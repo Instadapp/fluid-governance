@@ -51,8 +51,26 @@ contract PayloadIGP103 is PayloadIGPMain {
         // Action 3: Adjust wstETH Rate Curve
         action3();
 
-        // Action 4:
+        // Action 4: Withdraw $FLUID for Rewards
         action4();
+
+        // Action 5: Update the Limits for USDE-USDTb DEX
+        action5();
+
+        // Action 6: Update Dex Fee Auths
+        action6();
+
+        // Action 7: Update Token Auths
+        action7();
+
+        // Action 8: Update Vault Fee Rewards Auths
+        action8();
+
+        // Action 9: Update USDe-USDT Dex Fee auth
+        action9();
+
+        // Action 10: Add sUSDe-USDTb Dex Fee auth
+        action10();
     }
 
     function verifyProposal() public view override {}
@@ -172,7 +190,7 @@ contract PayloadIGP103 is PayloadIGPMain {
         address weETH_ETH_DEX = getDexAddress(9);
 
         // Fee Handler Addresses
-        address FeeHandler = 0x0000000000000000000000000000000000000000; // TODO: Add actual fee handler address
+        address FeeHandler = 0x8eaE5474C3DFE2c5F07E7423019E443258A73100;
 
         // Add new handler as auth
         DEX_FACTORY.setDexAuth(weETH_ETH_DEX, FeeHandler, true);
@@ -199,8 +217,136 @@ contract PayloadIGP103 is PayloadIGPMain {
         }
     }
 
-    // @notice Action 4:
-    function action4() internal isActionSkippable(4) {}
+    // @notice Action 4: Withdraw $FLUID for Rewards
+    function action4() internal isActionSkippable(4) {
+        string[] memory targets = new string[](1);
+        bytes[] memory encodedSpells = new bytes[](1);
+
+        string
+            memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
+
+        // Spell 1: Transfer FLUID to Team Multisig
+        {
+            uint256 FLUID_AMOUNT = 125_000 * 1e18;
+            targets[0] = "BASIC-A";
+            encodedSpells[0] = abi.encodeWithSignature(
+                withdrawSignature,
+                FLUID_ADDRESS,
+                FLUID_AMOUNT,
+                TEAM_MULTISIG,
+                0,
+                0
+            );
+        }
+
+        IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
+    }
+
+    // @notice Action 5: Update the Limits for USDE-USDTb DEX
+    function action5() internal isActionSkippable(5) {
+        {
+            {
+                address USDE_USDTb_DEX = getDexAddress(36);
+
+                // USDE-USDTb DEX
+                DexConfig memory DEX_USDE_USDTb = DexConfig({
+                    dex: USDE_USDTb_DEX,
+                    tokenA: USDe_ADDRESS,
+                    tokenB: USDTb_ADDRESS,
+                    smartCollateral: true,
+                    smartDebt: false,
+                    baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                    baseBorrowLimitInUSD: 0, // $0
+                    maxBorrowLimitInUSD: 0 // $0
+                });
+                setDexLimits(DEX_USDE_USDTb); // Smart Collateral
+            }
+            {
+                // Set max supply shares
+                IFluidDex(USDE_USDTb_DEX).updateMaxSupplyShares(
+                    15_000_000 * 1e18 // $30M
+                );
+            }
+        }
+    }
+
+    // @notice Action 6: Update Dex Fee Auths
+    function action6() internal isActionSkippable(6) {
+        {
+            // Dex Fee Auths
+            address oldDexFeeAuth = 0x7BD48D505A195d2d3B90263b7E4DB78909b817D3;
+            address newDexFeeAuth = 0x13c8d980dAb87b003D46C03e661672D167c824b9;
+
+            // Remove old dex fee auth
+            DEX_FACTORY.setGlobalAuth(oldDexFeeAuth, false);
+
+            // Add new dex fee auth
+            DEX_FACTORY.setGlobalAuth(newDexFeeAuth, true);
+        }
+    }
+
+    // @notice Action 7: Update Token Auths
+    function action7() internal isActionSkippable(7) {
+       {
+            // Token Auths
+            address oldTokenAuth = 0xb2875c793CE2277dE813953D7306506E87842b76;
+            address newTokenAuth = 0x3C27B24E9d7f3F5B9B4914A430C34ac8f8B27006;
+
+            FluidLiquidityAdminStructs.AddressBool[]
+                memory addrBools_ = new FluidLiquidityAdminStructs.AddressBool[](2);
+
+            // update token auth
+            addrBools_[0] = FluidLiquidityAdminStructs.AddressBool({
+                addr: oldTokenAuth,
+                value: false
+            });
+
+            addrBools_[1] = FluidLiquidityAdminStructs.AddressBool({
+                addr: newTokenAuth,
+                value: true
+            });
+
+            LIQUIDITY.updateAuths(addrBools_);
+        }
+    }
+
+    // @notice Action 8: Update Vault Fee Rewards Auths
+    function action8() internal isActionSkippable(8) {
+        {
+            // Vault Fee Rewards Auths
+            address newVaultFeeRewardsAuth = 0xEf363bA369Bd2140C5371C973dA9542c08bA9f9F;
+
+            // add new vault fee rewards auth
+            VAULT_FACTORY.setGlobalAuth(newVaultFeeRewardsAuth, true);
+        }
+    }
+
+    // @notice Action 9: Update USDe-USDT Dex Fee auth
+    function action9() internal isActionSkippable(9) {
+        address USDe_USDT_DEX = getDexAddress(18);
+
+        // Fee Handler Addresses
+        address oldFeeHandler = 0x855BaEf2EEBf4238e6e509c85a5277a3c5A38f9D;
+        address newFeeHandler = 0x49EF1B3230a8d2AC7205E808dF5859f1b94D61Df;
+
+        // Remove old fee handler
+        DEX_FACTORY.setDexAuth(USDe_USDT_DEX, oldFeeHandler, false);
+
+        // Add new fee handler as auth
+        DEX_FACTORY.setDexAuth(USDe_USDT_DEX, newFeeHandler, true);
+    }
+
+    // @notice Action 10: Add sUSDe-USDTb Dex Fee auth
+    function action10() internal isActionSkippable(10) {
+        address sUSDe_USDT_DEX = getDexAddress(15);
+
+        // Fee Handler Addresses
+        address FeeHandler = 0xc5ba4D4142Ae5cf9ec802B298963A08390658f05;
+
+        // Add new handler as auth
+        DEX_FACTORY.setDexAuth(sUSDe_USDT_DEX, FeeHandler, true);
+    }
+
 
     /**
      * |
