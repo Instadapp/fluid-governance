@@ -63,7 +63,7 @@ contract PayloadIGP103 is PayloadIGPMain {
         // Action 7: Update USDe-USDT Dex Fee auth
         action7();
 
-        // Action 8: Add sUSDe-USDTb Dex Fee auth
+        // Action 8: Add sUSDe-USDT Dex Fee auth
         action8();
     }
 
@@ -209,7 +209,7 @@ contract PayloadIGP103 is PayloadIGPMain {
         DEX_FACTORY.setDexAuth(USDe_USDT_DEX, newFeeHandler, true);
     }
 
-    // @notice Action 8: Add sUSDe-USDTb Dex Fee auth
+    // @notice Action 8: Add sUSDe-USDT Dex Fee auth
     function action8() internal isActionSkippable(8) {
         address sUSDe_USDT_DEX = getDexAddress(15);
 
