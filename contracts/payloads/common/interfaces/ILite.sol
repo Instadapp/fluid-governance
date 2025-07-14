@@ -22,8 +22,4 @@ interface ILite {
     function updateAggrMaxVaultRatio(uint256 newAggrMaxVaultRatio_) external;
 
     function addDSAAuth(address auth_) external;
-
-    function getImplementationSigs(address implementation_) external view returns (bytes4[] memory);
-    function updateSecondaryAuth(address secondaryAuth_) external;
-    function updateRebalancer(address rebalancer_, bool isRebalancer_) external;
 }
