@@ -116,13 +116,12 @@ contract PayloadIGP103 is PayloadIGPMain {
 
     // @notice Action 3: Update the Max Supply Shares for USDE-USDTb DEX
     function action3() internal isActionSkippable(3) {
+        address USDE_USDTb_DEX = getDexAddress(36);
         {
-            {
-                // Set max supply shares
-                IFluidDex(USDE_USDTb_DEX).updateMaxSupplyShares(
-                    15_000_000 * 1e18 // $30M
-                );
-            }
+            // Set max supply shares
+            IFluidDex(USDE_USDTb_DEX).updateMaxSupplyShares(
+                15_000_000 * 1e18 // $30M
+            );
         }
     }
 
@@ -143,13 +142,15 @@ contract PayloadIGP103 is PayloadIGPMain {
 
     // @notice Action 5: Update Token Auths
     function action5() internal isActionSkippable(5) {
-       {
+        {
             // Token Auths
             address oldTokenAuth = 0xb2875c793CE2277dE813953D7306506E87842b76;
             address newTokenAuth = 0x3C27B24E9d7f3F5B9B4914A430C34ac8f8B27006;
 
             FluidLiquidityAdminStructs.AddressBool[]
-                memory addrBools_ = new FluidLiquidityAdminStructs.AddressBool[](2);
+                memory addrBools_ = new FluidLiquidityAdminStructs.AddressBool[](
+                    2
+                );
 
             // update token auth
             addrBools_[0] = FluidLiquidityAdminStructs.AddressBool({
@@ -202,7 +203,6 @@ contract PayloadIGP103 is PayloadIGPMain {
         // Add new handler as auth
         DEX_FACTORY.setDexAuth(sUSDe_USDT_DEX, FeeHandler, true);
     }
-
 
     /**
      * |
