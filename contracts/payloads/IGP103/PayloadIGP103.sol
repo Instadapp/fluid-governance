@@ -117,6 +117,7 @@ contract PayloadIGP103 is PayloadIGPMain {
     // @notice Action 3: Update the Max Supply Shares for USDE-USDTb DEX
     function action3() internal isActionSkippable(3) {
         {
+            address USDE_USDTb_DEX = getDexAddress(36);
             {
                 // Set max supply shares
                 IFluidDex(USDE_USDTb_DEX).updateMaxSupplyShares(
