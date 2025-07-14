@@ -42,35 +42,29 @@ contract PayloadIGP103 is PayloadIGPMain {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Update Lite Modules to integrate weETH
+        // Action 1: Set Fee Handler for weETH-ETH DEX
         action1();
 
-        // Action 2: Set Fee Handler for weETH-ETH DEX
+        // Action 2: Withdraw $FLUID for Rewards
         action2();
 
-        // Action 3: Adjust wstETH Rate Curve
+        // Action 3: Update the Limits for USDE-USDTb DEX
         action3();
 
-        // Action 4: Withdraw $FLUID for Rewards
+        // Action 4: Update Dex Fee Auths
         action4();
 
-        // Action 5: Update the Limits for USDE-USDTb DEX
+        // Action 5: Update Token Auths
         action5();
 
-        // Action 6: Update Dex Fee Auths
+        // Action 6: Update Vault Fee Rewards Auths
         action6();
 
-        // Action 7: Update Token Auths
+        // Action 7: Update USDe-USDT Dex Fee auth
         action7();
 
-        // Action 8: Update Vault Fee Rewards Auths
+        // Action 8: Add sUSDe-USDTb Dex Fee auth
         action8();
-
-        // Action 9: Update USDe-USDT Dex Fee auth
-        action9();
-
-        // Action 10: Add sUSDe-USDTb Dex Fee auth
-        action10();
     }
 
     function verifyProposal() public view override {}
@@ -85,108 +79,8 @@ contract PayloadIGP103 is PayloadIGPMain {
      * |__________________________________
      */
 
-    // @notice Action 1: Update Lite Modules to integrate weETH
+    // @notice Action 1: Set Fee Handler for weETH-ETH DEX
     function action1() internal isActionSkippable(1) {
-        {
-            // Claim Module - Add KING Rewards
-            bytes4[] memory newSigs_ = new bytes4[](1);
-
-            newSigs_[0] = ILiteSigs.claimKingRewards.selector;
-
-            _updateLiteImplementation(
-                address(0),
-                0x0000000000000000000000000000000000000000, // TODO: Add actual implementation address
-                newSigs_,
-                false
-            );
-        }
-
-        {
-            // View Module - Add Ratio Helper Functions
-            bytes4[] memory newSigs_ = new bytes4[](2);
-
-            newSigs_[0] = ILiteSigs.getRatioAaveV3.selector;
-            newSigs_[1] = ILiteSigs.getRatioFluidWeETHWstETH.selector;
-
-            _updateLiteImplementation(
-                address(0),
-                0x0000000000000000000000000000000000000000, // TODO: Add actual implementation address
-                newSigs_,
-                false
-            );
-        }
-
-        {
-            // StethToEethModule (New Module) - WeETH Related Functions
-            bytes4[] memory newSigs_ = new bytes4[](1);
-
-            newSigs_[0] = ILiteSigs.convertAaveV3wstETHToWeETH.selector;
-
-            _updateLiteImplementation(
-                address(0),
-                0x0000000000000000000000000000000000000000, // TODO: Add actual implementation address
-                newSigs_,
-                false
-            );
-        }
-
-        {
-            // FluidAaveV3WeETHRebalancerModule (New Module) - WeETH Related Functions
-            bytes4[] memory newSigs_ = new bytes4[](2);
-
-            newSigs_[0] = ILiteSigs.rebalanceFromWeETHToWstETH.selector;
-            newSigs_[1] = ILiteSigs.rebalanceFromWstETHToWeETH.selector;
-
-            _updateLiteImplementation(
-                address(0),
-                0x0000000000000000000000000000000000000000, // TODO: Add actual implementation address
-                newSigs_,
-                false
-            );
-        }
-
-        {
-            // Rebalancer Module - KING Rewards and Sweep Functions
-            bytes4[] memory newSigs_ = new bytes4[](2);
-
-            newSigs_[0] = ILiteSigs.swapKingTokensToWeth.selector;
-            newSigs_[1] = ILiteSigs.sweepWethToWeEth.selector;
-
-            _updateLiteImplementation(
-                address(0),
-                0x0000000000000000000000000000000000000000, // TODO: Add actual implementation address
-                newSigs_,
-                false
-            );
-        }
-
-        // Update Dummy Implementation
-        IETHV2.setDummyImplementation(
-            0x41C4cB513C98717a91F591C17bf127e8cc7F5d2F
-        );
-
-        // Set Max Risk Ratio for Fluid Dex
-        {
-            uint8[] memory protocolId_ = new uint8[](1);
-            uint256[] memory newRiskRatio_ = new uint256[](1);
-
-            {
-                protocolId_[0] = 11;
-                newRiskRatio_[0] = 95_0000;
-            }
-
-            IETHV2.updateMaxRiskRatio(protocolId_, newRiskRatio_);
-        }
-
-        {
-            // Set Team Multisig as Secondary Auth and Rebalancer for iETHv2 Lite Vault
-            IETHV2.updateSecondaryAuth(TEAM_MULTISIG);
-            IETHV2.updateRebalancer(TEAM_MULTISIG, true);
-        }
-    }
-
-    // @notice Action 2: Set Fee Handler for weETH-ETH DEX
-    function action2() internal isActionSkippable(2) {
         address weETH_ETH_DEX = getDexAddress(9);
 
         // Fee Handler Addresses
@@ -196,29 +90,8 @@ contract PayloadIGP103 is PayloadIGPMain {
         DEX_FACTORY.setDexAuth(weETH_ETH_DEX, FeeHandler, true);
     }
 
-    // @notice Action 3: Adjust wstETH Rate Curve
-    function action3() internal isActionSkippable(3) {
-        // decrease wstETH rates
-        {
-            AdminModuleStructs.RateDataV2Params[]
-                memory params_ = new AdminModuleStructs.RateDataV2Params[](1);
-
-            params_[0] = AdminModuleStructs.RateDataV2Params({
-                token: wstETH_ADDRESS, // wstETH
-                kink1: 80 * 1e2, // 80%
-                kink2: 90 * 1e2, // 90%
-                rateAtUtilizationZero: 0, // 0%
-                rateAtUtilizationKink1: 0.8 * 1e2, // 0.8%
-                rateAtUtilizationKink2: 3.2 * 1e2, // 3.2%
-                rateAtUtilizationMax: 100 * 1e2 // 100%
-            });
-
-            LIQUIDITY.updateRateDataV2s(params_);
-        }
-    }
-
-    // @notice Action 4: Withdraw $FLUID for Rewards
-    function action4() internal isActionSkippable(4) {
+    // @notice Action 2: Withdraw $FLUID for Rewards
+    function action2() internal isActionSkippable(2) {
         string[] memory targets = new string[](1);
         bytes[] memory encodedSpells = new bytes[](1);
 
@@ -242,8 +115,8 @@ contract PayloadIGP103 is PayloadIGPMain {
         IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
     }
 
-    // @notice Action 5: Update the Limits for USDE-USDTb DEX
-    function action5() internal isActionSkippable(5) {
+    // @notice Action 3: Update the Limits for USDE-USDTb DEX
+    function action3() internal isActionSkippable(3) {
         {
             {
                 address USDE_USDTb_DEX = getDexAddress(36);
@@ -270,8 +143,8 @@ contract PayloadIGP103 is PayloadIGPMain {
         }
     }
 
-    // @notice Action 6: Update Dex Fee Auths
-    function action6() internal isActionSkippable(6) {
+    // @notice Action 4: Update Dex Fee Auths
+    function action4() internal isActionSkippable(4) {
         {
             // Dex Fee Auths
             address oldDexFeeAuth = 0x7BD48D505A195d2d3B90263b7E4DB78909b817D3;
@@ -285,8 +158,8 @@ contract PayloadIGP103 is PayloadIGPMain {
         }
     }
 
-    // @notice Action 7: Update Token Auths
-    function action7() internal isActionSkippable(7) {
+    // @notice Action 5: Update Token Auths
+    function action5() internal isActionSkippable(5) {
        {
             // Token Auths
             address oldTokenAuth = 0xb2875c793CE2277dE813953D7306506E87842b76;
@@ -310,8 +183,8 @@ contract PayloadIGP103 is PayloadIGPMain {
         }
     }
 
-    // @notice Action 8: Update Vault Fee Rewards Auths
-    function action8() internal isActionSkippable(8) {
+    // @notice Action 6: Update Vault Fee Rewards Auths
+    function action6() internal isActionSkippable(6) {
         {
             // Vault Fee Rewards Auths
             address newVaultFeeRewardsAuth = 0xEf363bA369Bd2140C5371C973dA9542c08bA9f9F;
@@ -321,8 +194,8 @@ contract PayloadIGP103 is PayloadIGPMain {
         }
     }
 
-    // @notice Action 9: Update USDe-USDT Dex Fee auth
-    function action9() internal isActionSkippable(9) {
+    // @notice Action 7: Update USDe-USDT Dex Fee auth
+    function action7() internal isActionSkippable(7) {
         address USDe_USDT_DEX = getDexAddress(18);
 
         // Fee Handler Addresses
@@ -336,8 +209,8 @@ contract PayloadIGP103 is PayloadIGPMain {
         DEX_FACTORY.setDexAuth(USDe_USDT_DEX, newFeeHandler, true);
     }
 
-    // @notice Action 10: Add sUSDe-USDTb Dex Fee auth
-    function action10() internal isActionSkippable(10) {
+    // @notice Action 8: Add sUSDe-USDTb Dex Fee auth
+    function action8() internal isActionSkippable(8) {
         address sUSDe_USDT_DEX = getDexAddress(15);
 
         // Fee Handler Addresses
