@@ -48,7 +48,7 @@ contract PayloadIGP103 is PayloadIGPMain {
         // Action 2: Withdraw $FLUID for Rewards
         action2();
 
-        // Action 3: Update the Limits for USDE-USDTb DEX
+        // Action 3: Update the Max Supply Shares for USDE-USDTb DEX
         action3();
 
         // Action 4: Update Dex Fee Auths
@@ -115,25 +115,9 @@ contract PayloadIGP103 is PayloadIGPMain {
         IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
     }
 
-    // @notice Action 3: Update the Limits for USDE-USDTb DEX
+    // @notice Action 3: Update the Max Supply Shares for USDE-USDTb DEX
     function action3() internal isActionSkippable(3) {
         {
-            {
-                address USDE_USDTb_DEX = getDexAddress(36);
-
-                // USDE-USDTb DEX
-                DexConfig memory DEX_USDE_USDTb = DexConfig({
-                    dex: USDE_USDTb_DEX,
-                    tokenA: USDe_ADDRESS,
-                    tokenB: USDTb_ADDRESS,
-                    smartCollateral: true,
-                    smartDebt: false,
-                    baseWithdrawalLimitInUSD: 8_000_000, // $8M
-                    baseBorrowLimitInUSD: 0, // $0
-                    maxBorrowLimitInUSD: 0 // $0
-                });
-                setDexLimits(DEX_USDE_USDTb); // Smart Collateral
-            }
             {
                 // Set max supply shares
                 IFluidDex(USDE_USDTb_DEX).updateMaxSupplyShares(
