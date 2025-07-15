@@ -27,4 +27,10 @@ interface IFluidVaultFactory {
     function getVaultAddress(
         uint256 vaultId_
     ) external view returns (address vault_);
+
+     /// @notice                         Sets an address (`globalAuth_`) as a global authorization or not.
+    ///                                 This function can only be called by the owner.
+    /// @param globalAuth_              The address to be set as global authorization.
+    /// @param allowed_                 A boolean indicating whether the specified address is allowed to update any vault config.
+    function setGlobalAuth(address globalAuth_, bool allowed_) external;
 }
