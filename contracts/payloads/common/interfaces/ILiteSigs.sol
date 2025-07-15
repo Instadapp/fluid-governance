@@ -144,3 +144,17 @@ interface ILiteSigs {
         uint256 route_
     ) external;
 }
+
+interface ILiteSigsToRemove {
+    function getRatioAaveV3(
+        uint256 stEthPerWsteth_
+    )
+        external
+        view
+        returns (
+            uint256 wstEthAmount_,
+            uint256 stEthAmount_,
+            uint256 ethAmount_,
+            uint256 ratio_
+        );
+}

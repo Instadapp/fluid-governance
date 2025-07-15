@@ -34,7 +34,7 @@ import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 
 import {ILite} from "../common/interfaces/ILite.sol";
-import {ILiteSigs} from "../common/interfaces/ILiteSigs.sol";
+import {ILiteSigs, ILiteSigsToRemove} from "../common/interfaces/ILiteSigs.sol";
 
 contract PayloadIGP104 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 104;
@@ -110,23 +110,28 @@ contract PayloadIGP104 is PayloadIGPMain {
             address oldImplementation_ = address(0x1BF97Df3D9eFa7036e96fB58F6c4CCfB2a2fDa21);
             address newImplementation_ = address(0x9485b2BE2Ce9672fe8eB36285d07c844DE97f43c);
             bytes4[] memory newSigs_ = new bytes4[](0);
+            bytes4[] memory removeSigs_ = new bytes4[](0);
 
             _updateLiteImplementationFromStorage(
                 oldImplementation_,
                 newImplementation_,
                 newSigs_,
+                removeSigs_,
                 module_,
                 false
             );
         }
         
-        // View Module (Module Update with 2 new sigs)
+        // View Module (Module Update with 2 new sigs and remove 1 sig)
         {
             
             ModuleImplementation memory module_ = modules_.viewModule;
             address oldImplementation_ = address(0x038c28580A22E2b74bfb13E00e9c0a75CD732342);
             address newImplementation_ = address(0x9FB2fDc9F64c1FD7aABedE5D3F0A5BcA9402451F);
             bytes4[] memory newSigs_ = new bytes4[](2);
+            bytes4[] memory removeSigs_ = new bytes4[](1);
+
+            removeSigs_[0] = ILiteSigsToRemove.getRatioAaveV3.selector;
 
             newSigs_[0] = ILiteSigs.getRatioAaveV3.selector;
             newSigs_[1] = ILiteSigs.getRatioFluidWeETHWstETH.selector;
@@ -135,6 +140,7 @@ contract PayloadIGP104 is PayloadIGPMain {
                 oldImplementation_,
                 newImplementation_,
                 newSigs_,
+                removeSigs_,
                 module_,
                 false
             );
@@ -147,6 +153,7 @@ contract PayloadIGP104 is PayloadIGPMain {
             address oldImplementation_ = address(0xB00df786d3611acE29D19De744B4147f378715f4);
             address newImplementation_ = address(0x012173245e401BAd0cB763C2d7BB2D21b7BE4e5f);
             bytes4[] memory newSigs_ = new bytes4[](1);
+            bytes4[] memory removeSigs_ = new bytes4[](0);
 
             newSigs_[0] = ILiteSigs.claimKingRewards.selector;
 
@@ -154,6 +161,7 @@ contract PayloadIGP104 is PayloadIGPMain {
                 oldImplementation_,
                 newImplementation_,
                 newSigs_,
+                removeSigs_,
                 module_,
                 false
             );
@@ -166,11 +174,13 @@ contract PayloadIGP104 is PayloadIGPMain {
             address oldImplementation_ = address(0xd23a760cD16610f67a68BADC3c5E04E9898d2789);
             address newImplementation_ = address(0x567b3c860eea18Fd0E3E6d4c38577e8DB653113C);
             bytes4[] memory newSigs_ = new bytes4[](0);
+            bytes4[] memory removeSigs_ = new bytes4[](0);
 
             _updateLiteImplementationFromStorage(
                 oldImplementation_,
                 newImplementation_,
                 newSigs_,
+                removeSigs_,
                 module_,
                 false
             );
@@ -183,11 +193,13 @@ contract PayloadIGP104 is PayloadIGPMain {
             address oldImplementation_ = address(0xbeE5CDBd7Ae69b31CeAEB16485e43F3Bbc1b6983);
             address newImplementation_ = address(0x2D29312C1D70C93cD110e9973874C7083F2730dd);
             bytes4[] memory newSigs_ = new bytes4[](0);
+            bytes4[] memory removeSigs_ = new bytes4[](0);
 
             _updateLiteImplementationFromStorage(
                 oldImplementation_,
                 newImplementation_,
                 newSigs_,
+                removeSigs_,
                 module_,
                 false
             );
@@ -200,11 +212,13 @@ contract PayloadIGP104 is PayloadIGPMain {
             address oldImplementation_ = address(0x42aFc927E8Ab5D14b2760625Eb188158eefB46be);
             address newImplementation_ = address(0x028B980F0b226B17dC53507731195A463D442e95);
             bytes4[] memory newSigs_ = new bytes4[](0);
+            bytes4[] memory removeSigs_ = new bytes4[](0);
 
             _updateLiteImplementationFromStorage(
                 oldImplementation_,
                 newImplementation_,
                 newSigs_,
+                removeSigs_,
                 module_,
                 false
             );
@@ -217,6 +231,7 @@ contract PayloadIGP104 is PayloadIGPMain {
             address oldImplementation_ = address(0x7C44B02dA7826f9e14264a8E2D48a92bb86F72ee);
             address newImplementation_ = address(0x5343Da5F10bD9C36EA9cB04CaaE1452D8D967511);
             bytes4[] memory newSigs_ = new bytes4[](2);
+            bytes4[] memory removeSigs_ = new bytes4[](0);
 
             newSigs_[0] = ILiteSigs.sweepWethToWeEth.selector;
             newSigs_[1] = ILiteSigs.swapKingTokensToWeth.selector;
@@ -225,6 +240,7 @@ contract PayloadIGP104 is PayloadIGPMain {
                 oldImplementation_,
                 newImplementation_,
                 newSigs_,
+                removeSigs_,
                 module_,
                 false
             );
@@ -237,11 +253,13 @@ contract PayloadIGP104 is PayloadIGPMain {
             address oldImplementation_ = address(0x807675e4D1eC7c1c134940Ab513B288d150E8023);
             address newImplementation_ = address(0x1E5B2b8546015B5537790c47BC7F5B3AF2038C03);
             bytes4[] memory newSigs_ = new bytes4[](0);
+            bytes4[] memory removeSigs_ = new bytes4[](0);
 
             _updateLiteImplementationFromStorage(
                 oldImplementation_,
                 newImplementation_,
                 newSigs_,
+                removeSigs_,
                 module_,
                 false
             );
@@ -254,11 +272,13 @@ contract PayloadIGP104 is PayloadIGPMain {
             address oldImplementation_ = address(0x635D70Fab1B1c3f7E9F3d30Bd1DeB738Daf87725);
             address newImplementation_ = address(0xFfB6B9958d3EA0B676C3945630a676732cf9c7d1);
             bytes4[] memory newSigs_ = new bytes4[](0);
+            bytes4[] memory removeSigs_ = new bytes4[](0);
 
             _updateLiteImplementationFromStorage(
                 oldImplementation_,
                 newImplementation_,
                 newSigs_,
+                removeSigs_,
                 module_,
                 false
             );
@@ -271,11 +291,13 @@ contract PayloadIGP104 is PayloadIGPMain {
             address oldImplementation_ = address(0x6aa752b1462e7C71aA90e9236a817263bb5E0c72);
             address newImplementation_ = address(0x61243890c242316C444B5378388Ed24A4dbD2487);
             bytes4[] memory newSigs_ = new bytes4[](0);
+            bytes4[] memory removeSigs_ = new bytes4[](0);
 
             _updateLiteImplementationFromStorage(
                 oldImplementation_,
                 newImplementation_,
                 newSigs_,
+                removeSigs_,
                 module_,
                 false
             );
@@ -288,6 +310,7 @@ contract PayloadIGP104 is PayloadIGPMain {
             address oldImplementation_ = address(0);
             address newImplementation_ = address(0x7ac6e3C02AC5dB7e7aD69d93ad1A2f60B67CcF5d);
             bytes4[] memory newSigs_ = new bytes4[](1);
+            bytes4[] memory removeSigs_ = new bytes4[](0);
 
             newSigs_[0] = ILiteSigs.convertAaveV3wstETHToWeETH.selector;
 
@@ -295,6 +318,7 @@ contract PayloadIGP104 is PayloadIGPMain {
                 oldImplementation_,
                 newImplementation_,
                 newSigs_,
+                removeSigs_,
                 module_,
                 false
             );
@@ -307,6 +331,7 @@ contract PayloadIGP104 is PayloadIGPMain {
             address oldImplementation_ = address(0);
             address newImplementation_ = address(0xCF8beE8092b93E28C046bD8dAE6f48175Fb74Fac);
             bytes4[] memory newSigs_ = new bytes4[](2);
+            bytes4[] memory removeSigs_ = new bytes4[](0);
 
             newSigs_[0] = ILiteSigs.rebalanceFromWeETHToWstETH.selector;
             newSigs_[1] = ILiteSigs.rebalanceFromWstETHToWeETH.selector;
@@ -315,6 +340,7 @@ contract PayloadIGP104 is PayloadIGPMain {
                 oldImplementation_,
                 newImplementation_,
                 newSigs_,
+                removeSigs_,
                 module_,
                 false
             );
@@ -326,8 +352,8 @@ contract PayloadIGP104 is PayloadIGPMain {
             ModuleImplementation memory module_ = modules_.aaveV3WstETHWeETHSwapModule;
             address oldImplementation_ = address(0);
             address newImplementation_ = address(0x32f293BDc04CCD87A3845710404D8F942f2123B9);
-
             bytes4[] memory newSigs_ = new bytes4[](2);
+            bytes4[] memory removeSigs_ = new bytes4[](0);
 
             newSigs_[0] = ILiteSigs.swapWstETHToWeETH.selector;
             newSigs_[1] = ILiteSigs.swapWeETHToWstETH.selector;
@@ -336,6 +362,7 @@ contract PayloadIGP104 is PayloadIGPMain {
                 oldImplementation_,
                 newImplementation_,
                 newSigs_,
+                removeSigs_,
                 module_,
                 false
             );
@@ -528,6 +555,7 @@ contract PayloadIGP104 is PayloadIGPMain {
         address oldImplementation_,
         address newImplementation_,
         bytes4[] memory newSigs_,
+        bytes4[] memory removeSigs_,
         ModuleImplementation memory module_,
         bool replace_
     ) internal {
@@ -557,13 +585,28 @@ contract PayloadIGP104 is PayloadIGPMain {
             oldSigs_ = IETHV2.getImplementationSigs(oldImplementation_);
         }
 
+        uint256 signaturesLength_ = oldSigs_.length + newSigs_.length - removeSigs_.length;
+
         // concat old sigs and new sigs
         bytes4[] memory allSigs_ = new bytes4[](
-            oldSigs_.length + newSigs_.length
+            signaturesLength_
         );
         uint256 j_;
         for (uint256 i = 0; i < oldSigs_.length; i++) {
-            allSigs_[j_++] = oldSigs_[i];
+            if (removeSigs_.length > 0) {
+                bool found_ = false;
+                for (uint256 k = 0; k < removeSigs_.length; k++) {
+                    if (oldSigs_[i] == removeSigs_[k]) {
+                        found_ = true;
+                        break;
+                    }
+                }
+                if (!found_) {
+                    allSigs_[j_++] = oldSigs_[i];
+                }
+            } else {
+                allSigs_[j_++] = oldSigs_[i];
+            }
         }
 
         for (uint256 i = 0; i < newSigs_.length; i++) {
