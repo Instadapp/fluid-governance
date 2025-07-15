@@ -47,9 +47,6 @@ contract PayloadIGP104 is PayloadIGPMain {
 
         // Action 2: Adjust wstETH Rate Curve
         action2();
-
-        // Action 3: 
-        action3();
     }
 
     function verifyProposal() public view override {}
@@ -65,75 +62,110 @@ contract PayloadIGP104 is PayloadIGPMain {
      */
 
 // @notice Action 1: Update Lite Modules to integrate weETH
+    // Struct to hold implementation addresses for each function selector
+    struct ModuleImplementation {
+        bytes4 selector;
+        address implementation;
+    }
+
+    struct ModuleImplementations {
+        ModuleImplementation[] claimModule;
+        ModuleImplementation[] viewModule;
+        ModuleImplementation[] stethToEethModule;
+        ModuleImplementation[] fluidAaveV3WeETHRebalancerModule;
+        ModuleImplementation[] rebalancerModule;
+    }
+
+    ModuleImplementations internal moduleImplementations;
+
+    // Setter for module implementations (can be extended for access control)
+    function setModuleImplementation(
+        uint8 moduleType, // 0: claim, 1: view, 2: stethToEeth, 3: fluidAaveV3WeETHRebalancer, 4: rebalancer
+        bytes4 selector,
+        address implementation
+    ) external {
+        ModuleImplementation memory impl = ModuleImplementation({selector: selector, implementation: implementation});
+        if (moduleType == 0) {
+            moduleImplementations.claimModule.push(impl);
+        } else if (moduleType == 1) {
+            moduleImplementations.viewModule.push(impl);
+        } else if (moduleType == 2) {
+            moduleImplementations.stethToEethModule.push(impl);
+        } else if (moduleType == 3) {
+            moduleImplementations.fluidAaveV3WeETHRebalancerModule.push(impl);
+        } else if (moduleType == 4) {
+            moduleImplementations.rebalancerModule.push(impl);
+        }
+    }
+
+    // Helper to get implementation address for a selector in a module
+    function _getImplementation(address hardcoded, ModuleImplementation[] storage arr, bytes4 selector) internal view returns (address) {
+        for (uint i = 0; i < arr.length; i++) {
+            if (arr[i].selector == selector) {
+                if (arr[i].implementation != address(0)) {
+                    return arr[i].implementation;
+                }
+                break;
+            }
+        }
+        return hardcoded;
+    }
+
     function action1() internal isActionSkippable(1) {
         {
             // Claim Module - Add KING Rewards
             bytes4[] memory newSigs_ = new bytes4[](1);
-
             newSigs_[0] = ILiteSigs.claimKingRewards.selector;
-
             _updateLiteImplementation(
                 address(0),
-                0x0000000000000000000000000000000000000000, // TODO: Add actual implementation address
+                _getImplementation(0x1111111111111111111111111111111111111111, moduleImplementations.claimModule, ILiteSigs.claimKingRewards.selector),
                 newSigs_,
                 false
             );
         }
-
         {
             // View Module - Add Ratio Helper Functions
             bytes4[] memory newSigs_ = new bytes4[](2);
-
             newSigs_[0] = ILiteSigs.getRatioAaveV3.selector;
             newSigs_[1] = ILiteSigs.getRatioFluidWeETHWstETH.selector;
-
             _updateLiteImplementation(
                 address(0),
-                0x0000000000000000000000000000000000000000, // TODO: Add actual implementation address
+                _getImplementation(0x2222222222222222222222222222222222222222, moduleImplementations.viewModule, ILiteSigs.getRatioAaveV3.selector),
                 newSigs_,
                 false
             );
         }
-
         {
             // StethToEethModule (New Module) - WeETH Related Functions
             bytes4[] memory newSigs_ = new bytes4[](1);
-
             newSigs_[0] = ILiteSigs.convertAaveV3wstETHToWeETH.selector;
-
             _updateLiteImplementation(
                 address(0),
-                0x0000000000000000000000000000000000000000, // TODO: Add actual implementation address
+                _getImplementation(0x3333333333333333333333333333333333333333, moduleImplementations.stethToEethModule, ILiteSigs.convertAaveV3wstETHToWeETH.selector),
                 newSigs_,
                 false
             );
         }
-
         {
             // FluidAaveV3WeETHRebalancerModule (New Module) - WeETH Related Functions
             bytes4[] memory newSigs_ = new bytes4[](2);
-
             newSigs_[0] = ILiteSigs.rebalanceFromWeETHToWstETH.selector;
             newSigs_[1] = ILiteSigs.rebalanceFromWstETHToWeETH.selector;
-
             _updateLiteImplementation(
                 address(0),
-                0x0000000000000000000000000000000000000000, // TODO: Add actual implementation address
+                _getImplementation(0x4444444444444444444444444444444444444444, moduleImplementations.fluidAaveV3WeETHRebalancerModule, ILiteSigs.rebalanceFromWeETHToWstETH.selector),
                 newSigs_,
                 false
             );
         }
-
         {
             // Rebalancer Module - KING Rewards and Sweep Functions
             bytes4[] memory newSigs_ = new bytes4[](2);
-
             newSigs_[0] = ILiteSigs.swapKingTokensToWeth.selector;
             newSigs_[1] = ILiteSigs.sweepWethToWeEth.selector;
-
             _updateLiteImplementation(
                 address(0),
-                0x0000000000000000000000000000000000000000, // TODO: Add actual implementation address
+                _getImplementation(0x5555555555555555555555555555555555555555, moduleImplementations.rebalancerModule, ILiteSigs.swapKingTokensToWeth.selector),
                 newSigs_,
                 false
             );
@@ -141,7 +173,7 @@ contract PayloadIGP104 is PayloadIGPMain {
 
         // Update Dummy Implementation
         IETHV2.setDummyImplementation(
-            0x41C4cB513C98717a91F591C17bf127e8cc7F5d2F
+            0x0000000000000000000000000000000000000000
         );
 
         // Set Max Risk Ratio for Fluid Dex
