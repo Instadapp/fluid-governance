@@ -88,6 +88,10 @@ interface ILiteSigs {
     ) external returns (uint256 ratioFromProtocol_, uint256 ratioToProtocol_);
 
     // View Module
+    function maxAllocationToTeamMultisig() external view returns (uint256);
+
+    function allocationToTeamMultisig() external view returns (uint256);
+
     function getRatioFluidDex(
         uint256 stEthPerWsteth_
     )
@@ -143,18 +147,4 @@ interface ILiteSigs {
         uint256 wstEthWithdrawAmount_,
         uint256 route_
     ) external;
-}
-
-interface ILiteSigsToRemove {
-    function getRatioAaveV3(
-        uint256 stEthPerWsteth_
-    )
-        external
-        view
-        returns (
-            uint256 wstEthAmount_,
-            uint256 stEthAmount_,
-            uint256 ethAmount_,
-            uint256 ratio_
-        );
 }

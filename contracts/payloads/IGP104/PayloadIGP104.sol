@@ -34,7 +34,34 @@ import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 
 import {ILite} from "../common/interfaces/ILite.sol";
-import {ILiteSigs, ILiteSigsToRemove} from "../common/interfaces/ILiteSigs.sol";
+import {ILiteSigs} from "../common/interfaces/ILiteSigs.sol";
+
+
+
+interface ILiteSigsToRemove {
+    // From View Module
+    // Below function sig got updated in the new implementation
+    function getRatioAaveV3(
+        uint256 stEthPerWsteth_
+    )
+        external
+        view
+        returns (
+            uint256 wstEthAmount_,
+            uint256 stEthAmount_,
+            uint256 ethAmount_,
+            uint256 ratio_
+        );
+
+    // Removed below sigs
+    function getRatioAaveV2() external;
+    function getRatioEuler(uint256 stEthPerWsteth_) external;
+    function getRatioMorphoAaveV2() external;
+    function borrowBalanceMorphoAaveV3(address underlying_) external;
+    function collateralBalanceMorphoAaveV3(address underlying_) external;
+    function getRatioMorphoAaveV3(uint256 stEthPerWsteth_) external;
+    function getRatioFluid(uint256 stEthPerWsteth_) external;
+}
 
 contract PayloadIGP104 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 104;
@@ -128,13 +155,22 @@ contract PayloadIGP104 is PayloadIGPMain {
             ModuleImplementation memory module_ = modules_.viewModule;
             address oldImplementation_ = address(0x038c28580A22E2b74bfb13E00e9c0a75CD732342);
             address newImplementation_ = address(0x9FB2fDc9F64c1FD7aABedE5D3F0A5BcA9402451F);
-            bytes4[] memory newSigs_ = new bytes4[](2);
-            bytes4[] memory removeSigs_ = new bytes4[](1);
-
-            removeSigs_[0] = ILiteSigsToRemove.getRatioAaveV3.selector;
+            bytes4[] memory newSigs_ = new bytes4[](4);
+            bytes4[] memory removeSigs_ = new bytes4[](8);
 
             newSigs_[0] = ILiteSigs.getRatioAaveV3.selector;
             newSigs_[1] = ILiteSigs.getRatioFluidWeETHWstETH.selector;
+            newSigs_[2] = ILiteSigs.maxAllocationToTeamMultisig.selector;
+            newSigs_[3] = ILiteSigs.allocationToTeamMultisig.selector;
+
+            removeSigs_[0] = ILiteSigsToRemove.getRatioAaveV3.selector;
+            removeSigs_[1] = ILiteSigsToRemove.getRatioAaveV2.selector;
+            removeSigs_[2] = ILiteSigsToRemove.getRatioEuler.selector;
+            removeSigs_[3] = ILiteSigsToRemove.getRatioMorphoAaveV2.selector;
+            removeSigs_[4] = ILiteSigsToRemove.getRatioMorphoAaveV3.selector;
+            removeSigs_[5] = ILiteSigsToRemove.getRatioFluid.selector;
+            removeSigs_[6] = ILiteSigsToRemove.borrowBalanceMorphoAaveV3.selector;
+            removeSigs_[7] = ILiteSigsToRemove.collateralBalanceMorphoAaveV3.selector;
 
             _updateLiteImplementationFromStorage(
                 oldImplementation_,
