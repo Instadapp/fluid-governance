@@ -58,18 +58,23 @@ contract PayloadIGP104 is PayloadIGPMain {
         ModuleImplementation withdrawModule;
         ModuleImplementation fluidAaveV3WeETHRebalancerModule;
         ModuleImplementation aaveV3WstETHWeETHSwapModule;
-        address dummyImplementations;
+        address dummyImplementation;
     }
 
-    LiteImplementationModules public liteImplementationModules;
+    LiteImplementationModules private _liteImplementationModules;
+
+    function getLiteImplementationModules() public view returns (LiteImplementationModules memory) {
+        return _liteImplementationModules;
+    }
 
     /**
      * |
      * |     Admin Actions      |
      * |__________________________________
      */
-    function setLiteImplementation(LiteImplementationModules memory modules_) external onlyOwner {
-        liteImplementationModules = modules_;
+    function setLiteImplementation(LiteImplementationModules memory modules_) external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        _liteImplementationModules = modules_;
     }
 
     function execute() public virtual override {
@@ -96,7 +101,7 @@ contract PayloadIGP104 is PayloadIGPMain {
 
     // @notice Action 1: Update Lite Modules to integrate weETH
     function action1() internal isActionSkippable(1) {
-        ModuleImplementation memory modules_ = PayloadIGP104(ADDRESS_THIS).liteImplementationModules();
+        LiteImplementationModules memory modules_ = PayloadIGP104(ADDRESS_THIS).getLiteImplementationModules();
         
         // Admin Module (Only Module Update with no new sigs)
         {
@@ -262,7 +267,7 @@ contract PayloadIGP104 is PayloadIGPMain {
         // Withdrawals Module (Only Module Update with 0 new sigs)
         {
             
-            ModuleImplementation memory module_ = modules_.withdrawalsModule;
+            ModuleImplementation memory module_ = modules_.withdrawModule;
             address oldImplementation_ = address(0x6aa752b1462e7C71aA90e9236a817263bb5E0c72);
             address newImplementation_ = address(0x61243890c242316C444B5378388Ed24A4dbD2487);
             bytes4[] memory newSigs_ = new bytes4[](0);
@@ -298,7 +303,7 @@ contract PayloadIGP104 is PayloadIGPMain {
         // FluidAaveV3WeETHRebalancer Module (Add new Module Update with 2 new sigs)
         {
             
-            ModuleImplementation memory module_ = modules_.stethToEethModule;
+            ModuleImplementation memory module_ = modules_.fluidAaveV3WeETHRebalancerModule;
             address oldImplementation_ = address(0);
             address newImplementation_ = address(0xCF8beE8092b93E28C046bD8dAE6f48175Fb74Fac);
             bytes4[] memory newSigs_ = new bytes4[](2);
@@ -320,7 +325,7 @@ contract PayloadIGP104 is PayloadIGPMain {
             
             ModuleImplementation memory module_ = modules_.aaveV3WstETHWeETHSwapModule;
             address oldImplementation_ = address(0);
-            address newImplementation_ = address(0x1BF97Df3D9eFa7036e96fB58F6c4CCfB2a2fDa21);
+            address newImplementation_ = address(0x32f293BDc04CCD87A3845710404D8F942f2123B9);
 
             bytes4[] memory newSigs_ = new bytes4[](2);
 
@@ -360,10 +365,10 @@ contract PayloadIGP104 is PayloadIGPMain {
     function action2() internal isActionSkippable(2) {
         // decrease wstETH rates
         {
-            AdminModuleStructs.RateDataV2Params[]
-                memory params_ = new AdminModuleStructs.RateDataV2Params[](1);
+            FluidLiquidityAdminStructs.RateDataV2Params[]
+                memory params_ = new FluidLiquidityAdminStructs.RateDataV2Params[](1);
 
-            params_[0] = AdminModuleStructs.RateDataV2Params({
+            params_[0] = FluidLiquidityAdminStructs.RateDataV2Params({
                 token: wstETH_ADDRESS, // wstETH
                 kink1: 80 * 1e2, // 80%
                 kink2: 90 * 1e2, // 90%

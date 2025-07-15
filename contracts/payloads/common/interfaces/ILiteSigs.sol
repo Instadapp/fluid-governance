@@ -70,7 +70,7 @@ interface ILiteSigs {
         uint256 unitAmount_,
         string memory swapConnectorName_,
         string memory swapCallData_
-    ) public;
+    ) external;
 
     // Unwind Dex Module
     function unwindDexRefinance(
@@ -109,7 +109,7 @@ interface ILiteSigs {
         uint256 eEthPerWeETH_,
         uint256 stEthPerWsteth_
     )
-        public
+        external
         view
         returns (
             uint256 wstEthAmount_,
@@ -124,7 +124,7 @@ interface ILiteSigs {
         uint256 eEthPerWeETH_,
         uint256 stEthPerWsteth_
     )
-        public
+        external
         view
         returns (
             uint256 weEthAmount_,
@@ -143,3 +143,4 @@ interface ILiteSigs {
         uint256 wstEthWithdrawAmount_,
         uint256 route_
     ) external;
+}
