@@ -1,15 +1,49 @@
 pragma solidity ^0.8.21;
 
 interface ILiteSigs {
-    // Claim Module
-    function claimFromAaveV3Lido() external;
-    function claimKingRewards(
-        address rewardToken,
-        uint256 amount,
-        bytes32 merkleRoot,
-        bytes32[] calldata merkleProof,
-        uint256 index
+    // AaveV3WstETHWeETHSwapModule
+    function swapWstETHToWeETH(
+        uint256 wstEthSellAmount_,
+        uint256 unitAmount_,
+        uint256 route_,
+        string memory swapConnectorName_,
+        string memory swapCallData_
     ) external;
+
+    function swapWeETHToWstETH(
+        uint256 weEthSellAmount_,
+        uint256 unitAmount_,
+        uint256 route_,
+        string memory swapConnectorName_,
+        string memory swapCallData_
+    ) external;
+
+     // ClaimModule
+    function claimFromAaveV3Lido() external;
+
+    function claimKingRewards(
+        address merkleContract_,
+        uint256 amount_,
+        bytes32 expectedMerkleRoot_,
+        bytes32[] calldata merkleProof_,
+        uint256 setId_
+    ) external;
+
+    // FluidAaveV3WeETHRebalancerModule
+    function rebalanceFromWeETHToWstETH(
+        uint256 weEthFlashloanAmount_,
+        uint256 wstEthBorrowAmount_,
+        uint256 route_
+    ) external returns (uint256 wstETHAmount_);
+
+    function rebalanceFromWstETHToWeETH(
+        uint256 wstEthFlashloanAmount_,
+        uint256 weEthWithdrawAmount_,
+        uint256 route_
+    ) external;
+
+    // FluidStethModule
+    
 
     // Leverage Dex Module
     function leverageDexRefinance(
@@ -25,6 +59,18 @@ interface ILiteSigs {
         int256 debtToken0MinMax_, // if +, min to borrow, if -, max to payback
         int256 debtToken1MinMax_ // if +, min to borrow, if -, max to payback
     ) external returns (uint256 ratioFromProtocol_, uint256 ratioToProtocol_);
+
+    // Leverage Module
+
+    // Rebalancer Module
+    function sweepWethToWeEth() external;
+
+    function swapKingTokensToWeth(
+        uint256 sellAmount_,
+        uint256 unitAmount_,
+        string memory swapConnectorName_,
+        string memory swapCallData_
+    ) public;
 
     // Unwind Dex Module
     function unwindDexRefinance(
@@ -58,43 +104,42 @@ interface ILiteSigs {
         );
 
     function fluidDexNFT() external view returns (address);
+
     function getRatioAaveV3(
-        uint256 stEthPerWsteth_,
-        uint256 ethPerWsteth_
-    ) external view returns (uint256 ratio_);
+        uint256 eEthPerWeETH_,
+        uint256 stEthPerWsteth_
+    )
+        public
+        view
+        returns (
+            uint256 wstEthAmount_,
+            uint256 weEthAmount_,
+            uint256 eEthAmount_,
+            uint256 stEthAmount_,
+            uint256 ethAmount_,
+            uint256 ratio_
+        );
+
     function getRatioFluidWeETHWstETH(
-        uint256 weEthPerWsteth_,
-        uint256 ethPerWsteth_
-    ) external view returns (uint256 ratio_);
+        uint256 eEthPerWeETH_,
+        uint256 stEthPerWsteth_
+    )
+        public
+        view
+        returns (
+            uint256 weEthAmount_,
+            uint256 wstEthAmount_,
+            uint256 eEthAmount_,
+            uint256 stEthAmount_,
+            uint256 ratio_
+        );
 
     // Admin Module
     function setFluidDexNftId(uint256 nftId_) external;
 
     // StethToEethModule (New Module)
     function convertAaveV3wstETHToWeETH(
-        uint256 wstETHAmount,
-        uint256 minWeETHAmount,
-        uint256 route
-    ) external returns (uint256 weETHAmount);
-
-    // FluidAaveV3WeETHRebalancerModule (New Module)
-    function rebalanceFromWeETHToWstETH(
-        uint256 weETHAmount,
-        uint256 minWstETHAmount,
-        uint256 route
-    ) external returns (uint256 wstETHAmount);
-    function rebalanceFromWstETHToWeETH(
-        uint256 wstETHAmount,
-        uint256 minWeETHAmount,
-        uint256 route
-    ) external returns (uint256 weETHAmount);
-
-    // Rebalancer Module
-    function swapKingTokensToWeth(
-        uint256 amount,
-        uint256 minWethAmount,
-        string memory tokenSymbol,
-        string memory poolSymbol
-    ) external returns (uint256 wethAmount);
-    function sweepWethToWeEth() external returns (uint256 weEthAmount);
-}
+        uint256 wEthFlashloanAmount_,
+        uint256 wstEthWithdrawAmount_,
+        uint256 route_
+    ) external;

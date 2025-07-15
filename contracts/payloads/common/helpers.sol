@@ -452,34 +452,4 @@ contract PayloadIGPHelpers is PayloadIGPConstants {
             revenueCut
         );
     }
-
-    function _updateLiteImplementation(
-        address oldImplementation_,
-        address newImplementation_,
-        bytes4[] memory newSigs_,
-        bool replace_
-    ) internal {
-        bytes4[] memory oldSigs_;
-
-        if (oldImplementation_ != address(0) && !replace_) {
-            oldSigs_ = IETHV2.getImplementationSigs(oldImplementation_);
-        }
-
-        bytes4[] memory allSigs_ = new bytes4[](
-            oldSigs_.length + newSigs_.length
-        );
-        uint256 j_;
-        for (uint256 i = 0; i < oldSigs_.length; i++) {
-            allSigs_[j_++] = oldSigs_[i];
-        }
-
-        for (uint256 i = 0; i < newSigs_.length; i++) {
-            allSigs_[j_++] = newSigs_[i];
-        }
-
-        if (oldImplementation_ != address(0)) {
-            IETHV2.removeImplementation(oldImplementation_);
-        }
-        IETHV2.addImplementation(newImplementation_, allSigs_);
-    }
 }

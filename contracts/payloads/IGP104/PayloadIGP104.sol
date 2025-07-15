@@ -39,6 +39,39 @@ import {ILiteSigs} from "../common/interfaces/ILiteSigs.sol";
 contract PayloadIGP104 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 104;
 
+    // State Variables
+    struct ModuleImplementation {
+        bytes4[] sigs;
+        address implementation;
+    }
+    struct LiteImplementationModules {
+        ModuleImplementation adminModule;
+        ModuleImplementation viewModule;
+        ModuleImplementation claimModule;
+        ModuleImplementation fluidStethModule;
+        ModuleImplementation leverageModule;
+        ModuleImplementation leverageDexModule;
+        ModuleImplementation rebalancerModule;
+        ModuleImplementation refinanceModule;
+        ModuleImplementation stethToEethModule;
+        ModuleImplementation unwindDexModule;
+        ModuleImplementation withdrawModule;
+        ModuleImplementation fluidAaveV3WeETHRebalancerModule;
+        ModuleImplementation aaveV3WstETHWeETHSwapModule;
+        address dummyImplementations;
+    }
+
+    LiteImplementationModules public liteImplementationModules;
+
+    /**
+     * |
+     * |     Admin Actions      |
+     * |__________________________________
+     */
+    function setLiteImplementation(LiteImplementationModules memory modules_) external onlyOwner {
+        liteImplementationModules = modules_;
+    }
+
     function execute() public virtual override {
         super.execute();
 
@@ -61,120 +94,253 @@ contract PayloadIGP104 is PayloadIGPMain {
      * |__________________________________
      */
 
-// @notice Action 1: Update Lite Modules to integrate weETH
-    // Struct to hold implementation addresses for each function selector
-    struct ModuleImplementation {
-        bytes4 selector;
-        address implementation;
-    }
-
-    struct ModuleImplementations {
-        ModuleImplementation[] claimModule;
-        ModuleImplementation[] viewModule;
-        ModuleImplementation[] stethToEethModule;
-        ModuleImplementation[] fluidAaveV3WeETHRebalancerModule;
-        ModuleImplementation[] rebalancerModule;
-    }
-
-    ModuleImplementations internal moduleImplementations;
-
-    // Setter for module implementations (can be extended for access control)
-    function setModuleImplementation(
-        uint8 moduleType, // 0: claim, 1: view, 2: stethToEeth, 3: fluidAaveV3WeETHRebalancer, 4: rebalancer
-        bytes4 selector,
-        address implementation
-    ) external {
-        ModuleImplementation memory impl = ModuleImplementation({selector: selector, implementation: implementation});
-        if (moduleType == 0) {
-            moduleImplementations.claimModule.push(impl);
-        } else if (moduleType == 1) {
-            moduleImplementations.viewModule.push(impl);
-        } else if (moduleType == 2) {
-            moduleImplementations.stethToEethModule.push(impl);
-        } else if (moduleType == 3) {
-            moduleImplementations.fluidAaveV3WeETHRebalancerModule.push(impl);
-        } else if (moduleType == 4) {
-            moduleImplementations.rebalancerModule.push(impl);
-        }
-    }
-
-    // Helper to get implementation address for a selector in a module
-    function _getImplementation(address hardcoded, ModuleImplementation[] storage arr, bytes4 selector) internal view returns (address) {
-        for (uint i = 0; i < arr.length; i++) {
-            if (arr[i].selector == selector) {
-                if (arr[i].implementation != address(0)) {
-                    return arr[i].implementation;
-                }
-                break;
-            }
-        }
-        return hardcoded;
-    }
-
+    // @notice Action 1: Update Lite Modules to integrate weETH
     function action1() internal isActionSkippable(1) {
+        ModuleImplementation memory modules_ = PayloadIGP104(ADDRESS_THIS).liteImplementationModules();
+        
+        // Admin Module (Only Module Update with no new sigs)
         {
-            // Claim Module - Add KING Rewards
-            bytes4[] memory newSigs_ = new bytes4[](1);
-            newSigs_[0] = ILiteSigs.claimKingRewards.selector;
-            _updateLiteImplementation(
-                address(0),
-                _getImplementation(0x1111111111111111111111111111111111111111, moduleImplementations.claimModule, ILiteSigs.claimKingRewards.selector),
+            
+            ModuleImplementation memory module_ = modules_.adminModule;
+            address oldImplementation_ = address(0x1BF97Df3D9eFa7036e96fB58F6c4CCfB2a2fDa21);
+            address newImplementation_ = address(0x9485b2BE2Ce9672fe8eB36285d07c844DE97f43c);
+            bytes4[] memory newSigs_ = new bytes4[](0);
+
+            _updateLiteImplementationFromStorage(
+                oldImplementation_,
+                newImplementation_,
                 newSigs_,
+                module_,
                 false
             );
         }
+        
+        // View Module (Module Update with 2 new sigs)
         {
-            // View Module - Add Ratio Helper Functions
+            
+            ModuleImplementation memory module_ = modules_.viewModule;
+            address oldImplementation_ = address(0x038c28580A22E2b74bfb13E00e9c0a75CD732342);
+            address newImplementation_ = address(0x9FB2fDc9F64c1FD7aABedE5D3F0A5BcA9402451F);
             bytes4[] memory newSigs_ = new bytes4[](2);
+
             newSigs_[0] = ILiteSigs.getRatioAaveV3.selector;
             newSigs_[1] = ILiteSigs.getRatioFluidWeETHWstETH.selector;
-            _updateLiteImplementation(
-                address(0),
-                _getImplementation(0x2222222222222222222222222222222222222222, moduleImplementations.viewModule, ILiteSigs.getRatioAaveV3.selector),
+
+            _updateLiteImplementationFromStorage(
+                oldImplementation_,
+                newImplementation_,
                 newSigs_,
+                module_,
                 false
             );
         }
+
+        // Claim Module(Module Update with 1 new sig)
         {
-            // StethToEethModule (New Module) - WeETH Related Functions
+            
+            ModuleImplementation memory module_ = modules_.claimModule;
+            address oldImplementation_ = address(0xB00df786d3611acE29D19De744B4147f378715f4);
+            address newImplementation_ = address(0x012173245e401BAd0cB763C2d7BB2D21b7BE4e5f);
             bytes4[] memory newSigs_ = new bytes4[](1);
-            newSigs_[0] = ILiteSigs.convertAaveV3wstETHToWeETH.selector;
-            _updateLiteImplementation(
-                address(0),
-                _getImplementation(0x3333333333333333333333333333333333333333, moduleImplementations.stethToEethModule, ILiteSigs.convertAaveV3wstETHToWeETH.selector),
+
+            newSigs_[0] = ILiteSigs.claimKingRewards.selector;
+
+            _updateLiteImplementationFromStorage(
+                oldImplementation_,
+                newImplementation_,
                 newSigs_,
+                module_,
                 false
             );
         }
+
+        // FluidSteth Module (Only Module Update with no new sigs)
         {
-            // FluidAaveV3WeETHRebalancerModule (New Module) - WeETH Related Functions
+            
+            ModuleImplementation memory module_ = modules_.fluidStethModule;
+            address oldImplementation_ = address(0xd23a760cD16610f67a68BADC3c5E04E9898d2789);
+            address newImplementation_ = address(0x567b3c860eea18Fd0E3E6d4c38577e8DB653113C);
+            bytes4[] memory newSigs_ = new bytes4[](0);
+
+            _updateLiteImplementationFromStorage(
+                oldImplementation_,
+                newImplementation_,
+                newSigs_,
+                module_,
+                false
+            );
+        }
+
+        // LeverageDex Module (Only Module Update with no new sigs)
+        {
+            
+            ModuleImplementation memory module_ = modules_.leverageDexModule;
+            address oldImplementation_ = address(0xbeE5CDBd7Ae69b31CeAEB16485e43F3Bbc1b6983);
+            address newImplementation_ = address(0x2D29312C1D70C93cD110e9973874C7083F2730dd);
+            bytes4[] memory newSigs_ = new bytes4[](0);
+
+            _updateLiteImplementationFromStorage(
+                oldImplementation_,
+                newImplementation_,
+                newSigs_,
+                module_,
+                false
+            );
+        }
+
+        // Leverage Module (Only Module Update with no new sigs)
+        {
+            
+            ModuleImplementation memory module_ = modules_.leverageModule;
+            address oldImplementation_ = address(0x42aFc927E8Ab5D14b2760625Eb188158eefB46be);
+            address newImplementation_ = address(0x028B980F0b226B17dC53507731195A463D442e95);
+            bytes4[] memory newSigs_ = new bytes4[](0);
+
+            _updateLiteImplementationFromStorage(
+                oldImplementation_,
+                newImplementation_,
+                newSigs_,
+                module_,
+                false
+            );
+        }
+
+        // Rebalancer Module (Only Module Update with 2 new sigs)
+        {
+            
+            ModuleImplementation memory module_ = modules_.rebalancerModule;
+            address oldImplementation_ = address(0x7C44B02dA7826f9e14264a8E2D48a92bb86F72ee);
+            address newImplementation_ = address(0x5343Da5F10bD9C36EA9cB04CaaE1452D8D967511);
             bytes4[] memory newSigs_ = new bytes4[](2);
+
+            newSigs_[0] = ILiteSigs.sweepWethToWeEth.selector;
+            newSigs_[1] = ILiteSigs.swapKingTokensToWeth.selector;
+
+            _updateLiteImplementationFromStorage(
+                oldImplementation_,
+                newImplementation_,
+                newSigs_,
+                module_,
+                false
+            );
+        }
+
+        // Refinance Module (Only Module Update with 0 new sigs)
+        {
+            
+            ModuleImplementation memory module_ = modules_.refinanceModule;
+            address oldImplementation_ = address(0x807675e4D1eC7c1c134940Ab513B288d150E8023);
+            address newImplementation_ = address(0x1E5B2b8546015B5537790c47BC7F5B3AF2038C03);
+            bytes4[] memory newSigs_ = new bytes4[](0);
+
+            _updateLiteImplementationFromStorage(
+                oldImplementation_,
+                newImplementation_,
+                newSigs_,
+                module_,
+                false
+            );
+        }
+
+        // UnwindDex Module (Only Module Update with 0 new sigs)
+        {
+            
+            ModuleImplementation memory module_ = modules_.unwindDexModule;
+            address oldImplementation_ = address(0x635D70Fab1B1c3f7E9F3d30Bd1DeB738Daf87725);
+            address newImplementation_ = address(0xFfB6B9958d3EA0B676C3945630a676732cf9c7d1);
+            bytes4[] memory newSigs_ = new bytes4[](0);
+
+            _updateLiteImplementationFromStorage(
+                oldImplementation_,
+                newImplementation_,
+                newSigs_,
+                module_,
+                false
+            );
+        }
+
+        // Withdrawals Module (Only Module Update with 0 new sigs)
+        {
+            
+            ModuleImplementation memory module_ = modules_.withdrawalsModule;
+            address oldImplementation_ = address(0x6aa752b1462e7C71aA90e9236a817263bb5E0c72);
+            address newImplementation_ = address(0x61243890c242316C444B5378388Ed24A4dbD2487);
+            bytes4[] memory newSigs_ = new bytes4[](0);
+
+            _updateLiteImplementationFromStorage(
+                oldImplementation_,
+                newImplementation_,
+                newSigs_,
+                module_,
+                false
+            );
+        }
+
+        // StethToEeth Module (Add new Module Update with 1 new sigs)
+        {
+            
+            ModuleImplementation memory module_ = modules_.stethToEethModule;
+            address oldImplementation_ = address(0);
+            address newImplementation_ = address(0x7ac6e3C02AC5dB7e7aD69d93ad1A2f60B67CcF5d);
+            bytes4[] memory newSigs_ = new bytes4[](1);
+
+            newSigs_[0] = ILiteSigs.convertAaveV3wstETHToWeETH.selector;
+
+            _updateLiteImplementationFromStorage(
+                oldImplementation_,
+                newImplementation_,
+                newSigs_,
+                module_,
+                false
+            );
+        }
+
+        // FluidAaveV3WeETHRebalancer Module (Add new Module Update with 2 new sigs)
+        {
+            
+            ModuleImplementation memory module_ = modules_.stethToEethModule;
+            address oldImplementation_ = address(0);
+            address newImplementation_ = address(0xCF8beE8092b93E28C046bD8dAE6f48175Fb74Fac);
+            bytes4[] memory newSigs_ = new bytes4[](2);
+
             newSigs_[0] = ILiteSigs.rebalanceFromWeETHToWstETH.selector;
             newSigs_[1] = ILiteSigs.rebalanceFromWstETHToWeETH.selector;
-            _updateLiteImplementation(
-                address(0),
-                _getImplementation(0x4444444444444444444444444444444444444444, moduleImplementations.fluidAaveV3WeETHRebalancerModule, ILiteSigs.rebalanceFromWeETHToWstETH.selector),
+
+            _updateLiteImplementationFromStorage(
+                oldImplementation_,
+                newImplementation_,
                 newSigs_,
+                module_,
                 false
             );
         }
+
+        // AaveV3WstETHWeETHSwap Module (Add new Module Update with 2 new sigs)
         {
-            // Rebalancer Module - KING Rewards and Sweep Functions
+            
+            ModuleImplementation memory module_ = modules_.aaveV3WstETHWeETHSwapModule;
+            address oldImplementation_ = address(0);
+            address newImplementation_ = address(0x1BF97Df3D9eFa7036e96fB58F6c4CCfB2a2fDa21);
+
             bytes4[] memory newSigs_ = new bytes4[](2);
-            newSigs_[0] = ILiteSigs.swapKingTokensToWeth.selector;
-            newSigs_[1] = ILiteSigs.sweepWethToWeEth.selector;
-            _updateLiteImplementation(
-                address(0),
-                _getImplementation(0x5555555555555555555555555555555555555555, moduleImplementations.rebalancerModule, ILiteSigs.swapKingTokensToWeth.selector),
+
+            newSigs_[0] = ILiteSigs.swapWstETHToWeETH.selector;
+            newSigs_[1] = ILiteSigs.swapWeETHToWstETH.selector;
+
+            _updateLiteImplementationFromStorage(
+                oldImplementation_,
+                newImplementation_,
                 newSigs_,
+                module_,
                 false
             );
         }
 
         // Update Dummy Implementation
-        IETHV2.setDummyImplementation(
-            0x0000000000000000000000000000000000000000
-        );
+        {
+            address dummyImplementation_ = address(0x4cDeac65c8E0495F608bdEC080Efd97f9532Ee9c);
+            IETHV2.setDummyImplementation(modules_.dummyImplementation == address(0) ? dummyImplementation_ : modules_.dummyImplementation);
+        }
 
         // Set Max Risk Ratio for Fluid Dex
         {
@@ -182,17 +348,11 @@ contract PayloadIGP104 is PayloadIGPMain {
             uint256[] memory newRiskRatio_ = new uint256[](1);
 
             {
-                protocolId_[0] = 11;
-                newRiskRatio_[0] = 95_0000;
+                protocolId_[0] = 12;
+                newRiskRatio_[0] = 95_0000; // 95%
             }
 
             IETHV2.updateMaxRiskRatio(protocolId_, newRiskRatio_);
-        }
-
-        {
-            // Set Team Multisig as Secondary Auth and Rebalancer for iETHv2 Lite Vault
-            IETHV2.updateSecondaryAuth(TEAM_MULTISIG);
-            IETHV2.updateRebalancer(TEAM_MULTISIG, true);
         }
     }
 
@@ -357,5 +517,58 @@ contract PayloadIGP104 is PayloadIGPMain {
                 (amountInUSD * 1e12 * (10 ** decimals)) /
                 ((usdPrice * exchangePrice) / 1e2);
         }
+    }
+
+    function _updateLiteImplementationFromStorage(
+        address oldImplementation_,
+        address newImplementation_,
+        bytes4[] memory newSigs_,
+        ModuleImplementation memory module_,
+        bool replace_
+    ) internal {
+        bytes4[] memory sigs;
+        address newImplementationToUpdate;
+
+        // If module is updated by Team MS, then use the latest one set by team MS
+        if (module_.implementation != address(0)) {
+            newImplementationToUpdate = module_.implementation;
+
+            // If module sigs are not empty, then use the latest one set by team MS
+            if (module_.sigs.length > 0) {
+                sigs = module_.sigs;
+            } else {
+                sigs = newSigs_;
+            }
+        } else {
+            // If module is not updated by Team MS, then use the hardcoded new implementation and sigs
+            newImplementationToUpdate = newImplementation_;
+            sigs = newSigs_;
+        }
+
+        bytes4[] memory oldSigs_;
+
+        // If old implementation is not address(0) and replace is false, then get the old sigs
+        if (oldImplementation_ != address(0) && !replace_) {
+            oldSigs_ = IETHV2.getImplementationSigs(oldImplementation_);
+        }
+
+        // concat old sigs and new sigs
+        bytes4[] memory allSigs_ = new bytes4[](
+            oldSigs_.length + newSigs_.length
+        );
+        uint256 j_;
+        for (uint256 i = 0; i < oldSigs_.length; i++) {
+            allSigs_[j_++] = oldSigs_[i];
+        }
+
+        for (uint256 i = 0; i < newSigs_.length; i++) {
+            allSigs_[j_++] = newSigs_[i];
+        }
+
+        if (oldImplementation_ != address(0)) {
+            IETHV2.removeImplementation(oldImplementation_);
+        }
+
+        IETHV2.addImplementation(newImplementation_, allSigs_);
     }
 }
