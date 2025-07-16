@@ -365,7 +365,7 @@ contract PayloadIGP104 is PayloadIGPMain {
             
             ModuleImplementation memory module_ = modules_.fluidAaveV3WeETHRebalancerModule;
             address oldImplementation_ = address(0);
-            address newImplementation_ = address(0xCF8beE8092b93E28C046bD8dAE6f48175Fb74Fac);
+            address newImplementation_ = address(0x44feDC1F420ffB852e08de5087d7FA87fB1717E5);
             bytes4[] memory newSigs_ = new bytes4[](2);
             bytes4[] memory removeSigs_ = new bytes4[](0);
 
