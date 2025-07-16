@@ -149,7 +149,7 @@ contract PayloadIGP104 is PayloadIGPMain {
             );
         }
         
-        // View Module (Module Update with 2 new sigs and remove 1 sig)
+        // View Module (Module Update with 2 new sigs and remove 8 sigs)
         {
             
             ModuleImplementation memory module_ = modules_.viewModule;
