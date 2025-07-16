@@ -417,7 +417,7 @@ contract PayloadIGP104 is PayloadIGPMain {
 
             {
                 protocolId_[0] = 12;
-                newRiskRatio_[0] = 95_0000; // 95%
+                newRiskRatio_[0] = 94_0000; // 94%
             }
 
             IETHV2.updateMaxRiskRatio(protocolId_, newRiskRatio_);
