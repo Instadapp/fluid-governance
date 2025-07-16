@@ -410,7 +410,7 @@ contract PayloadIGP104 is PayloadIGPMain {
             IETHV2.setDummyImplementation(modules_.dummyImplementation == address(0) ? dummyImplementation_ : modules_.dummyImplementation);
         }
 
-        // Set Max Risk Ratio for Fluid Dex
+        // Set Max Risk Ratio for Fluid weETH-wstETH Vault
         {
             uint8[] memory protocolId_ = new uint8[](1);
             uint256[] memory newRiskRatio_ = new uint256[](1);
