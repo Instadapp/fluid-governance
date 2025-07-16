@@ -112,9 +112,6 @@ contract PayloadIGP104 is PayloadIGPMain {
 
         // Action 2: Adjust wstETH Rate Curve
         action2();
-
-        // Action 3: Temporarily Transfer the Ownership of Lite to Team Multisig
-        action3();
     }
 
     function verifyProposal() public view override {}
@@ -446,11 +443,6 @@ contract PayloadIGP104 is PayloadIGPMain {
 
             LIQUIDITY.updateRateDataV2s(params_);
         }
-    }
-
-    // @notice Action 3: Temporarily Transfer the Ownership of Lite to Team Multisig
-    function action3() internal isActionSkippable(3) {
-        IETHV2.setAdmin(TEAM_MULTISIG);
     }
 
     /**
