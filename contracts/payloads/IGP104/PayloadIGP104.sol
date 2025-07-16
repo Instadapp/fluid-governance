@@ -387,7 +387,7 @@ contract PayloadIGP104 is PayloadIGPMain {
             
             ModuleImplementation memory module_ = modules_.aaveV3WstETHWeETHSwapModule;
             address oldImplementation_ = address(0);
-            address newImplementation_ = address(0x32f293BDc04CCD87A3845710404D8F942f2123B9);
+            address newImplementation_ = address(0xa1f4499DfdBFfACA9eCe405f5B6d2076e2D9F929);
             bytes4[] memory newSigs_ = new bytes4[](2);
             bytes4[] memory removeSigs_ = new bytes4[](0);
 
