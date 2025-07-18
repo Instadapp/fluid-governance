@@ -15,8 +15,7 @@ import {IFluidReserveContract} from "./interfaces/IFluidReserveContract.sol";
 
 import {IFluidVaultFactory} from "./interfaces/IFluidVaultFactory.sol";
 import {IFluidDexFactory} from "./interfaces/IFluidDexFactory.sol";
-import { IFluidLendingFactory } from "./interfaces/IFluidLendingFactory.sol";
-
+import {IFluidLendingFactory} from "./interfaces/IFluidLendingFactory.sol";
 
 import {IFluidDex, IFluidAdminDex} from "./interfaces/IFluidDex.sol";
 import {IFluidDexResolver} from "./interfaces/IFluidDex.sol";
@@ -54,20 +53,29 @@ contract PayloadIGPHelpers is PayloadIGPConstants {
         return LENDING_FACTORY.computeToken(token, "fToken");
     }
 
-    function getCurrentBaseWithdrawalLimit(address token_, address user_) internal view returns (uint256) {
-        bytes32 _LIQUDITY_PROTOCOL_SUPPLY_SLOT = LiquiditySlotsLink.calculateDoubleMappingStorageSlot(
-            LiquiditySlotsLink.LIQUIDITY_USER_SUPPLY_DOUBLE_MAPPING_SLOT,
-            user_,
-            token_
+    function getCurrentBaseWithdrawalLimit(
+        address token_,
+        address user_
+    ) internal view returns (uint256) {
+        bytes32 _LIQUDITY_PROTOCOL_SUPPLY_SLOT = LiquiditySlotsLink
+            .calculateDoubleMappingStorageSlot(
+                LiquiditySlotsLink.LIQUIDITY_USER_SUPPLY_DOUBLE_MAPPING_SLOT,
+                user_,
+                token_
+            );
+
+        uint256 userSupplyData_ = LIQUIDITY.readFromStorage(
+            _LIQUDITY_PROTOCOL_SUPPLY_SLOT
         );
 
-        uint256 userSupplyData_ = LIQUIDITY.readFromStorage(_LIQUDITY_PROTOCOL_SUPPLY_SLOT);
-        
-        return BigMathMinified.fromBigNumber(
-            (userSupplyData_ >> LiquiditySlotsLink.BITS_USER_SUPPLY_BASE_WITHDRAWAL_LIMIT) & X18,
-            DEFAULT_EXPONENT_SIZE,
-            DEFAULT_EXPONENT_MASK
-        );
+        return
+            BigMathMinified.fromBigNumber(
+                (userSupplyData_ >>
+                    LiquiditySlotsLink.BITS_USER_SUPPLY_BASE_WITHDRAWAL_LIMIT) &
+                    X18,
+                DEFAULT_EXPONENT_SIZE,
+                DEFAULT_EXPONENT_MASK
+            );
     }
 
     function setProtocolSupplyExpansion(
@@ -76,10 +84,13 @@ contract PayloadIGPHelpers is PayloadIGPConstants {
         uint256 expandPercent,
         uint256 expandDuration
     ) internal {
-        FluidLiquidityAdminStructs.UserSupplyConfig[] memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](1);
+        FluidLiquidityAdminStructs.UserSupplyConfig[]
+            memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
+                1
+            );
         configs_[0] = FluidLiquidityAdminStructs.UserSupplyConfig({
             user: protocol,
-            token: token, 
+            token: token,
             mode: 1,
             expandPercent: expandPercent,
             expandDuration: expandDuration,
@@ -288,48 +299,52 @@ contract PayloadIGPHelpers is PayloadIGPConstants {
     function setDexLimits(DexConfig memory dex_) internal {
         // Smart Collateral
         if (dex_.smartCollateral) {
-            SupplyProtocolConfig memory protocolConfigTokenA_ = SupplyProtocolConfig({
-                protocol: dex_.dex,
-                supplyToken: dex_.tokenA,
-                expandPercent: 50 * 1e2, // 50%
-                expandDuration: 1 hours, // 1 hour
-                baseWithdrawalLimitInUSD: dex_.baseWithdrawalLimitInUSD
-            });
+            SupplyProtocolConfig
+                memory protocolConfigTokenA_ = SupplyProtocolConfig({
+                    protocol: dex_.dex,
+                    supplyToken: dex_.tokenA,
+                    expandPercent: 50 * 1e2, // 50%
+                    expandDuration: 1 hours, // 1 hour
+                    baseWithdrawalLimitInUSD: dex_.baseWithdrawalLimitInUSD
+                });
 
             setSupplyProtocolLimits(protocolConfigTokenA_);
 
-            SupplyProtocolConfig memory protocolConfigTokenB_ = SupplyProtocolConfig({
-                protocol: dex_.dex,
-                supplyToken: dex_.tokenB,
-                expandPercent: 50 * 1e2, // 50%
-                expandDuration: 1 hours, // 1 hour
-                baseWithdrawalLimitInUSD: dex_.baseWithdrawalLimitInUSD
-            });
+            SupplyProtocolConfig
+                memory protocolConfigTokenB_ = SupplyProtocolConfig({
+                    protocol: dex_.dex,
+                    supplyToken: dex_.tokenB,
+                    expandPercent: 50 * 1e2, // 50%
+                    expandDuration: 1 hours, // 1 hour
+                    baseWithdrawalLimitInUSD: dex_.baseWithdrawalLimitInUSD
+                });
 
             setSupplyProtocolLimits(protocolConfigTokenB_);
         }
 
         // Smart Debt
         if (dex_.smartDebt) {
-            BorrowProtocolConfig memory protocolConfigTokenA_ = BorrowProtocolConfig({
-                protocol: dex_.dex,
-                borrowToken: dex_.tokenA,
-                expandPercent: 50 * 1e2, // 50%
-                expandDuration: 1 hours, // 1 hour
-                baseBorrowLimitInUSD: dex_.baseBorrowLimitInUSD,
-                maxBorrowLimitInUSD: dex_.maxBorrowLimitInUSD
-            });
+            BorrowProtocolConfig
+                memory protocolConfigTokenA_ = BorrowProtocolConfig({
+                    protocol: dex_.dex,
+                    borrowToken: dex_.tokenA,
+                    expandPercent: 50 * 1e2, // 50%
+                    expandDuration: 1 hours, // 1 hour
+                    baseBorrowLimitInUSD: dex_.baseBorrowLimitInUSD,
+                    maxBorrowLimitInUSD: dex_.maxBorrowLimitInUSD
+                });
 
             setBorrowProtocolLimits(protocolConfigTokenA_);
 
-            BorrowProtocolConfig memory protocolConfigTokenB_ = BorrowProtocolConfig({
-                protocol: dex_.dex,
-                borrowToken: dex_.tokenB,
-                expandPercent: 50 * 1e2, // 50%
-                expandDuration: 1 hours, // 1 hour
-                baseBorrowLimitInUSD: dex_.baseBorrowLimitInUSD,
-                maxBorrowLimitInUSD: dex_.maxBorrowLimitInUSD
-            });
+            BorrowProtocolConfig
+                memory protocolConfigTokenB_ = BorrowProtocolConfig({
+                    protocol: dex_.dex,
+                    borrowToken: dex_.tokenB,
+                    expandPercent: 50 * 1e2, // 50%
+                    expandDuration: 1 hours, // 1 hour
+                    baseBorrowLimitInUSD: dex_.baseBorrowLimitInUSD,
+                    maxBorrowLimitInUSD: dex_.maxBorrowLimitInUSD
+                });
 
             setBorrowProtocolLimits(protocolConfigTokenB_);
         }
