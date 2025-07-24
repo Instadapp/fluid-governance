@@ -7,4 +7,8 @@ interface IFluidLendingFactory {
     /// @return The computed address of the token.
     function computeToken(address asset_, string calldata fTokenType_) external view returns (address);
 
+    /// @notice Sets an address as a factory-level authorization or not.
+    /// @param auth The address to be set as factory authorization.
+    /// @param allowed A boolean indicating whether the specified address is allowed as factory auth.
+    function setFactoryAuth(address auth, bool allowed) external;
 }

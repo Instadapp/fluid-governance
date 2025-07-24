@@ -14,6 +14,11 @@ interface IFluidDexFactory {
     /// @param allowed_                 A boolean indicating whether the specified address is allowed to update any dex config.
     function setGlobalAuth(address globalAuth_, bool allowed_) external;
 
+    /// @notice Sets an address as a factory-level authorization or not.
+    /// @param auth The address to be set as factory authorization.
+    /// @param allowed A boolean indicating whether the specified address is allowed as factory auth.
+    function setFactoryAuth(address auth, bool allowed) external;
+
     function owner() external view returns (address);
 
     function setDexDeploymentLogic(
