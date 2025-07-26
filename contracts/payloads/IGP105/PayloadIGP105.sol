@@ -47,13 +47,13 @@ contract PayloadIGP105 is PayloadIGPMain {
         // Action 2: Update ETH interest rate curve
         action2();
 
-        // Action 3: Make Multisig 2 as deployer on all factories
+        // Action 3: Make Team Multisig 2 as deployer on all factories
         action3();
 
         // Action 4: Set wstUSR launch limits and dust limits
         action4();
 
-        // Action 5: Withdraw remaining $FLUID for Rewards
+        // Action 5: Withdraw additional $FLUID for Rewards
         action5();
 
         // Action 6: Update LBTC oracle and center price
@@ -244,7 +244,7 @@ contract PayloadIGP105 is PayloadIGPMain {
                     vaultType: VAULT_TYPE.TYPE_3,
                     supplyToken: wstUSR_ADDRESS, // Set at vault level
                     borrowToken: address(0), // Set at DEX level
-                    baseWithdrawalLimitInUSD: 10_000,
+                    baseWithdrawalLimitInUSD: 9_000,
                     baseBorrowLimitInUSD: 0,
                     maxBorrowLimitInUSD: 0
                 });
@@ -259,8 +259,8 @@ contract PayloadIGP105 is PayloadIGPMain {
                     protocol: wstUSR_USDC_USDT_VAULT,
                     expandPercent: 30 * 1e2, // 20%
                     expandDuration: 6 hours, // 6 hours
-                    baseBorrowLimit: 4000 * 1e18, // 4000 shares or $8k
-                    maxBorrowLimit: 5000 * 1e18 // 5000 shares or $10k
+                    baseBorrowLimit: 3500 * 1e18, // 3500 shares or $7k
+                    maxBorrowLimit: 4500 * 1e18 // 4500 shares or $9k
                 });
 
                 setDexBorrowProtocolLimitsInShares(config_);
@@ -293,8 +293,8 @@ contract PayloadIGP105 is PayloadIGPMain {
                     protocol: wstUSR_USDC_USDT_CONCENTRATED_VAULT,
                     expandPercent: 30 * 1e2, // 20%
                     expandDuration: 6 hours, // 6 hours
-                    baseBorrowLimit: 4000 * 1e18, // 4000 shares or $8k
-                    maxBorrowLimit: 5000 * 1e18 // 5000 shares or $10k
+                    baseBorrowLimit: 3500 * 1e18, // 3500 shares or $7k
+                    maxBorrowLimit: 4500 * 1e18 // 4500 shares or $9k
                 });
 
                 setDexBorrowProtocolLimitsInShares(vaultConfig_);
