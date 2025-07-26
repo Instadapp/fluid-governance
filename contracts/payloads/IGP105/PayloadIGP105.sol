@@ -21,7 +21,7 @@ import {IFluidVault, IFluidVaultT1} from "../common/interfaces/IFluidVault.sol";
 import {IFTokenAdmin, ILendingRewards} from "../common/interfaces/IFToken.sol";
 
 import {ISmartLendingAdmin} from "../common/interfaces/ISmartLending.sol";
-import {ISmartLendingFactory} from "../common/interfaces/ISmartLendingFactory.sol";
+import {IFluidSmartLendingFactory} from "../common/interfaces/IFluidSmartLendingFactory.sol";
 import {IFluidLendingFactory} from "../common/interfaces/IFluidLendingFactory.sol";
 
 import {ICodeReader} from "../common/interfaces/ICodeReader.sol";
@@ -152,7 +152,7 @@ contract PayloadIGP105 is PayloadIGPMain {
         IFluidLendingFactory(LENDING_FACTORY).setDeployer(TEAM_MULTISIG_2, true);
 
         // Smart Lending Factory
-        ISmartLendingFactory(SMART_LENDING_FACTORY).updateDeployer(TEAM_MULTISIG_2, true);
+        IFluidSmartLendingFactory(SMART_LENDING_FACTORY).updateDeployer(TEAM_MULTISIG_2, true);
     }
 
     // @notice Action 4: Set wstUSR launch limits and dust limits
@@ -351,11 +351,11 @@ contract PayloadIGP105 is PayloadIGPMain {
         }
         {
             address LBTC_cbBTC__wBTC_VAULT = getVaultAddress(97);
-            IFluidVaultT1(LBTC_cbBTC__wBTC_VAULT).updateOracle(174); // https://etherscan.io/address/0x19bd1022114A8c45e9D6a332aE9e31Af53bF98cb
+            IFluidVault(LBTC_cbBTC__wBTC_VAULT).updateOracle(174); // https://etherscan.io/address/0x19bd1022114A8c45e9D6a332aE9e31Af53bF98cb
         }
         {
             address WBTC_LBTC__WBTC_VAULT = getVaultAddress(115);
-            IFluidVaultT1(WBTC_LBTC__WBTC_VAULT).updateOracle(175); // https://etherscan.io/address/0xb6ccC6b170b0c9B93Fa4b6400ebdD7dBec2C224D
+            IFluidVault(WBTC_LBTC__WBTC_VAULT).updateOracle(175); // https://etherscan.io/address/0xb6ccC6b170b0c9B93Fa4b6400ebdD7dBec2C224D
         }
     }
 
