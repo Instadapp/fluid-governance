@@ -224,7 +224,7 @@ contract PayloadIGP105 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: wstUSR_ADDRESS,
                 borrowToken: USDTb_ADDRESS,
-                baseWithdrawalLimitInUSD: 9_000, // $9k
+                baseWithdrawalLimitInUSD: 7_000, // $7k
                 baseBorrowLimitInUSD: 7_000, // $7k
                 maxBorrowLimitInUSD: 9_000 // $9k
             });
@@ -244,7 +244,7 @@ contract PayloadIGP105 is PayloadIGPMain {
                     vaultType: VAULT_TYPE.TYPE_3,
                     supplyToken: wstUSR_ADDRESS, // Set at vault level
                     borrowToken: address(0), // Set at DEX level
-                    baseWithdrawalLimitInUSD: 9_000,
+                    baseWithdrawalLimitInUSD: 7_000,
                     baseBorrowLimitInUSD: 0,
                     maxBorrowLimitInUSD: 0
                 });
@@ -278,7 +278,7 @@ contract PayloadIGP105 is PayloadIGPMain {
                     vaultType: VAULT_TYPE.TYPE_3,
                     supplyToken: wstUSR_ADDRESS, // Set at vault level
                     borrowToken: address(0), // Set at DEX level
-                    baseWithdrawalLimitInUSD: 10_000,
+                    baseWithdrawalLimitInUSD: 7_000,
                     baseBorrowLimitInUSD: 0,
                     maxBorrowLimitInUSD: 0
                 });
