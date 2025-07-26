@@ -209,7 +209,7 @@ contract PayloadIGP105 is PayloadIGPMain {
             });
             
             setVaultLimits(VAULT_wstUSR_GHO);
-            VAULT_FACTORY.setVaultAuth(wstUSR_GHO_VAULT, TEAM_MULTISIG, true);
+            VAULT_FACTORY.setVaultAuth(wstUSR_GHO_VAULT, TEAM_MULTISIG, false);
         }
 
 
