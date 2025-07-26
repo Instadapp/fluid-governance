@@ -496,26 +496,26 @@ contract PayloadIGP105 is PayloadIGPMain {
      */
 
     // Token Prices Constants
-    uint256 public constant ETH_USD_PRICE = 2_500 * 1e2;
-    uint256 public constant wstETH_USD_PRICE = 3_050 * 1e2;
-    uint256 public constant weETH_USD_PRICE = 2_700 * 1e2;
-    uint256 public constant rsETH_USD_PRICE = 2_650 * 1e2;
-    uint256 public constant weETHs_USD_PRICE = 2_600 * 1e2;
-    uint256 public constant mETH_USD_PRICE = 2_690 * 1e2;
-    uint256 public constant ezETH_USD_PRICE = 2_650 * 1e2;
+    uint256 public constant ETH_USD_PRICE = 3_700 * 1e2;
+    uint256 public constant wstETH_USD_PRICE = 3_700 * 1e2;
+    uint256 public constant weETH_USD_PRICE = 3_700 * 1e2;
+    uint256 public constant rsETH_USD_PRICE = 3_700 * 1e2;
+    uint256 public constant weETHs_USD_PRICE = 3_700 * 1e2;
+    uint256 public constant mETH_USD_PRICE = 3_700 * 1e2;
+    uint256 public constant ezETH_USD_PRICE = 3_700 * 1e2;
 
-    uint256 public constant BTC_USD_PRICE = 103_000 * 1e2;
+    uint256 public constant BTC_USD_PRICE = 113_000 * 1e2;
 
     uint256 public constant STABLE_USD_PRICE = 1 * 1e2;
-    uint256 public constant sUSDe_USD_PRICE = 1.17 * 1e2;
-    uint256 public constant sUSDs_USD_PRICE = 1.05 * 1e2;
+    uint256 public constant sUSDe_USD_PRICE = 1.19 * 1e2;
+    uint256 public constant sUSDs_USD_PRICE = 1.06 * 1e2;
 
-    uint256 public constant FLUID_USD_PRICE = 4.2 * 1e2;
+    uint256 public constant FLUID_USD_PRICE = 6 * 1e2;
 
-    uint256 public constant RLP_USD_PRICE = 1.18 * 1e2;
-    uint256 public constant wstUSR_USD_PRICE = 1.07 * 1e2;
-    uint256 public constant XAUT_USD_PRICE = 3_240 * 1e2;
-    uint256 public constant PAXG_USD_PRICE = 3_240 * 1e2;
+    uint256 public constant RLP_USD_PRICE = 1.22 * 1e2;
+    uint256 public constant wstUSR_USD_PRICE = 1.09 * 1e2;
+    uint256 public constant XAUT_USD_PRICE = 3_340 * 1e2;
+    uint256 public constant PAXG_USD_PRICE = 3_340 * 1e2;
 
     uint256 public constant csUSDL_USD_PRICE = 1.03 * 1e2;
 
