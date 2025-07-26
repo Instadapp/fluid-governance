@@ -126,8 +126,8 @@ contract PayloadIGP105 is PayloadIGPMain {
 
             params_[0] = FluidLiquidityAdminStructs.RateDataV2Params({
                 token: ETH_ADDRESS, // ETH
-                kink1: 88 * 1e2, // 50%
-                kink2: 93 * 1e2, // 80%
+                kink1: 88 * 1e2, // 88%
+                kink2: 93 * 1e2, // 93%
                 rateAtUtilizationZero: 0, // 0%
                 rateAtUtilizationKink1: 2.75 * 1e2, // 2.75%
                 rateAtUtilizationKink2: 4 * 1e2, // 4%
@@ -201,46 +201,65 @@ contract PayloadIGP105 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: wstUSR_ADDRESS,
                 borrowToken: GHO_ADDRESS,
-                baseWithdrawalLimitInUSD: 10_000, // $10k
-                baseBorrowLimitInUSD: 10_000, // $10k
-                maxBorrowLimitInUSD: 20_000 // $20k
+                baseWithdrawalLimitInUSD: 6_000_000, // $6M
+                baseBorrowLimitInUSD: 6_000_000, // $6M
+                maxBorrowLimitInUSD: 12_000_000 // $12M
             });
             
             setVaultLimits(VAULT_wstUSR_GHO);
             VAULT_FACTORY.setVaultAuth(wstUSR_GHO_VAULT, TEAM_MULTISIG, true);
         }
-        
-        // Set dust limits for WSTUSR T3 vaults with USDC-USDT smart debt
-        {
-            address wstUSR_USDC_USDT_VAULT = getVaultAddress(143);
+
+        { // dust limits for wstUSR/USDTb vault
+            address wstUSR_USDTb_VAULT = getVaultAddress(112);
             
-            // [TYPE 2] WSTUSR-USDC<>USDC-USDT vault - Dust limits
-            VaultConfig memory VAULT_wstUSR_USDC_USDT = VaultConfig({
-                vault: wstUSR_USDC_USDT_VAULT,
-                vaultType: VAULT_TYPE.TYPE_2,
-                supplyToken: address(0), // Set at DEX level
+            // [TYPE 1] WSTUSR/USDTbvault - Dust limits
+            VaultConfig memory VAULT_wstUSR_USDTb = VaultConfig({
+                vault: wstUSR_USDTb_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: wstUSR_ADDRESS,
                 borrowToken: USDT_ADDRESS,
-                baseWithdrawalLimitInUSD: 0,
+                baseWithdrawalLimitInUSD: 10_000, // $10k
                 baseBorrowLimitInUSD: 10_000, // $10k
                 maxBorrowLimitInUSD: 20_000 // $20k
+            });
+            
+            setVaultLimits(VAULT_wstUSR_USDTb);
+            VAULT_FACTORY.setVaultAuth(wstUSR_USDTb_VAULT, TEAM_MULTISIG, true);
+        }
+        
+        { // dust limits for wstUSR/USDC-USDT vault
+            address wstUSR_USDC_USDT_VAULT = getVaultAddress(143);
+            address USDC_USDT_DEX = getDexAddress(2);
+            
+            // [TYPE 3] WSTUSR<>USDC-USDT vault - Dust limits
+            VaultConfig memory VAULT_wstUSR_USDC_USDT = VaultConfig({
+                vault: wstUSR_USDC_USDT_VAULT,
+                vaultType: VAULT_TYPE.TYPE_3,
+                supplyToken: wstUSR_ADDRESS, // Set at vault level
+                borrowToken: address(0), // Set at DEX level
+                baseWithdrawalLimitInUSD: 10_000,
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
             });
             
             setVaultLimits(VAULT_wstUSR_USDC_USDT);
             VAULT_FACTORY.setVaultAuth(wstUSR_USDC_USDT_VAULT, TEAM_MULTISIG, true);
         }
         
-        {
+        { // dust limits for wstUSR/USDC-USDT concentrated vault
             address wstUSR_USDC_USDT_CONCENTRATED_VAULT = getVaultAddress(144);
+            address USDC_USDT_CONCENTRATED_DEX = getDexAddress(34);
             
-            // [TYPE 2] WSTUSR-USDC<>USDC-USDT concentrated vault - Dust limits
+            // [TYPE 3] WSTUSR<>USDC-USDT concentrated vault - Dust limits
             VaultConfig memory VAULT_wstUSR_USDC_USDT_CONCENTRATED = VaultConfig({
                 vault: wstUSR_USDC_USDT_CONCENTRATED_VAULT,
-                vaultType: VAULT_TYPE.TYPE_2,
-                supplyToken: address(0), // Set at DEX level
-                borrowToken: USDT_ADDRESS,
-                baseWithdrawalLimitInUSD: 0,
-                baseBorrowLimitInUSD: 10_000, // $10k
-                maxBorrowLimitInUSD: 20_000 // $20k
+                vaultType: VAULT_TYPE.TYPE_3,
+                supplyToken: wstUSR_ADDRESS, // Set at vault level
+                borrowToken: address(0), // Set at DEX level
+                baseWithdrawalLimitInUSD: 10_000,
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
             });
             
             setVaultLimits(VAULT_wstUSR_USDC_USDT_CONCENTRATED);
@@ -280,15 +299,15 @@ contract PayloadIGP105 is PayloadIGPMain {
             IFluidDex(lBTC_cbBTC_DEX).updateCenterPriceAddress(
                 170,
                 1e4,
-                1 days
+                2 days
             );
         }
         {
-            address CBBTC_WBTC_DEX_ADDRESS = getDexAddress(3);
-            IFluidDex(CBBTC_WBTC_DEX_ADDRESS).updateCenterPriceAddress(
+            address LBTC_WBTC_DEX_ADDRESS = getDexAddress(30);
+            IFluidDex(LBTC_WBTC_DEX_ADDRESS).updateCenterPriceAddress(
                 171,
                 1e4,
-                1 days
+                2 days
             );
         }
         {
@@ -326,8 +345,8 @@ contract PayloadIGP105 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: USDe_ADDRESS,
                 borrowToken: USDC_ADDRESS,
-                baseWithdrawalLimitInUSD: 6_000_000, // $6M
-                baseBorrowLimitInUSD: 6_000_000, // $6M
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                baseBorrowLimitInUSD: 8_000_000, // $8M
                 maxBorrowLimitInUSD: 50_000_000 // $50M
             });
             
@@ -347,8 +366,8 @@ contract PayloadIGP105 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: USDe_ADDRESS,
                 borrowToken: USDT_ADDRESS,
-                baseWithdrawalLimitInUSD: 6_000_000, // $6M
-                baseBorrowLimitInUSD: 6_000_000, // $6M
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                baseBorrowLimitInUSD: 8_000_000, // $8M
                 maxBorrowLimitInUSD: 50_000_000 // $50M
             });
             
@@ -368,8 +387,8 @@ contract PayloadIGP105 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: USDe_ADDRESS,
                 borrowToken: GHO_ADDRESS,
-                baseWithdrawalLimitInUSD: 6_000_000, // $6M
-                baseBorrowLimitInUSD: 6_000_000, // $6M
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                baseBorrowLimitInUSD: 8_000_000, // $8M
                 maxBorrowLimitInUSD: 20_000_000 // $20M
             });
             
@@ -386,15 +405,15 @@ contract PayloadIGP105 is PayloadIGPMain {
     function action8() internal isActionSkippable(8) {
         // Give Team Multisig 2.5M USDC credit
         {
-            IFluidAdminDex.UserBorrowConfig[]
-                memory configs_ = new IFluidAdminDex.UserBorrowConfig[](1);
+            IFluidLiquidityAdmin.UserBorrowConfig[]
+                memory configs_ = new IFluidLiquidityAdmin.UserBorrowConfig[](1);
 
-            configs_[0] = IFluidAdminDex.UserBorrowConfig({
+            configs_[0] = IFluidLiquidityAdmin.UserBorrowConfig({
                 user: TEAM_MULTISIG,
                 token: USDC_ADDRESS,
                 mode: 1,
-                expandPercent: 50 * 1e2, // 50%
-                expandDuration: 6 hours, // 6 hours
+                expandPercent: 1 * 1e2, // 1%
+                expandDuration: 16777215, // max time
                 baseDebtCeiling: getRawAmount(
                     USDC_ADDRESS,
                     0,
@@ -414,15 +433,15 @@ contract PayloadIGP105 is PayloadIGPMain {
 
         // Give Team Multisig 2.5M USDT credit
         {
-            IFluidAdminDex.UserBorrowConfig[]
-                memory configs_ = new IFluidAdminDex.UserBorrowConfig[](1);
+            IFluidLiquidityAdmin.UserBorrowConfig[]
+                memory configs_ = new IFluidLiquidityAdmin.UserBorrowConfig[](1);
 
-            configs_[0] = IFluidAdminDex.UserBorrowConfig({
+            configs_[0] = IFluidLiquidityAdmin.UserBorrowConfig({
                 user: TEAM_MULTISIG,
                 token: USDT_ADDRESS,
                 mode: 1,
-                expandPercent: 50 * 1e2, // 50%
-                expandDuration: 6 hours, // 6 hours
+                expandPercent: 1 * 1e2, // 1%
+                expandDuration: 16777215, // max time
                 baseDebtCeiling: getRawAmount(
                     USDT_ADDRESS,
                     0,
