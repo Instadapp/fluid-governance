@@ -524,7 +524,7 @@ contract PayloadIGP105 is PayloadIGPMain {
 
             // Spell 1: Withdraw 55 stETH from Lite vault and send back to iETH v2 vault as normal deposit
             {
-                uint256 STETH_AMOUNT = 55.1 * 1e18; // 55.1 stETH
+                uint256 STETH_AMOUNT = 55 * 1e18; // 55 stETH
                 string memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
                 
                 targets[0] = "BASIC-D-V2";
