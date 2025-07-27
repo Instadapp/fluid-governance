@@ -64,6 +64,9 @@ contract PayloadIGP105 is PayloadIGPMain {
 
         // Action 8: Provide Credit to Team Multisig for Fluid DEX Lite
         action8();
+
+        // Action 9: Refunding Lite Users
+        action9();
     }
 
     function verifyProposal() public view override {}
@@ -167,9 +170,9 @@ contract PayloadIGP105 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: wstUSR_ADDRESS,
                 borrowToken: USDC_ADDRESS,
-                baseWithdrawalLimitInUSD: 6_000_000, // $6M
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
                 baseBorrowLimitInUSD: 6_000_000, // $6M
-                maxBorrowLimitInUSD: 12_000_000 // $12M
+                maxBorrowLimitInUSD: 20_000_000 // $20M
             });
             
             setVaultLimits(VAULT_wstUSR_USDC);
@@ -185,9 +188,9 @@ contract PayloadIGP105 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: wstUSR_ADDRESS,
                 borrowToken: USDT_ADDRESS,
-                baseWithdrawalLimitInUSD: 6_000_000, // $6M
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
                 baseBorrowLimitInUSD: 6_000_000, // $6M
-                maxBorrowLimitInUSD: 12_000_000 // $12M
+                maxBorrowLimitInUSD: 20_000_000 // $20M
             });
             
             setVaultLimits(VAULT_wstUSR_USDT);
@@ -203,9 +206,9 @@ contract PayloadIGP105 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: wstUSR_ADDRESS,
                 borrowToken: GHO_ADDRESS,
-                baseWithdrawalLimitInUSD: 6_000_000, // $6M
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
                 baseBorrowLimitInUSD: 6_000_000, // $6M
-                maxBorrowLimitInUSD: 12_000_000 // $12M
+                maxBorrowLimitInUSD: 20_000_000 // $20M
             });
             
             setVaultLimits(VAULT_wstUSR_GHO);
@@ -486,6 +489,55 @@ contract PayloadIGP105 is PayloadIGPMain {
             });
 
             LIQUIDITY.updateUserBorrowConfigs(configs_);
+        }
+    }
+
+    // @notice Action 9: Refunding Lite Users
+    function action9() internal isActionSkippable(9) {
+        // Step 1: Withdraw 55 stETH from Lite vault
+        {
+            string[] memory targets = new string[](1);
+            bytes[] memory encodedSpells = new bytes[](1);
+
+            string memory withdrawSignature = "withdraw(address,uint256,uint256,uint256)";
+
+            // Spell 1: Withdraw 55 stETH from Lite vault
+            {
+                uint256 STETH_AMOUNT = 55 * 1e18; // 55 stETH
+                targets[0] = "BASIC-D-V2";
+                encodedSpells[0] = abi.encodeWithSignature(
+                    withdrawSignature,
+                    IETHV2,
+                    STETH_AMOUNT,
+                    0,
+                    0
+                );
+            }
+
+            IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
+        }
+
+        // Step 2: Deposit 55 stETH back to Lite vault
+        {
+            string[] memory targets = new string[](1);
+            bytes[] memory encodedSpells = new bytes[](1);
+
+            string memory depositSignature = "deposit(address,uint256,uint256,uint256)";
+
+            // Spell 1: Deposit 55 stETH into Lite
+            {
+                uint256 STETH_AMOUNT = 55 * 1e18; // 55 stETH
+                targets[0] = "BASIC-D-V2";
+                encodedSpells[0] = abi.encodeWithSignature(
+                    depositSignature,
+                    IETHV2,
+                    STETH_AMOUNT,
+                    0,
+                    0
+                );
+            }
+
+            IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
         }
     }
 
