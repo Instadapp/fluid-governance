@@ -499,41 +499,20 @@ contract PayloadIGP105 is PayloadIGPMain {
             string[] memory targets = new string[](1);
             bytes[] memory encodedSpells = new bytes[](1);
 
-            string memory withdrawSignature = "withdraw(address,uint256,uint256,uint256)";
 
-            // Spell 1: Withdraw 55 stETH from Lite vault
+            // Spell 1: Withdraw 55 stETH from Lite vault and send back to iETH v2 vault as normal deposit
             {
-                uint256 STETH_AMOUNT = 55 * 1e18; // 55 stETH
+                uint256 STETH_AMOUNT = 55.1 * 1e18; // 55.1 stETH
+                string memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
+                
                 targets[0] = "BASIC-D-V2";
                 encodedSpells[0] = abi.encodeWithSignature(
                     withdrawSignature,
                     IETHV2,
                     STETH_AMOUNT,
+                    address(IETHV2),
                     0,
-                    0
-                );
-            }
-
-            IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
-        }
-
-        // Step 2: Deposit 55 stETH back to Lite vault
-        {
-            string[] memory targets = new string[](1);
-            bytes[] memory encodedSpells = new bytes[](1);
-
-            string memory depositSignature = "deposit(address,uint256,uint256,uint256)";
-
-            // Spell 1: Deposit 55 stETH into Lite
-            {
-                uint256 STETH_AMOUNT = 55 * 1e18; // 55 stETH
-                targets[0] = "BASIC-D-V2";
-                encodedSpells[0] = abi.encodeWithSignature(
-                    depositSignature,
-                    IETHV2,
-                    STETH_AMOUNT,
-                    0,
-                    0
+                    39287492
                 );
             }
 
