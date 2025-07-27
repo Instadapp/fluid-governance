@@ -152,10 +152,16 @@ contract PayloadIGP105 is PayloadIGPMain {
         IFluidDexFactory(DEX_FACTORY).setDeployer(TEAM_MULTISIG_2, true);
 
         // Lending Factory
-        IFluidLendingFactory(LENDING_FACTORY).setDeployer(TEAM_MULTISIG_2, true);
+        IFluidLendingFactory(LENDING_FACTORY).setDeployer(
+            TEAM_MULTISIG_2,
+            true
+        );
 
         // Smart Lending Factory
-        IFluidSmartLendingFactory(SMART_LENDING_FACTORY).updateDeployer(TEAM_MULTISIG_2, true);
+        IFluidSmartLendingFactory(SMART_LENDING_FACTORY).updateDeployer(
+            TEAM_MULTISIG_2,
+            true
+        );
     }
 
     // @notice Action 4: Set wstUSR launch limits and dust limits
@@ -163,7 +169,7 @@ contract PayloadIGP105 is PayloadIGPMain {
         // Set launch limits for existing WSTUSR/STABLE vaults (T1 vaults)
         {
             address wstUSR_USDC_VAULT = getVaultAddress(110);
-            
+
             // [TYPE 1] WSTUSR/USDC vault - Launch limits
             VaultConfig memory VAULT_wstUSR_USDC = VaultConfig({
                 vault: wstUSR_USDC_VAULT,
@@ -174,14 +180,14 @@ contract PayloadIGP105 is PayloadIGPMain {
                 baseBorrowLimitInUSD: 6_000_000, // $6M
                 maxBorrowLimitInUSD: 20_000_000 // $20M
             });
-            
+
             setVaultLimits(VAULT_wstUSR_USDC);
             VAULT_FACTORY.setVaultAuth(wstUSR_USDC_VAULT, TEAM_MULTISIG, false);
         }
-        
+
         {
             address wstUSR_USDT_VAULT = getVaultAddress(111);
-            
+
             // [TYPE 1] WSTUSR/USDT vault - Launch limits
             VaultConfig memory VAULT_wstUSR_USDT = VaultConfig({
                 vault: wstUSR_USDT_VAULT,
@@ -192,14 +198,14 @@ contract PayloadIGP105 is PayloadIGPMain {
                 baseBorrowLimitInUSD: 6_000_000, // $6M
                 maxBorrowLimitInUSD: 20_000_000 // $20M
             });
-            
+
             setVaultLimits(VAULT_wstUSR_USDT);
             VAULT_FACTORY.setVaultAuth(wstUSR_USDT_VAULT, TEAM_MULTISIG, false);
         }
-        
+
         {
             address wstUSR_GHO_VAULT = getVaultAddress(112);
-            
+
             // [TYPE 1] WSTUSR/GHO vault - Launch limits
             VaultConfig memory VAULT_wstUSR_GHO = VaultConfig({
                 vault: wstUSR_GHO_VAULT,
@@ -210,17 +216,17 @@ contract PayloadIGP105 is PayloadIGPMain {
                 baseBorrowLimitInUSD: 6_000_000, // $6M
                 maxBorrowLimitInUSD: 20_000_000 // $20M
             });
-            
+
             setVaultLimits(VAULT_wstUSR_GHO);
             VAULT_FACTORY.setVaultAuth(wstUSR_GHO_VAULT, TEAM_MULTISIG, false);
         }
 
-
         // Set Dust Limit for wstUSR vaults
 
-        { // dust limits for wstUSR/USDTb vault
+        {
+            // dust limits for wstUSR/USDTb vault
             address wstUSR_USDTb_VAULT = getVaultAddress(142);
-            
+
             // [TYPE 1] WSTUSR/USDTbvault - Dust limits
             VaultConfig memory VAULT_wstUSR_USDTb = VaultConfig({
                 vault: wstUSR_USDTb_VAULT,
@@ -231,12 +237,13 @@ contract PayloadIGP105 is PayloadIGPMain {
                 baseBorrowLimitInUSD: 7_000, // $7k
                 maxBorrowLimitInUSD: 9_000 // $9k
             });
-            
+
             setVaultLimits(VAULT_wstUSR_USDTb);
             VAULT_FACTORY.setVaultAuth(wstUSR_USDTb_VAULT, TEAM_MULTISIG, true);
         }
-        
-        { // dust limits for wstUSR/USDC-USDT vault
+
+        {
+            // dust limits for wstUSR/USDC-USDT vault
             address wstUSR_USDC_USDT_VAULT = getVaultAddress(143);
             address USDC_USDT_DEX = getDexAddress(2);
 
@@ -251,54 +258,66 @@ contract PayloadIGP105 is PayloadIGPMain {
                     baseBorrowLimitInUSD: 0,
                     maxBorrowLimitInUSD: 0
                 });
-                
+
                 setVaultLimits(VAULT_wstUSR_USDC_USDT);
-                VAULT_FACTORY.setVaultAuth(wstUSR_USDC_USDT_VAULT, TEAM_MULTISIG, true);
+                VAULT_FACTORY.setVaultAuth(
+                    wstUSR_USDC_USDT_VAULT,
+                    TEAM_MULTISIG,
+                    true
+                );
             }
 
             {
-                DexBorrowProtocolConfigInShares memory config_ = DexBorrowProtocolConfigInShares({
-                    dex: USDC_USDT_DEX,
-                    protocol: wstUSR_USDC_USDT_VAULT,
-                    expandPercent: 30 * 1e2, // 20%
-                    expandDuration: 6 hours, // 6 hours
-                    baseBorrowLimit: 3500 * 1e18, // 3500 shares or $7k
-                    maxBorrowLimit: 4500 * 1e18 // 4500 shares or $9k
-                });
+                DexBorrowProtocolConfigInShares
+                    memory config_ = DexBorrowProtocolConfigInShares({
+                        dex: USDC_USDT_DEX,
+                        protocol: wstUSR_USDC_USDT_VAULT,
+                        expandPercent: 30 * 1e2, // 20%
+                        expandDuration: 6 hours, // 6 hours
+                        baseBorrowLimit: 3500 * 1e18, // 3500 shares or $7k
+                        maxBorrowLimit: 4500 * 1e18 // 4500 shares or $9k
+                    });
 
                 setDexBorrowProtocolLimitsInShares(config_);
             }
         }
-        
-        { // dust limits for wstUSR/USDC-USDT concentrated vault
+
+        {
+            // dust limits for wstUSR/USDC-USDT concentrated vault
             address wstUSR_USDC_USDT_CONCENTRATED_VAULT = getVaultAddress(144);
             address USDC_USDT_CONCENTRATED_DEX = getDexAddress(34);
-            
+
             {
-                    // [TYPE 3] WSTUSR<>USDC-USDT concentrated vault - Dust limits
-                VaultConfig memory VAULT_wstUSR_USDC_USDT_CONCENTRATED = VaultConfig({
-                    vault: wstUSR_USDC_USDT_CONCENTRATED_VAULT,
-                    vaultType: VAULT_TYPE.TYPE_3,
-                    supplyToken: wstUSR_ADDRESS, // Set at vault level
-                    borrowToken: address(0), // Set at DEX level
-                    baseWithdrawalLimitInUSD: 7_000,
-                    baseBorrowLimitInUSD: 0,
-                    maxBorrowLimitInUSD: 0
-                });
-                
+                // [TYPE 3] WSTUSR<>USDC-USDT concentrated vault - Dust limits
+                VaultConfig
+                    memory VAULT_wstUSR_USDC_USDT_CONCENTRATED = VaultConfig({
+                        vault: wstUSR_USDC_USDT_CONCENTRATED_VAULT,
+                        vaultType: VAULT_TYPE.TYPE_3,
+                        supplyToken: wstUSR_ADDRESS, // Set at vault level
+                        borrowToken: address(0), // Set at DEX level
+                        baseWithdrawalLimitInUSD: 7_000,
+                        baseBorrowLimitInUSD: 0,
+                        maxBorrowLimitInUSD: 0
+                    });
+
                 setVaultLimits(VAULT_wstUSR_USDC_USDT_CONCENTRATED);
-                VAULT_FACTORY.setVaultAuth(wstUSR_USDC_USDT_CONCENTRATED_VAULT, TEAM_MULTISIG, true);
+                VAULT_FACTORY.setVaultAuth(
+                    wstUSR_USDC_USDT_CONCENTRATED_VAULT,
+                    TEAM_MULTISIG,
+                    true
+                );
             }
 
             {
-                DexBorrowProtocolConfigInShares memory vaultConfig_ = DexBorrowProtocolConfigInShares({
-                    dex: USDC_USDT_CONCENTRATED_DEX,
-                    protocol: wstUSR_USDC_USDT_CONCENTRATED_VAULT,
-                    expandPercent: 30 * 1e2, // 20%
-                    expandDuration: 6 hours, // 6 hours
-                    baseBorrowLimit: 3500 * 1e18, // 3500 shares or $7k
-                    maxBorrowLimit: 4500 * 1e18 // 4500 shares or $9k
-                });
+                DexBorrowProtocolConfigInShares
+                    memory vaultConfig_ = DexBorrowProtocolConfigInShares({
+                        dex: USDC_USDT_CONCENTRATED_DEX,
+                        protocol: wstUSR_USDC_USDT_CONCENTRATED_VAULT,
+                        expandPercent: 30 * 1e2, // 20%
+                        expandDuration: 6 hours, // 6 hours
+                        baseBorrowLimit: 3500 * 1e18, // 3500 shares or $7k
+                        maxBorrowLimit: 4500 * 1e18 // 4500 shares or $9k
+                    });
 
                 setDexBorrowProtocolLimitsInShares(vaultConfig_);
             }
@@ -364,13 +383,13 @@ contract PayloadIGP105 is PayloadIGPMain {
 
     // @notice Action 7: Update USDE T1 vaults parameters
     function action7() internal isActionSkippable(7) {
-            uint256 LML = 96 * 1e2;
-            uint256 LT = 95 * 1e2;
-            uint256 CF = 94 * 1e2;
-            uint256 LP = 0.5 * 1e2;
+        uint256 LML = 96 * 1e2;
+        uint256 LT = 95 * 1e2;
+        uint256 CF = 94 * 1e2;
+        uint256 LP = 0.5 * 1e2;
         {
             address USDe_USDC_VAULT = getVaultAddress(66);
-            
+
             // [TYPE 1] USDe/USDC vault - Launch limits
             VaultConfig memory VAULT_USDe_USDC = VaultConfig({
                 vault: USDe_USDC_VAULT,
@@ -381,7 +400,7 @@ contract PayloadIGP105 is PayloadIGPMain {
                 baseBorrowLimitInUSD: 8_000_000, // $8M
                 maxBorrowLimitInUSD: 50_000_000 // $50M
             });
-            
+
             setVaultLimits(VAULT_USDe_USDC);
 
             IFluidVaultT1(USDe_USDC_VAULT).updateLiquidationMaxLimit(LML);
@@ -391,7 +410,7 @@ contract PayloadIGP105 is PayloadIGPMain {
         }
         {
             address USDe_USDT_VAULT = getVaultAddress(67);
-            
+
             // [TYPE 1] USDe/USDT vault - Launch limits
             VaultConfig memory VAULT_USDe_USDT = VaultConfig({
                 vault: USDe_USDT_VAULT,
@@ -402,7 +421,7 @@ contract PayloadIGP105 is PayloadIGPMain {
                 baseBorrowLimitInUSD: 8_000_000, // $8M
                 maxBorrowLimitInUSD: 50_000_000 // $50M
             });
-            
+
             setVaultLimits(VAULT_USDe_USDT);
 
             IFluidVaultT1(USDe_USDT_VAULT).updateLiquidationMaxLimit(LML);
@@ -412,7 +431,7 @@ contract PayloadIGP105 is PayloadIGPMain {
         }
         {
             address USDe_GHO_VAULT = getVaultAddress(68);
-            
+
             // [TYPE 1] USDe/GHO vault - Launch limits
             VaultConfig memory VAULT_USDe_GHO = VaultConfig({
                 vault: USDe_GHO_VAULT,
@@ -423,7 +442,7 @@ contract PayloadIGP105 is PayloadIGPMain {
                 baseBorrowLimitInUSD: 8_000_000, // $8M
                 maxBorrowLimitInUSD: 20_000_000 // $20M
             });
-            
+
             setVaultLimits(VAULT_USDe_GHO);
 
             IFluidVaultT1(USDe_GHO_VAULT).updateLiquidationMaxLimit(LML);
@@ -438,7 +457,9 @@ contract PayloadIGP105 is PayloadIGPMain {
         // Give Team Multisig 2.5M USDC credit
         {
             FluidLiquidityAdminStructs.UserBorrowConfig[]
-                memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](1);
+                memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](
+                    1
+                );
 
             configs_[0] = FluidLiquidityAdminStructs.UserBorrowConfig({
                 user: TEAM_MULTISIG,
@@ -466,7 +487,9 @@ contract PayloadIGP105 is PayloadIGPMain {
         // Give Team Multisig 2.5M USDT credit
         {
             FluidLiquidityAdminStructs.UserBorrowConfig[]
-                memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](1);
+                memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](
+                    1
+                );
 
             configs_[0] = FluidLiquidityAdminStructs.UserBorrowConfig({
                 user: TEAM_MULTISIG,
@@ -494,11 +517,10 @@ contract PayloadIGP105 is PayloadIGPMain {
 
     // @notice Action 9: Refunding Lite Users
     function action9() internal isActionSkippable(9) {
-        // Step 1: Withdraw 55 stETH from Lite vault
+        // Step 1: Withdraw 55 stETH from Lite vault to Treasury
         {
             string[] memory targets = new string[](1);
             bytes[] memory encodedSpells = new bytes[](1);
-
 
             // Spell 1: Withdraw 55 stETH from Lite vault and send back to iETH v2 vault as normal deposit
             {
@@ -512,7 +534,7 @@ contract PayloadIGP105 is PayloadIGPMain {
                     STETH_AMOUNT,
                     address(IETHV2),
                     0,
-                    39287492
+                    0
                 );
             }
 
