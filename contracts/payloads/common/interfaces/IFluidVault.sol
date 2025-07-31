@@ -100,6 +100,8 @@ interface IFluidSmartVault {
 
     /// @notice returns all Vault constants
     function constantsView() external view returns (ConstantViews memory constantsView_);
+
+    function updateOracle(uint256 newOracle_) external;
 }
 
 interface IFluidVault {

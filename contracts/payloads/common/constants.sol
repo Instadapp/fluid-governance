@@ -57,6 +57,8 @@ contract PayloadIGPConstants {
     // Team Multisig
     address public constant TEAM_MULTISIG =
         0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e;
+    address public constant TEAM_MULTISIG_2 =
+        0x1e2e1aeD876f67Fe4Fd54090FD7B8F57Ce234219;
 
     // Fluid Addresses
     IFluidLiquidityAdmin public constant LIQUIDITY =
