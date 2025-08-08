@@ -21,6 +21,7 @@ import {IFluidVault, IFluidVaultT1} from "../common/interfaces/IFluidVault.sol";
 import {IFTokenAdmin, ILendingRewards} from "../common/interfaces/IFToken.sol";
 
 import {ISmartLendingAdmin} from "../common/interfaces/ISmartLending.sol";
+import {ISmartLendingFactory} from "../common/interfaces/ISmartLendingFactory.sol";
 import {IFluidSmartLendingFactory} from "../common/interfaces/IFluidSmartLendingFactory.sol";
 import {IFluidLendingFactory} from "../common/interfaces/IFluidLendingFactory.sol";
 
@@ -60,8 +61,11 @@ contract PayloadIGP106 is PayloadIGPMain {
         // Action 4: Set wstUSR smart vaults T3 and WSTUSR / USDTB vault launch limits
         action4();
 
-        // Action 5: Lite Module Implementation Updates
+        // Action 5: Remove MS as auth for csUSDL-USDC dex and set rebalancer for csUSDL-USDC smart lending
         action5();
+
+        // Action 6: Lite Module Implementation Updates
+        action6();
     }
 
     function verifyProposal() public view override {}
@@ -275,8 +279,25 @@ contract PayloadIGP106 is PayloadIGPMain {
         }
     }
 
-    // @notice Action 5: Lite Module Implementation Updates
+    // @notice Action 5: Remove MS as auth for csUSDL-USDC dex and set rebalancer for csUSDL-USDC smart lending
     function action5() internal isActionSkippable(5) {
+        address csUSDL_USDC_DEX = getDexAddress(38);
+        {
+            // csUSDL-USDC DEX
+            DEX_FACTORY.setDexAuth(csUSDL_USDC_DEX, TEAM_MULTISIG, false);
+        }
+        {
+            address fSL38_csUSDL_USDC = getSmartLendingAddress(38);
+
+            // set rebalancer at fSL38 to reserve contract proxy
+            ISmartLendingAdmin(fSL38_csUSDL_USDC).setRebalancer(
+                address(FLUID_RESERVE)
+            );
+        }
+    }
+
+    // @notice Action 6: Lite Module Implementation Updates
+    function action6() internal isActionSkippable(6) {
 
         // Rebalancer Module (Only Module Update with 2 new sigs)
         {
