@@ -179,10 +179,10 @@ contract PayloadIGP106 is PayloadIGPMain {
     // @notice Action 4: Set wstUSR smart vaults T3 and WSTUSR / USDTB vault launch limits
     function action4() internal isActionSkippable(4) {
         {
-            // dust limits for wstUSR/USDTb vault
+            // launch limits for wstUSR/USDTb vault
             address wstUSR_USDTb_VAULT = getVaultAddress(142);
 
-            // [TYPE 1] WSTUSR/USDTbvault - Dust limits
+            // [TYPE 1] WSTUSR/USDTbvault - Launch limits
             VaultConfig memory VAULT_wstUSR_USDTb = VaultConfig({
                 vault: wstUSR_USDTb_VAULT,
                 vaultType: VAULT_TYPE.TYPE_1,
@@ -218,7 +218,7 @@ contract PayloadIGP106 is PayloadIGPMain {
                 VAULT_FACTORY.setVaultAuth(
                     wstUSR_USDC_USDT_VAULT,
                     TEAM_MULTISIG,
-                    true
+                    false
                 );
             }
 
@@ -243,7 +243,7 @@ contract PayloadIGP106 is PayloadIGPMain {
             address USDC_USDT_CONCENTRATED_DEX = getDexAddress(34);
 
             {
-                // [TYPE 3] WSTUSR<>USDC-USDT concentrated vault - Dust limits
+                // [TYPE 3] WSTUSR<>USDC-USDT concentrated vault - Launch limits
                 VaultConfig
                     memory VAULT_wstUSR_USDC_USDT_CONCENTRATED = VaultConfig({
                         vault: wstUSR_USDC_USDT_CONCENTRATED_VAULT,
@@ -259,7 +259,7 @@ contract PayloadIGP106 is PayloadIGPMain {
                 VAULT_FACTORY.setVaultAuth(
                     wstUSR_USDC_USDT_CONCENTRATED_VAULT,
                     TEAM_MULTISIG,
-                    true
+                    false
                 );
             }
 
