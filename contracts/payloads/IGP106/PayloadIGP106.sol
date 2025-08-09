@@ -303,8 +303,8 @@ contract PayloadIGP106 is PayloadIGPMain {
         {
             
             ModuleImplementation memory module_ = modules_.rebalancerModule;
-            address oldImplementation_ = address(0x7C44B02dA7826f9e14264a8E2D48a92bb86F72ee);
-            address newImplementation_ = address(0x5343Da5F10bD9C36EA9cB04CaaE1452D8D967511);
+            address oldImplementation_ = address(0x5343Da5F10bD9C36EA9cB04CaaE1452D8D967511);
+            address newImplementation_ = address(0x475035176043478c74df4AEAb07146484E3c3530);
             bytes4[] memory newSigs_ = new bytes4[](2);
             bytes4[] memory removeSigs_ = new bytes4[](0);
 
@@ -325,8 +325,8 @@ contract PayloadIGP106 is PayloadIGPMain {
         {
             
             ModuleImplementation memory module_ = modules_.aaveV3WstETHWeETHSwapModule;
-            address oldImplementation_ = address(0);
-            address newImplementation_ = address(0xa1f4499DfdBFfACA9eCe405f5B6d2076e2D9F929);
+            address oldImplementation_ = address(0xa1f4499DfdBFfACA9eCe405f5B6d2076e2D9F929);
+            address newImplementation_ = address(0xF95105c0f7ceBFbc5F186cE9E7D22620c75e0c8d);
             bytes4[] memory newSigs_ = new bytes4[](2);
             bytes4[] memory removeSigs_ = new bytes4[](0);
 
@@ -345,7 +345,7 @@ contract PayloadIGP106 is PayloadIGPMain {
 
         // Update Dummy Implementation
         {
-            address dummyImplementation_ = address(0x4cDeac65c8E0495F608bdEC080Efd97f9532Ee9c);
+            address dummyImplementation_ = address(0x6Feb5478f7345aBE1d477Ff6828819b4C8ba551a);
             IETHV2.setDummyImplementation(dummyImplementation_);
         }
         
