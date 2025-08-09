@@ -203,7 +203,7 @@ contract PayloadIGP106 is PayloadIGPMain {
             address USDC_USDT_DEX = getDexAddress(2);
 
             {
-                // [TYPE 3] WSTUSR<>USDC-USDT vault - Dust limits
+                // [TYPE 3] WSTUSR<>USDC-USDT vault - Launch limits
                 VaultConfig memory VAULT_wstUSR_USDC_USDT = VaultConfig({
                     vault: wstUSR_USDC_USDT_VAULT,
                     vaultType: VAULT_TYPE.TYPE_3,
@@ -229,8 +229,8 @@ contract PayloadIGP106 is PayloadIGPMain {
                         protocol: wstUSR_USDC_USDT_VAULT,
                         expandPercent: 30 * 1e2, // 20%
                         expandDuration: 6 hours, // 6 hours
-                        baseBorrowLimit: 3_000_000 * 1e18, // $6M
-                        maxBorrowLimit: 10_000_000 * 1e18 // $20M
+                        baseBorrowLimit: 2_900_000 * 1e18, // $6M
+                        maxBorrowLimit: 9_800_000 * 1e18 // $20M
                     });
 
                 setDexBorrowProtocolLimitsInShares(config_);
