@@ -72,6 +72,8 @@ interface ILiteSigs {
         string memory swapCallData_
     ) external;
 
+    function transferKingTokensToTeamMS(uint256 amount_) external;
+
     // Unwind Dex Module
     function unwindDexRefinance(
         uint8 protocolId_,

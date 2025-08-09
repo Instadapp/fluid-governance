@@ -37,6 +37,30 @@ import {PayloadIGPMain} from "../common/main.sol";
 import {ILite} from "../common/interfaces/ILite.sol";
 import {ILiteSigs} from "../common/interfaces/ILiteSigs.sol";
 
+interface ILiteSigsToRemove {
+    // From AaveV3WstETHWeETHSwap Module
+    // Old signatures to be removed
+    function swapWstETHToWeETH(
+        uint256 wstEthSellAmount_,
+        uint256 unitAmount_,
+        uint256 route_,
+        string memory swapConnectorName_,
+        string memory swapCallData_
+    ) external;
+
+    function swapWeETHToWstETH(
+        uint256 weEthSellAmount_,
+        uint256 unitAmount_,
+        uint256 route_,
+        string memory swapConnectorName_,
+        string memory swapCallData_
+    ) external;
+
+    // From Rebalancer Module
+    // Old signature to be removed
+    function sweepWethToWeEth() external;
+}
+
 contract PayloadIGP106 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 106;
 
@@ -44,6 +68,38 @@ contract PayloadIGP106 is PayloadIGPMain {
     struct ModuleImplementation {
         bytes4[] sigs;
         address implementation;
+    }
+    struct LiteImplementationModules {
+        ModuleImplementation adminModule;
+        ModuleImplementation viewModule;
+        ModuleImplementation claimModule;
+        ModuleImplementation fluidStethModule;
+        ModuleImplementation leverageModule;
+        ModuleImplementation leverageDexModule;
+        ModuleImplementation rebalancerModule;
+        ModuleImplementation refinanceModule;
+        ModuleImplementation stethToEethModule;
+        ModuleImplementation unwindDexModule;
+        ModuleImplementation withdrawModule;
+        ModuleImplementation fluidAaveV3WeETHRebalancerModule;
+        ModuleImplementation aaveV3WstETHWeETHSwapModule;
+        address dummyImplementation;
+    }
+
+    LiteImplementationModules private _liteImplementationModules;
+
+    function getLiteImplementationModules() public view returns (LiteImplementationModules memory) {
+        return _liteImplementationModules;
+    }
+
+    /**
+     * |
+     * |     Admin Actions      |
+     * |__________________________________
+     */
+    function setLiteImplementation(LiteImplementationModules memory modules_) external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        _liteImplementationModules = modules_;
     }
 
     function execute() public virtual override {
@@ -298,18 +354,21 @@ contract PayloadIGP106 is PayloadIGPMain {
 
     // @notice Action 6: Lite Module Implementation Updates
     function action6() internal isActionSkippable(6) {
+        LiteImplementationModules memory modules_ = PayloadIGP106(ADDRESS_THIS).getLiteImplementationModules();
 
-        // Rebalancer Module (Only Module Update with 2 new sigs)
+        // Rebalancer Module (Module Update with 2 new sigs and remove 1 sig)
         {
             
             ModuleImplementation memory module_ = modules_.rebalancerModule;
             address oldImplementation_ = address(0x5343Da5F10bD9C36EA9cB04CaaE1452D8D967511);
             address newImplementation_ = address(0x475035176043478c74df4AEAb07146484E3c3530);
             bytes4[] memory newSigs_ = new bytes4[](2);
-            bytes4[] memory removeSigs_ = new bytes4[](0);
+            bytes4[] memory removeSigs_ = new bytes4[](1);
 
-            newSigs_[0] = ILiteSigs.sweepWethToWeEth.selector;
-            newSigs_[1] = ILiteSigs.swapKingTokensToWeth.selector;
+            newSigs_[0] = ILiteSigs.swapKingTokensToWeth.selector;
+            newSigs_[1] = bytes4(0x84d5f112); // transferKingTokensToTeamMS
+
+            removeSigs_[0] = bytes4(0xc4a64d17); // old signature to be removed
 
             _updateLiteImplementationFromStorage(
                 oldImplementation_,
@@ -321,17 +380,20 @@ contract PayloadIGP106 is PayloadIGPMain {
             );
         }
 
-                // AaveV3WstETHWeETHSwap Module (Add new Module Update with 2 new sigs)
+        // AaveV3WstETHWeETHSwap Module (Module Update with 2 new sigs and remove 2 old sigs)
         {
             
             ModuleImplementation memory module_ = modules_.aaveV3WstETHWeETHSwapModule;
             address oldImplementation_ = address(0xa1f4499DfdBFfACA9eCe405f5B6d2076e2D9F929);
             address newImplementation_ = address(0xF95105c0f7ceBFbc5F186cE9E7D22620c75e0c8d);
             bytes4[] memory newSigs_ = new bytes4[](2);
-            bytes4[] memory removeSigs_ = new bytes4[](0);
+            bytes4[] memory removeSigs_ = new bytes4[](2);
 
-            newSigs_[0] = ILiteSigs.swapWstETHToWeETH.selector;
-            newSigs_[1] = ILiteSigs.swapWeETHToWstETH.selector;
+            newSigs_[0] = bytes4(0xf0fefc66); // swapWstETHToWeETH (new signature)
+            newSigs_[1] = bytes4(0x2aaa3e6c); // swapWeETHToWstETH (new signature)
+
+            removeSigs_[0] = ILiteSigsToRemove.swapWstETHToWeETH.selector;
+            removeSigs_[1] = ILiteSigsToRemove.swapWeETHToWstETH.selector;
 
             _updateLiteImplementationFromStorage(
                 oldImplementation_,
