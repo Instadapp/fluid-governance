@@ -37,30 +37,6 @@ import {PayloadIGPMain} from "../common/main.sol";
 import {ILite} from "../common/interfaces/ILite.sol";
 import {ILiteSigs} from "../common/interfaces/ILiteSigs.sol";
 
-interface ILiteSigsToRemove {
-    // From AaveV3WstETHWeETHSwap Module
-    // Old signatures to be removed
-    function swapWstETHToWeETH(
-        uint256 wstEthSellAmount_,
-        uint256 unitAmount_,
-        uint256 route_,
-        string memory swapConnectorName_,
-        string memory swapCallData_
-    ) external;
-
-    function swapWeETHToWstETH(
-        uint256 weEthSellAmount_,
-        uint256 unitAmount_,
-        uint256 route_,
-        string memory swapConnectorName_,
-        string memory swapCallData_
-    ) external;
-
-    // From Rebalancer Module
-    // Old signature to be removed
-    function sweepWethToWeEth() external;
-}
-
 contract PayloadIGP106 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 106;
 
@@ -70,18 +46,7 @@ contract PayloadIGP106 is PayloadIGPMain {
         address implementation;
     }
     struct LiteImplementationModules {
-        ModuleImplementation adminModule;
-        ModuleImplementation viewModule;
-        ModuleImplementation claimModule;
-        ModuleImplementation fluidStethModule;
-        ModuleImplementation leverageModule;
-        ModuleImplementation leverageDexModule;
         ModuleImplementation rebalancerModule;
-        ModuleImplementation refinanceModule;
-        ModuleImplementation stethToEethModule;
-        ModuleImplementation unwindDexModule;
-        ModuleImplementation withdrawModule;
-        ModuleImplementation fluidAaveV3WeETHRebalancerModule;
         ModuleImplementation aaveV3WstETHWeETHSwapModule;
         address dummyImplementation;
     }
@@ -365,11 +330,11 @@ contract PayloadIGP106 is PayloadIGPMain {
             bytes4[] memory newSigs_ = new bytes4[](2);
             bytes4[] memory removeSigs_ = new bytes4[](1);
 
-            newSigs_[0] = ILiteSigs.swapKingTokensToWeth.selector;
-            newSigs_[1] = bytes4(0x84d5f112); // transferKingTokensToTeamMS
+            newSigs_[0] = bytes4(0x97c8b4db); // swapKingTokensToWeth (new signature)
+            newSigs_[1] = bytes4(0x84d5f112); // transferKingTokensToTeamMS (new signature)
 
-            removeSigs_[0] = bytes4(0xc4a64d17); // old signature to be removed
-
+            removeSigs_[0] = bytes4(0xc4a64d17); // swapKingTokensToWeth (old signature)
+ 
             _updateLiteImplementationFromStorage(
                 oldImplementation_,
                 newImplementation_,
@@ -392,8 +357,8 @@ contract PayloadIGP106 is PayloadIGPMain {
             newSigs_[0] = bytes4(0xf0fefc66); // swapWstETHToWeETH (new signature)
             newSigs_[1] = bytes4(0x2aaa3e6c); // swapWeETHToWstETH (new signature)
 
-            removeSigs_[0] = ILiteSigsToRemove.swapWstETHToWeETH.selector;
-            removeSigs_[1] = ILiteSigsToRemove.swapWeETHToWstETH.selector;
+            removeSigs_[0] = bytes4(0x1609c001); // swapWstETHToWeETH (old signature)
+            removeSigs_[1] = bytes4(0x8a47ea39); // swapWeETHToWstETH (old signature)
 
             _updateLiteImplementationFromStorage(
                 oldImplementation_,
