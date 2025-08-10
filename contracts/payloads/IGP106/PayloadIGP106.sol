@@ -53,7 +53,11 @@ contract PayloadIGP106 is PayloadIGPMain {
 
     LiteImplementationModules private _liteImplementationModules;
 
-    function getLiteImplementationModules() public view returns (LiteImplementationModules memory) {
+    function getLiteImplementationModules()
+        public
+        view
+        returns (LiteImplementationModules memory)
+    {
         return _liteImplementationModules;
     }
 
@@ -62,7 +66,9 @@ contract PayloadIGP106 is PayloadIGPMain {
      * |     Admin Actions      |
      * |__________________________________
      */
-    function setLiteImplementation(LiteImplementationModules memory modules_) external {
+    function setLiteImplementation(
+        LiteImplementationModules memory modules_
+    ) external {
         require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
         _liteImplementationModules = modules_;
     }
@@ -140,8 +146,8 @@ contract PayloadIGP106 is PayloadIGPMain {
                 kink1: 85 * 1e2, // 85%
                 kink2: 93 * 1e2, // 93%
                 rateAtUtilizationZero: 0, // 0%
-                rateAtUtilizationKink1: 7 * 1e2, // 7%
-                rateAtUtilizationKink2: 9 * 1e2, // 9%
+                rateAtUtilizationKink1: 6 * 1e2, // 6%
+                rateAtUtilizationKink2: 8 * 1e2, // 8%
                 rateAtUtilizationMax: 25 * 1e2 // 25%
             });
 
@@ -151,8 +157,8 @@ contract PayloadIGP106 is PayloadIGPMain {
                 kink1: 85 * 1e2, // 85%
                 kink2: 93 * 1e2, // 93%
                 rateAtUtilizationZero: 0, // 0%
-                rateAtUtilizationKink1: 7 * 1e2, // 7%
-                rateAtUtilizationKink2: 9 * 1e2, // 9%
+                rateAtUtilizationKink1: 6 * 1e2, // 6%
+                rateAtUtilizationKink2: 8 * 1e2, // 8%
                 rateAtUtilizationMax: 15 * 1e2 // 15%
             });
 
@@ -162,8 +168,8 @@ contract PayloadIGP106 is PayloadIGPMain {
                 kink1: 85 * 1e2, // 85%
                 kink2: 93 * 1e2, // 93%
                 rateAtUtilizationZero: 0, // 0%
-                rateAtUtilizationKink1: 7.2 * 1e2, // 7.2%
-                rateAtUtilizationKink2: 9.6 * 1e2, // 9.6%
+                rateAtUtilizationKink1: 8 * 1e2, // 8%
+                rateAtUtilizationKink2: 10 * 1e2, // 10%
                 rateAtUtilizationMax: 15 * 1e2 // 15%
             });
 
@@ -179,7 +185,7 @@ contract PayloadIGP106 is PayloadIGPMain {
         // Update wstUSR T1 vault parameters
         {
             address wstUSR_USDC_VAULT = getVaultAddress(110);
-            
+
             IFluidVaultT1(wstUSR_USDC_VAULT).updateCollateralFactor(CF);
             IFluidVaultT1(wstUSR_USDC_VAULT).updateLiquidationThreshold(LT);
         }
@@ -215,7 +221,11 @@ contract PayloadIGP106 is PayloadIGPMain {
             });
 
             setVaultLimits(VAULT_wstUSR_USDTb);
-            VAULT_FACTORY.setVaultAuth(wstUSR_USDTb_VAULT, TEAM_MULTISIG, false);
+            VAULT_FACTORY.setVaultAuth(
+                wstUSR_USDTb_VAULT,
+                TEAM_MULTISIG,
+                false
+            );
         }
 
         {
@@ -244,15 +254,14 @@ contract PayloadIGP106 is PayloadIGPMain {
             }
 
             {
-                DexBorrowProtocolConfigInShares
-                    memory config_ = DexBorrowProtocolConfigInShares({
-                        dex: USDC_USDT_DEX,
-                        protocol: wstUSR_USDC_USDT_VAULT,
-                        expandPercent: 30 * 1e2, // 20%
-                        expandDuration: 6 hours, // 6 hours
-                        baseBorrowLimit: 2_900_000 * 1e18, // $6M
-                        maxBorrowLimit: 9_800_000 * 1e18 // $20M
-                    });
+                DexBorrowProtocolConfigInShares memory config_ = DexBorrowProtocolConfigInShares({
+                    dex: USDC_USDT_DEX,
+                    protocol: wstUSR_USDC_USDT_VAULT,
+                    expandPercent: 30 * 1e2, // 20%
+                    expandDuration: 6 hours, // 6 hours
+                    baseBorrowLimit: 2_900_000 * 1e18, // $6M
+                    maxBorrowLimit: 9_800_000 * 1e18 // $20M
+                });
 
                 setDexBorrowProtocolLimitsInShares(config_);
             }
@@ -265,16 +274,15 @@ contract PayloadIGP106 is PayloadIGPMain {
 
             {
                 // [TYPE 3] WSTUSR<>USDC-USDT concentrated vault - Launch limits
-                VaultConfig
-                    memory VAULT_wstUSR_USDC_USDT_CONCENTRATED = VaultConfig({
-                        vault: wstUSR_USDC_USDT_CONCENTRATED_VAULT,
-                        vaultType: VAULT_TYPE.TYPE_3,
-                        supplyToken: wstUSR_ADDRESS, // Set at vault level
-                        borrowToken: address(0), // Set at DEX level
-                        baseWithdrawalLimitInUSD: 8_000_000, // $8M
-                        baseBorrowLimitInUSD: 0,
-                        maxBorrowLimitInUSD: 0
-                    });
+                VaultConfig memory VAULT_wstUSR_USDC_USDT_CONCENTRATED = VaultConfig({
+                    vault: wstUSR_USDC_USDT_CONCENTRATED_VAULT,
+                    vaultType: VAULT_TYPE.TYPE_3,
+                    supplyToken: wstUSR_ADDRESS, // Set at vault level
+                    borrowToken: address(0), // Set at DEX level
+                    baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                    baseBorrowLimitInUSD: 0,
+                    maxBorrowLimitInUSD: 0
+                });
 
                 setVaultLimits(VAULT_wstUSR_USDC_USDT_CONCENTRATED);
                 VAULT_FACTORY.setVaultAuth(
@@ -285,15 +293,14 @@ contract PayloadIGP106 is PayloadIGPMain {
             }
 
             {
-                DexBorrowProtocolConfigInShares
-                    memory vaultConfig_ = DexBorrowProtocolConfigInShares({
-                        dex: USDC_USDT_CONCENTRATED_DEX,
-                        protocol: wstUSR_USDC_USDT_CONCENTRATED_VAULT,
-                        expandPercent: 30 * 1e2, // 20%
-                        expandDuration: 6 hours, // 6 hours
-                        baseBorrowLimit: 3_000_000 * 1e18, // $6M
-                        maxBorrowLimit: 10_000_000 * 1e18 // $20M
-                    });
+                DexBorrowProtocolConfigInShares memory vaultConfig_ = DexBorrowProtocolConfigInShares({
+                    dex: USDC_USDT_CONCENTRATED_DEX,
+                    protocol: wstUSR_USDC_USDT_CONCENTRATED_VAULT,
+                    expandPercent: 30 * 1e2, // 20%
+                    expandDuration: 6 hours, // 6 hours
+                    baseBorrowLimit: 3_000_000 * 1e18, // $6M
+                    maxBorrowLimit: 10_000_000 * 1e18 // $20M
+                });
 
                 setDexBorrowProtocolLimitsInShares(vaultConfig_);
             }
@@ -319,14 +326,18 @@ contract PayloadIGP106 is PayloadIGPMain {
 
     // @notice Action 6: Lite Module Implementation Updates
     function action6() internal isActionSkippable(6) {
-        LiteImplementationModules memory modules_ = PayloadIGP106(ADDRESS_THIS).getLiteImplementationModules();
+        LiteImplementationModules memory modules_ = PayloadIGP106(ADDRESS_THIS)
+            .getLiteImplementationModules();
 
         // Rebalancer Module (Module Update with 2 new sigs and remove 1 sig)
         {
-            
             ModuleImplementation memory module_ = modules_.rebalancerModule;
-            address oldImplementation_ = address(0x5343Da5F10bD9C36EA9cB04CaaE1452D8D967511);
-            address newImplementation_ = address(0x475035176043478c74df4AEAb07146484E3c3530);
+            address oldImplementation_ = address(
+                0x5343Da5F10bD9C36EA9cB04CaaE1452D8D967511
+            );
+            address newImplementation_ = address(
+                0x475035176043478c74df4AEAb07146484E3c3530
+            );
             bytes4[] memory newSigs_ = new bytes4[](2);
             bytes4[] memory removeSigs_ = new bytes4[](1);
 
@@ -334,7 +345,7 @@ contract PayloadIGP106 is PayloadIGPMain {
             newSigs_[1] = bytes4(0x84d5f112); // transferKingTokensToTeamMS (new signature)
 
             removeSigs_[0] = bytes4(0xc4a64d17); // swapKingTokensToWeth (old signature)
- 
+
             _updateLiteImplementationFromStorage(
                 oldImplementation_,
                 newImplementation_,
@@ -347,15 +358,19 @@ contract PayloadIGP106 is PayloadIGPMain {
 
         // AaveV3WstETHWeETHSwap Module (Module Update with 2 new sigs and remove 2 old sigs)
         {
-            
-            ModuleImplementation memory module_ = modules_.aaveV3WstETHWeETHSwapModule;
-            address oldImplementation_ = address(0xa1f4499DfdBFfACA9eCe405f5B6d2076e2D9F929);
-            address newImplementation_ = address(0xF95105c0f7ceBFbc5F186cE9E7D22620c75e0c8d);
+            ModuleImplementation memory module_ = modules_
+                .aaveV3WstETHWeETHSwapModule;
+            address oldImplementation_ = address(
+                0xa1f4499DfdBFfACA9eCe405f5B6d2076e2D9F929
+            );
+            address newImplementation_ = address(
+                0xF95105c0f7ceBFbc5F186cE9E7D22620c75e0c8d
+            );
             bytes4[] memory newSigs_ = new bytes4[](2);
             bytes4[] memory removeSigs_ = new bytes4[](2);
 
-            newSigs_[0] = bytes4(0xf0fefc66); // swapWstETHToWeETH (new signature)
-            newSigs_[1] = bytes4(0x2aaa3e6c); // swapWeETHToWstETH (new signature)
+            newSigs_[0] = bytes4(0xf0fefc66); // swapWeETHToWstETH (new signature)
+            newSigs_[1] = bytes4(0x2aaa3e6c); // swapWstETHToWeETH (new signature)
 
             removeSigs_[0] = bytes4(0x1609c001); // swapWstETHToWeETH (old signature)
             removeSigs_[1] = bytes4(0x8a47ea39); // swapWeETHToWstETH (old signature)
@@ -372,13 +387,12 @@ contract PayloadIGP106 is PayloadIGPMain {
 
         // Update Dummy Implementation
         {
-            address dummyImplementation_ = address(0x6Feb5478f7345aBE1d477Ff6828819b4C8ba551a);
+            address dummyImplementation_ = address(
+                0x6Feb5478f7345aBE1d477Ff6828819b4C8ba551a
+            );
             IETHV2.setDummyImplementation(dummyImplementation_);
         }
-        
     }
-
- 
 
     /**
      * |
@@ -420,12 +434,12 @@ contract PayloadIGP106 is PayloadIGPMain {
             oldSigs_ = IETHV2.getImplementationSigs(oldImplementation_);
         }
 
-        uint256 signaturesLength_ = oldSigs_.length + newSigs_.length - removeSigs_.length;
+        uint256 signaturesLength_ = oldSigs_.length +
+            newSigs_.length -
+            removeSigs_.length;
 
         // concat old sigs and new sigs
-        bytes4[] memory allSigs_ = new bytes4[](
-            signaturesLength_
-        );
+        bytes4[] memory allSigs_ = new bytes4[](signaturesLength_);
         uint256 j_;
         for (uint256 i = 0; i < oldSigs_.length; i++) {
             if (removeSigs_.length > 0) {
