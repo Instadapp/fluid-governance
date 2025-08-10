@@ -7,7 +7,7 @@ interface ILiteSigs {
         uint256 unitAmount_,
         uint256 route_,
         string memory swapConnectorName_,
-        string memory swapCallData_
+        bytes memory swapCallData_
     ) external;
 
     function swapWeETHToWstETH(
@@ -15,7 +15,7 @@ interface ILiteSigs {
         uint256 unitAmount_,
         uint256 route_,
         string memory swapConnectorName_,
-        string memory swapCallData_
+        bytes memory swapCallData_
     ) external;
 
      // ClaimModule
@@ -69,7 +69,7 @@ interface ILiteSigs {
         uint256 sellAmount_,
         uint256 unitAmount_,
         string memory swapConnectorName_,
-        string memory swapCallData_
+        bytes memory swapCallData_
     ) external;
 
     function transferKingTokensToTeamMS(uint256 amount_) external;
