@@ -117,7 +117,7 @@ contract PayloadIGP106 is PayloadIGPMain {
 
         // Spell 1: Transfer FLUID to Team Multisig for Solana LP and rewards
         {
-            uint256 FLUID_AMOUNT = 50_000 * 1e18; // 50,000 FLUID tokens
+            uint256 FLUID_AMOUNT = 200_000 * 1e18; // 200,000 FLUID tokens
             targets[0] = "BASIC-A";
             encodedSpells[0] = abi.encodeWithSignature(
                 withdrawSignature,
