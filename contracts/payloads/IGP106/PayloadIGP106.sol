@@ -162,8 +162,8 @@ contract PayloadIGP106 is PayloadIGPMain {
                 kink1: 85 * 1e2, // 85%
                 kink2: 93 * 1e2, // 93%
                 rateAtUtilizationZero: 0, // 0%
-                rateAtUtilizationKink1: 7 * 1e2, // 7%
-                rateAtUtilizationKink2: 9 * 1e2, // 9%
+                rateAtUtilizationKink1: 7.2 * 1e2, // 7.2%
+                rateAtUtilizationKink2: 9.6 * 1e2, // 9.6%
                 rateAtUtilizationMax: 15 * 1e2 // 15%
             });
 
