@@ -186,20 +186,20 @@ contract PayloadIGP106 is PayloadIGPMain {
         {
             address wstUSR_USDC_VAULT = getVaultAddress(110);
 
-            IFluidVaultT1(wstUSR_USDC_VAULT).updateCollateralFactor(CF);
             IFluidVaultT1(wstUSR_USDC_VAULT).updateLiquidationThreshold(LT);
+            IFluidVaultT1(wstUSR_USDC_VAULT).updateCollateralFactor(CF);
         }
 
         {
             address wstUSR_USDT_VAULT = getVaultAddress(111);
-            IFluidVaultT1(wstUSR_USDT_VAULT).updateCollateralFactor(CF);
             IFluidVaultT1(wstUSR_USDT_VAULT).updateLiquidationThreshold(LT);
+            IFluidVaultT1(wstUSR_USDT_VAULT).updateCollateralFactor(CF);
         }
 
         {
             address wstUSR_GHO_VAULT = getVaultAddress(112);
-            IFluidVaultT1(wstUSR_GHO_VAULT).updateCollateralFactor(CF);
             IFluidVaultT1(wstUSR_GHO_VAULT).updateLiquidationThreshold(LT);
+            IFluidVaultT1(wstUSR_GHO_VAULT).updateCollateralFactor(CF);
         }
     }
 
