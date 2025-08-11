@@ -257,7 +257,7 @@ contract PayloadIGP106 is PayloadIGPMain {
                 DexBorrowProtocolConfigInShares memory config_ = DexBorrowProtocolConfigInShares({
                     dex: USDC_USDT_DEX,
                     protocol: wstUSR_USDC_USDT_VAULT,
-                    expandPercent: 30 * 1e2, // 20%
+                    expandPercent: 30 * 1e2, // 30%
                     expandDuration: 6 hours, // 6 hours
                     baseBorrowLimit: 2_900_000 * 1e18, // $6M
                     maxBorrowLimit: 9_800_000 * 1e18 // $20M
@@ -296,7 +296,7 @@ contract PayloadIGP106 is PayloadIGPMain {
                 DexBorrowProtocolConfigInShares memory vaultConfig_ = DexBorrowProtocolConfigInShares({
                     dex: USDC_USDT_CONCENTRATED_DEX,
                     protocol: wstUSR_USDC_USDT_CONCENTRATED_VAULT,
-                    expandPercent: 30 * 1e2, // 20%
+                    expandPercent: 30 * 1e2, // 30%
                     expandDuration: 6 hours, // 6 hours
                     baseBorrowLimit: 3_000_000 * 1e18, // $6M
                     maxBorrowLimit: 10_000_000 * 1e18 // $20M
