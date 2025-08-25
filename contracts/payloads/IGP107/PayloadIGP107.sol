@@ -87,7 +87,7 @@ contract PayloadIGP107 is PayloadIGPMain {
 
         // Spell 1: Transfer ETH to Team Multisig
         {
-            uint256 IETHV2_AMOUNT = 334 * 1e18; // 334 iETHV2 ~$1.5M
+            uint256 IETHV2_AMOUNT = 285 * 1e18; // ~334 stETH ~$1.5M
             targets[0] = "BASIC-A";
             encodedSpells[0] = abi.encodeWithSignature(
                 withdrawSignature,
@@ -101,7 +101,7 @@ contract PayloadIGP107 is PayloadIGPMain {
 
         // Spell 2: Withdraw 334 stETH from Lite vault(revenue) and send to Team Multisig
         {
-            uint256 STETH_AMOUNT = type(uint256).max; // max ~$1.5M
+            uint256 STETH_AMOUNT = type(uint256).max; // ~334.33 stETH
             targets[1] = "BASIC-A";
             encodedSpells[1] = abi.encodeWithSignature(
                 withdrawSignature,
@@ -355,7 +355,7 @@ contract PayloadIGP107 is PayloadIGPMain {
                 supplyToken: wstUSR_ADDRESS,
                 borrowToken: USDC_ADDRESS,
                 baseWithdrawalLimitInUSD: 8_000_000, // $8M
-                baseBorrowLimitInUSD: 6_000_000, // $6M
+                baseBorrowLimitInUSD: 10_000_000, // $10M
                 maxBorrowLimitInUSD: 60_000_000 // $60M
             });
 
@@ -372,7 +372,7 @@ contract PayloadIGP107 is PayloadIGPMain {
                 supplyToken: wstUSR_ADDRESS,
                 borrowToken: USDT_ADDRESS,
                 baseWithdrawalLimitInUSD: 8_000_000, // $8M
-                baseBorrowLimitInUSD: 6_000_000, // $6M
+                baseBorrowLimitInUSD: 10_000_000, // $10M
                 maxBorrowLimitInUSD: 60_000_000 // $60M
             });
 
