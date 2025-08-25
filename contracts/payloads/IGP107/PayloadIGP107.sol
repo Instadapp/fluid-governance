@@ -40,38 +40,11 @@ import {ILiteSigs} from "../common/interfaces/ILiteSigs.sol";
 contract PayloadIGP107 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 107;
 
-    // State Variables
-    struct ModuleImplementation {
-        bytes4[] sigs;
-        address implementation;
-    }
-    struct LiteImplementationModules {
-        ModuleImplementation rebalancerModule;
-        ModuleImplementation aaveV3WstETHWeETHSwapModule;
-        address dummyImplementation;
-    }
-
-    LiteImplementationModules private _liteImplementationModules;
-
-    function getLiteImplementationModules()
-        public
-        view
-        returns (LiteImplementationModules memory)
-    {
-        return _liteImplementationModules;
-    }
-
     /**
      * |
      * |     Admin Actions      |
      * |__________________________________
      */
-    function setLiteImplementation(
-        LiteImplementationModules memory modules_
-    ) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        _liteImplementationModules = modules_;
-    }
 
     function execute() public virtual override {
         super.execute();
@@ -145,15 +118,8 @@ contract PayloadIGP107 is PayloadIGPMain {
 
     // @notice Action 2: Set dust limits for syrupUSDC DEX and its vaults
     function action2() internal isActionSkippable(2) {
-        address syrupUSDC_USDC_DEX = getDexAddress(39);
-        address syrupUSDC_USDC__USDC_VAULT = getVaultAddress(145);
-        address syrupUSDC__USDC_VAULT = getVaultAddress(146);
-        address syrupUSDC__USDT_VAULT = getVaultAddress(147);
-        address syrupUSDC__GHO_VAULT = getVaultAddress(148);
-
         {
             address syrupUSDC_USDC_DEX = getDexAddress(39);
-
             // syrupUSDC-USDC DEX
             DexConfig memory DEX_syrupUSDC_USDC = DexConfig({
                 dex: syrupUSDC_USDC_DEX,
@@ -192,7 +158,6 @@ contract PayloadIGP107 is PayloadIGPMain {
         {
             // dust limits for syrupUSDC/USDC vault
             address syrupUSDC__USDC_VAULT = getVaultAddress(146);
-
             // [TYPE 1] syrupUSDC/USDC vault - Dust limits
             VaultConfig memory VAULT_syrupUSDC__USDC = VaultConfig({
                 vault: syrupUSDC__USDC_VAULT,
@@ -214,7 +179,6 @@ contract PayloadIGP107 is PayloadIGPMain {
         {
             // dust limits for syrupUSDC/USDT vault
             address syrupUSDC__USDT_VAULT = getVaultAddress(147);
-
             // [TYPE 1] syrupUSDC/USDT vault - Dust limits
             VaultConfig memory VAULT_syrupUSDC__USDT = VaultConfig({
                 vault: syrupUSDC__USDT_VAULT,
@@ -236,7 +200,6 @@ contract PayloadIGP107 is PayloadIGPMain {
         {
             // dust limits for syrupUSDC/GHO vault
             address syrupUSDC__GHO_VAULT = getVaultAddress(148);
-
             // [TYPE 1] syrupUSDC/GHO vault - Dust limits
             VaultConfig memory VAULT_syrupUSDC__GHO = VaultConfig({
                 vault: syrupUSDC__GHO_VAULT,
@@ -532,6 +495,7 @@ contract PayloadIGP107 is PayloadIGPMain {
     uint256 public constant PAXG_USD_PRICE = 3_340 * 1e2;
 
     uint256 public constant csUSDL_USD_PRICE = 1.03 * 1e2;
+    uint256 public constant syrupUSDC_USD_PRICE = 1.12 * 1e2;
 
     function getRawAmount(
         address token,
