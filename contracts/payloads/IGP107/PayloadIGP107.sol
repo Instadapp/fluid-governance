@@ -85,9 +85,9 @@ contract PayloadIGP107 is PayloadIGPMain {
         string
             memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
 
-        // Spell 1: Transfer ETH to Team Multisig
+        // Spell 1: Transfer 284 iETHv2 to Team Multisig
         {
-            uint256 IETHV2_AMOUNT = 285 * 1e18; // ~334 stETH ~$1.5M
+            uint256 IETHV2_AMOUNT = 285 * 1e18; // ~285 iETHv2
             targets[0] = "BASIC-A";
             encodedSpells[0] = abi.encodeWithSignature(
                 withdrawSignature,
