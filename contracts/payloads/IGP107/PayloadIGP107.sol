@@ -49,7 +49,7 @@ contract PayloadIGP107 is PayloadIGPMain {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Withdraw ETH for Solana LP and rewards and the USDC, USDT native token rewards
+        // Action 1: Withdraw stETH & iETHv2 for Solana LP and rewards and the USDC, USDT native token rewards
         action1();
 
         // Action 2: Set dust limits for syrupUSDC DEX and its vaults
@@ -77,7 +77,7 @@ contract PayloadIGP107 is PayloadIGPMain {
      * |__________________________________
      */
 
-    // @notice Action 1: Withdraw ETH for Solana LP and rewards and the USDC, USDT native token rewards
+    // @notice Action 1: Withdraw stETH & iETHv2 for Solana LP and rewards and the USDC, USDT native token rewards
     function action1() internal isActionSkippable(1) {
         string[] memory targets = new string[](2);
         bytes[] memory encodedSpells = new bytes[](2);
