@@ -76,11 +76,20 @@ contract PayloadIGP107 is PayloadIGPMain {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Withdraw ETH for Solana LP and rewards
+        // Action 1: Withdraw ETH for Solana LP and rewards and the USDC, USDT native token rewards
         action1();
 
-        // Action 2: Provide Credit to Team Multisig for Fluid DEX Lite
+        // Action 2: Set dust limits for syrupUSDC DEX and its vaults
         action2();
+
+        // Action 3: Provide Credit to Team Multisig for scaling Fluid DEX Lite
+        action3();
+
+        // Action 4: Update limits for existing wstUSR/STABLE T1 vaults
+        action4();
+
+        // Action 5: Update borrow limit for USDe-USDT/USDT
+        action5();
     }
 
     function verifyProposal() public view override {}
@@ -95,17 +104,17 @@ contract PayloadIGP107 is PayloadIGPMain {
      * |__________________________________
      */
 
-    // @notice Action 1: Withdraw ETH for Solana LP and rewards
+    // @notice Action 1: Withdraw ETH for Solana LP and rewards and the USDC, USDT native token rewards
     function action1() internal isActionSkippable(1) {
-        string[] memory targets = new string[](1);
-        bytes[] memory encodedSpells = new bytes[](1);
+        string[] memory targets = new string[](2);
+        bytes[] memory encodedSpells = new bytes[](2);
 
         string
             memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
 
-        // Spell 1: Transfer ETH to Team Multisig for Solana LP and rewards
+        // Spell 1: Transfer ETH to Team Multisig
         {
-            uint256 ETH_AMOUNT = 230 * 1e18; // 230 ETH
+            uint256 ETH_AMOUNT = 334 * 1e18; // 334 ETH ~$1.5M
             targets[0] = "BASIC-A";
             encodedSpells[0] = abi.encodeWithSignature(
                 withdrawSignature,
@@ -117,12 +126,140 @@ contract PayloadIGP107 is PayloadIGPMain {
             );
         }
 
+        // Spell 2: Withdraw 334 stETH from Lite vault(revenue) and send to Team Multisig
+        {
+            uint256 STETH_AMOUNT = 334 * 1e18; // 334 stETH ~$1.5M
+            targets[1] = "BASIC-D-V2";
+            encodedSpells[1] = abi.encodeWithSignature(
+                withdrawSignature,
+                IETHV2,
+                STETH_AMOUNT,
+                TEAM_MULTISIG,
+                0,
+                0
+            );
+        }
+
         IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
     }
 
-     // @notice Action 2: Provide Credit to Team Multisig for Fluid DEX Lite
+    // @notice Action 2: Set dust limits for syrupUSDC DEX and its vaults
     function action2() internal isActionSkippable(2) {
-        // Give Team Multisig 4M USDC credit
+        address syrupUSDC_USDC_DEX = getDexAddress(39);
+        address syrupUSDC_USDC__USDC_VAULT = getVaultAddress(145);
+        address syrupUSDC__USDC_VAULT = getVaultAddress(146);
+        address syrupUSDC__USDT_VAULT = getVaultAddress(147);
+        address syrupUSDC__GHO_VAULT = getVaultAddress(148);
+
+        {
+            address syrupUSDC_USDC_DEX = getDexAddress(39);
+
+            // syrupUSDC-USDC DEX
+            DexConfig memory DEX_syrupUSDC_USDC = DexConfig({
+                dex: syrupUSDC_USDC_DEX,
+                tokenA: syrupUSDC_ADDRESS,
+                tokenB: USDC_ADDRESS,
+                smartCollateral: true,
+                smartDebt: false,
+                baseWithdrawalLimitInUSD: 10_000, // $10k
+                baseBorrowLimitInUSD: 0, // $0
+                maxBorrowLimitInUSD: 0 // $0
+            });
+            setDexLimits(DEX_syrupUSDC_USDC); // Smart Collateral
+
+            DEX_FACTORY.setDexAuth(syrupUSDC_USDC_DEX, TEAM_MULTISIG, true);
+        }
+        {
+            address syrupUSDC_USDC__USDC_VAULT = getVaultAddress(145);
+            // [TYPE 2] syrupUSDC-USDC<>USDC | smart collateral & debt
+            VaultConfig memory VAULT_syrupUSDC_USDC__USDC = VaultConfig({
+                vault: syrupUSDC_USDC__USDC_VAULT,
+                vaultType: VAULT_TYPE.TYPE_2,
+                supplyToken: address(0),
+                borrowToken: USDC_ADDRESS,
+                baseWithdrawalLimitInUSD: 0,
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 10_000 // $10k
+            });
+
+            setVaultLimits(VAULT_syrupUSDC_USDC__USDC); // TYPE_2 => 133
+            VAULT_FACTORY.setVaultAuth(
+                syrupUSDC_USDC__USDC_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
+        {
+            // dust limits for syrupUSDC/USDC vault
+            address syrupUSDC__USDC_VAULT = getVaultAddress(146);
+
+            // [TYPE 1] syrupUSDC/USDC vault - Dust limits
+            VaultConfig memory VAULT_syrupUSDC__USDC = VaultConfig({
+                vault: syrupUSDC__USDC_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: syrupUSDC_ADDRESS,
+                borrowToken: USDC_ADDRESS,
+                baseWithdrawalLimitInUSD: 7_000, // $7k
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 9_000 // $9k
+            });
+
+            setVaultLimits(VAULT_syrupUSDC__USDC);
+            VAULT_FACTORY.setVaultAuth(
+                syrupUSDC__USDC_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
+        {
+            // dust limits for syrupUSDC/USDT vault
+            address syrupUSDC__USDT_VAULT = getVaultAddress(147);
+
+            // [TYPE 1] syrupUSDC/USDT vault - Dust limits
+            VaultConfig memory VAULT_syrupUSDC__USDT = VaultConfig({
+                vault: syrupUSDC__USDT_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: syrupUSDC_ADDRESS,
+                borrowToken: USDT_ADDRESS,
+                baseWithdrawalLimitInUSD: 7_000, // $7k
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 9_000 // $9k
+            });
+
+            setVaultLimits(VAULT_syrupUSDC__USDT);
+            VAULT_FACTORY.setVaultAuth(
+                syrupUSDC__USDT_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
+        {
+            // dust limits for syrupUSDC/GHO vault
+            address syrupUSDC__GHO_VAULT = getVaultAddress(148);
+
+            // [TYPE 1] syrupUSDC/GHO vault - Dust limits
+            VaultConfig memory VAULT_syrupUSDC__GHO = VaultConfig({
+                vault: syrupUSDC__GHO_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: syrupUSDC_ADDRESS,
+                borrowToken: GHO_ADDRESS,
+                baseWithdrawalLimitInUSD: 7_000, // $7k
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 9_000 // $9k
+            });
+
+            setVaultLimits(VAULT_syrupUSDC__GHO);
+            VAULT_FACTORY.setVaultAuth(
+                syrupUSDC__GHO_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
+    }
+
+    // @notice Action 3: Provide Credit to Team Multisig for scaling Fluid DEX Lite
+    function action3() internal isActionSkippable(3) {
+        // Give Team Multisig 3.5M USDC credit
         {
             FluidLiquidityAdminStructs.UserBorrowConfig[]
                 memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](
@@ -138,13 +275,13 @@ contract PayloadIGP107 is PayloadIGPMain {
                 baseDebtCeiling: getRawAmount(
                     USDC_ADDRESS,
                     0,
-                    4_000_000, // $4M -> additional 2M
+                    3_500_000, // $3.5M
                     false
                 ),
                 maxDebtCeiling: getRawAmount(
                     USDC_ADDRESS,
                     0,
-                    4_000_000, // $4M -> additional 2M
+                    3_500_000, // $3.5M
                     false
                 )
             });
@@ -152,7 +289,7 @@ contract PayloadIGP107 is PayloadIGPMain {
             LIQUIDITY.updateUserBorrowConfigs(configs_);
         }
 
-        // Give Team Multisig 4M USDT credit
+        // Give Team Multisig 4.5 USDT credit
         {
             FluidLiquidityAdminStructs.UserBorrowConfig[]
                 memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](
@@ -168,43 +305,13 @@ contract PayloadIGP107 is PayloadIGPMain {
                 baseDebtCeiling: getRawAmount(
                     USDT_ADDRESS,
                     0,
-                    6_000_000, // $6M -> additional 2M each for USDC/USDT and USDe/USDT
+                    4_500_000, // $4.5M
                     false
                 ),
                 maxDebtCeiling: getRawAmount(
                     USDT_ADDRESS,
                     0,
-                    6_000_000, // $6M -> additional 2M each for USDC/USDT and USDe/USDT
-                    false
-                )
-            });
-
-            LIQUIDITY.updateUserBorrowConfigs(configs_);
-        }
-
-        // Give Team Multisig 2M USDe credit - USDe/USDT Pool
-        {
-            FluidLiquidityAdminStructs.UserBorrowConfig[]
-                memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](
-                    1
-                );
-
-            configs_[0] = FluidLiquidityAdminStructs.UserBorrowConfig({
-                user: TEAM_MULTISIG,
-                token: USDe_ADDRESS,
-                mode: 1,
-                expandPercent: 1 * 1e2, // 1%
-                expandDuration: 16777215, // max time
-                baseDebtCeiling: getRawAmount(
-                    USDe_ADDRESS,
-                    0,
-                    2_000_000, // $2M
-                    false
-                ),
-                maxDebtCeiling: getRawAmount(
-                    USDe_ADDRESS,
-                    0,
-                    2_000_000, // $2M
+                    4_500_000, // $4.5M
                     false
                 )
             });
@@ -273,6 +380,59 @@ contract PayloadIGP107 is PayloadIGPMain {
         }
     }
 
+    // @notice Action 4: Update limits for existing wstUSR/STABLE T1 vaults
+    function action4() internal isActionSkippable(4) {
+        {
+            address wstUSR_USDC_VAULT = getVaultAddress(110);
+
+            // [TYPE 1] WSTUSR/USDC vault - Launch limits
+            VaultConfig memory VAULT_wstUSR_USDC = VaultConfig({
+                vault: wstUSR_USDC_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: wstUSR_ADDRESS,
+                borrowToken: USDC_ADDRESS,
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                baseBorrowLimitInUSD: 6_000_000, // $6M
+                maxBorrowLimitInUSD: 60_000_000 // $60M
+            });
+
+            setVaultLimits(VAULT_wstUSR_USDC);
+        }
+
+        {
+            address wstUSR_USDT_VAULT = getVaultAddress(111);
+
+            // [TYPE 1] WSTUSR/USDT vault - Launch limits
+            VaultConfig memory VAULT_wstUSR_USDT = VaultConfig({
+                vault: wstUSR_USDT_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: wstUSR_ADDRESS,
+                borrowToken: USDT_ADDRESS,
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                baseBorrowLimitInUSD: 6_000_000, // $6M
+                maxBorrowLimitInUSD: 60_000_000 // $60M
+            });
+
+            setVaultLimits(VAULT_wstUSR_USDT);
+        }
+    }
+
+    // @notice Action 5: Update borrow limit for USDe-USDT/USDT
+    function action5() internal isActionSkippable(5) {
+        address USDe_USDT__USDT_VAULT = getVaultAddress(93);
+        // [TYPE 2] USDe-USDT<>USDT | smart collateral & debt
+        VaultConfig memory VAULT_USDe_USDT__USDT = VaultConfig({
+            vault: USDe_USDT__USDT_VAULT,
+            vaultType: VAULT_TYPE.TYPE_2,
+            supplyToken: address(0),
+            borrowToken: USDT_ADDRESS,
+            baseWithdrawalLimitInUSD: 0,
+            baseBorrowLimitInUSD: 12_500_000, // $12.5M
+            maxBorrowLimitInUSD: 75_000_000 // $75M
+        });
+
+        setVaultLimits(VAULT_USDe_USDT__USDT);
+    }
 
     /**
      * |
