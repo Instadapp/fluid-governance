@@ -105,6 +105,8 @@ contract PayloadIGPConstants {
         0xdAC17F958D2ee523a2206206994597C13D831ec7;
     address internal constant sUSDe_ADDRESS =
         0x9D39A5DE30e57443BfF2A8307A4256c8797A3497;
+    address internal constant syrupUSDC_ADDRESS =
+        0x80ac24aA929eaF5013f6436cdA2a7ba190f5Cc0b;
     address internal constant sUSDs_ADDRESS =
         0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD;
     address internal constant USDe_ADDRESS =
