@@ -53,6 +53,8 @@ contract PayloadIGPConstants {
         ITimelock(0x2386DC45AdDed673317eF068992F19421B481F4c);
     IDSAV2 public constant TREASURY =
         IDSAV2(0x28849D2b63fA8D361e5fc15cB8aBB13019884d09);
+    IDSAConnectorsV2 public constant DSA_CONNECTORS_V2 =
+        IDSAConnectorsV2(0x97b0B3A8bDeFE8cB9563a3c610019Ad10DB8aD11);
 
     // Team Multisig
     address public constant TEAM_MULTISIG =
