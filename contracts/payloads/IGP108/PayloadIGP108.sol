@@ -58,7 +58,7 @@ contract PayloadIGP107 is PayloadIGPMain {
         // Action 3: Enable New DSA Connector Multisig as Chief on DSAv2 Connector
         action3();
 
-        // Action 4:
+        // Action 4: Reduce the Limits on WBTC Debt Vaults
         action4();
     }
 
@@ -253,8 +253,51 @@ contract PayloadIGP107 is PayloadIGPMain {
         ); // New Connector Multisig
     }
 
-    // @notice Action 4:
-    function action4() internal isActionSkippable(4) {}
+    // @notice Action 4: Reduce the Limits on WBTC Debt Vaults
+    function action4() internal isActionSkippable(4) {
+        {
+            address ETH_WBTC_VAULT = getVaultAddress(24);
+
+            BorrowProtocolConfig memory protocolConfig_ = BorrowProtocolConfig({
+                protocol: ETH_WBTC_VAULT,
+                borrowToken: WBTC_ADDRESS,
+                expandPercent: 50 * 1e2, // 50%
+                expandDuration: 6 hours, // 6 hours
+                baseBorrowLimitInUSD: 15_000_000, // $15M base limit
+                maxBorrowLimitInUSD: 40_000_000 // $40M max limit
+            });
+
+            setBorrowProtocolLimits(protocolConfig_);
+        }
+        {
+            address wstETH_WBTC_VAULT = getVaultAddress(25);
+
+            BorrowProtocolConfig memory protocolConfig_ = BorrowProtocolConfig({
+                protocol: wstETH_WBTC_VAULT,
+                borrowToken: WBTC_ADDRESS,
+                expandPercent: 50 * 1e2, // 50%
+                expandDuration: 6 hours, // 6 hours
+                baseBorrowLimitInUSD: 15_000_000, // $15M base limit
+                maxBorrowLimitInUSD: 40_000_000 // $40M max limit
+            });
+
+            setBorrowProtocolLimits(protocolConfig_);
+        }
+        {
+            address weETH_WBTC_VAULT = getVaultAddress(26);
+
+            BorrowProtocolConfig memory protocolConfig_ = BorrowProtocolConfig({
+                protocol: weETH_WBTC_VAULT,
+                borrowToken: WBTC_ADDRESS,
+                expandPercent: 50 * 1e2, // 50%
+                expandDuration: 6 hours, // 6 hours
+                baseBorrowLimitInUSD: 15_000_000, // $15M base limit
+                maxBorrowLimitInUSD: 40_000_000 // $40M max limit
+            });
+
+            setBorrowProtocolLimits(protocolConfig_);
+        }
+    }
 
     /**
      * |
