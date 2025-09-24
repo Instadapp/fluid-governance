@@ -58,8 +58,11 @@ contract PayloadIGP107 is PayloadIGPMain {
         // Action 3: Enable New DSA Connector Multisig as Chief on DSAv2 Connector
         action3();
 
-        // Action 4: Reduce the Limits on WBTC Debt Vaults
+        // Action 4: Reduce the Limits on Less Utilized Vaults
         action4();
+
+        // Action 5: Absorb Dust Debt for wstETH-WBTC
+        action5();
     }
 
     function verifyProposal() public view override {}
@@ -253,50 +256,181 @@ contract PayloadIGP107 is PayloadIGPMain {
         ); // New Connector Multisig
     }
 
-    // @notice Action 4: Reduce the Limits on WBTC Debt Vaults
+    // @notice Action 4: Reduce the Limits on Less Utilized Vaults
     function action4() internal isActionSkippable(4) {
         {
-            address ETH_WBTC_VAULT = getVaultAddress(24);
+            // Vault IDs 24,25,26: ETH/WBTC, wstETH/WBTC, weETH/WBTC - Max Borrow to $40M
+            {
+                address ETH_WBTC_VAULT = getVaultAddress(24);
+
+                BorrowProtocolConfig
+                    memory protocolConfig_ = BorrowProtocolConfig({
+                        protocol: ETH_WBTC_VAULT,
+                        borrowToken: WBTC_ADDRESS,
+                        expandPercent: 50 * 1e2, // 50%
+                        expandDuration: 6 hours, // 6 hours
+                        baseBorrowLimitInUSD: 15_000_000, // $15M base limit
+                        maxBorrowLimitInUSD: 40_000_000 // $40M max limit
+                    });
+
+                setBorrowProtocolLimits(protocolConfig_);
+            }
+            {
+                address wstETH_WBTC_VAULT = getVaultAddress(25);
+
+                BorrowProtocolConfig
+                    memory protocolConfig_ = BorrowProtocolConfig({
+                        protocol: wstETH_WBTC_VAULT,
+                        borrowToken: WBTC_ADDRESS,
+                        expandPercent: 50 * 1e2, // 50%
+                        expandDuration: 6 hours, // 6 hours
+                        baseBorrowLimitInUSD: 15_000_000, // $15M base limit
+                        maxBorrowLimitInUSD: 40_000_000 // $40M max limit
+                    });
+
+                setBorrowProtocolLimits(protocolConfig_);
+            }
+            {
+                address weETH_WBTC_VAULT = getVaultAddress(26);
+
+                BorrowProtocolConfig
+                    memory protocolConfig_ = BorrowProtocolConfig({
+                        protocol: weETH_WBTC_VAULT,
+                        borrowToken: WBTC_ADDRESS,
+                        expandPercent: 50 * 1e2, // 50%
+                        expandDuration: 6 hours, // 6 hours
+                        baseBorrowLimitInUSD: 15_000_000, // $15M base limit
+                        maxBorrowLimitInUSD: 40_000_000 // $40M max limit
+                    });
+
+                setBorrowProtocolLimits(protocolConfig_);
+            }
+        }
+        {
+            // Vault ID 13: Wsteth/eth - Max Borrow to $500M
+            address wstETH_ETH_VAULT = getVaultAddress(13);
 
             BorrowProtocolConfig memory protocolConfig_ = BorrowProtocolConfig({
-                protocol: ETH_WBTC_VAULT,
-                borrowToken: WBTC_ADDRESS,
+                protocol: wstETH_ETH_VAULT,
+                borrowToken: ETH_ADDRESS,
                 expandPercent: 50 * 1e2, // 50%
                 expandDuration: 6 hours, // 6 hours
-                baseBorrowLimitInUSD: 15_000_000, // $15M base limit
-                maxBorrowLimitInUSD: 40_000_000 // $40M max limit
+                baseBorrowLimitInUSD: 45_000_000, // $45M base limit
+                maxBorrowLimitInUSD: 500_000_000 // $500M max limit
             });
 
             setBorrowProtocolLimits(protocolConfig_);
         }
         {
-            address wstETH_WBTC_VAULT = getVaultAddress(25);
+            // Vault IDs 14,15: Wsteth/stables - Max Borrow to $70M
+
+            {
+                address wstETH_USDC_VAULT = getVaultAddress(14);
+
+                BorrowProtocolConfig
+                    memory protocolConfig_ = BorrowProtocolConfig({
+                        protocol: wstETH_USDC_VAULT,
+                        borrowToken: USDC_ADDRESS,
+                        expandPercent: 50 * 1e2, // 50%
+                        expandDuration: 6 hours, // 6 hours
+                        baseBorrowLimitInUSD: 8_500_000, // $8.5M base limit
+                        maxBorrowLimitInUSD: 70_000_000 // $70M max limit
+                    });
+
+                setBorrowProtocolLimits(protocolConfig_);
+            }
+            {
+                address wstETH_USDT_VAULT = getVaultAddress(15);
+
+                BorrowProtocolConfig
+                    memory protocolConfig_ = BorrowProtocolConfig({
+                        protocol: wstETH_USDT_VAULT,
+                        borrowToken: USDT_ADDRESS,
+                        expandPercent: 50 * 1e2, // 50%
+                        expandDuration: 6 hours, // 6 hours
+                        baseBorrowLimitInUSD: 8_500_000, // $8.5M base limit
+                        maxBorrowLimitInUSD: 70_000_000 // $70M max limit
+                    });
+
+                setBorrowProtocolLimits(protocolConfig_);
+            }
+        }
+        {
+            // Vault ID 16: Weeth/Wsteth - Max Borrow to $300M
+            address weETH_wstETH_VAULT = getVaultAddress(16);
 
             BorrowProtocolConfig memory protocolConfig_ = BorrowProtocolConfig({
-                protocol: wstETH_WBTC_VAULT,
-                borrowToken: WBTC_ADDRESS,
+                protocol: weETH_wstETH_VAULT,
+                borrowToken: wstETH_ADDRESS,
                 expandPercent: 50 * 1e2, // 50%
                 expandDuration: 6 hours, // 6 hours
-                baseBorrowLimitInUSD: 15_000_000, // $15M base limit
-                maxBorrowLimitInUSD: 40_000_000 // $40M max limit
+                baseBorrowLimitInUSD: 20_000_000, // $20M base limit
+                maxBorrowLimitInUSD: 300_000_000 // $300M max limit
             });
 
             setBorrowProtocolLimits(protocolConfig_);
         }
         {
-            address weETH_WBTC_VAULT = getVaultAddress(26);
+            // Vault IDs 31,32,33: ETH/cbBTC Vaults - Max Borrow to $70M
+            {
+                address ETH_cbBTC_VAULT_31 = getVaultAddress(31);
 
-            BorrowProtocolConfig memory protocolConfig_ = BorrowProtocolConfig({
-                protocol: weETH_WBTC_VAULT,
-                borrowToken: WBTC_ADDRESS,
-                expandPercent: 50 * 1e2, // 50%
-                expandDuration: 6 hours, // 6 hours
-                baseBorrowLimitInUSD: 15_000_000, // $15M base limit
-                maxBorrowLimitInUSD: 40_000_000 // $40M max limit
-            });
+                BorrowProtocolConfig
+                    memory protocolConfig_ = BorrowProtocolConfig({
+                        protocol: ETH_cbBTC_VAULT_31,
+                        borrowToken: cbBTC_ADDRESS,
+                        expandPercent: 50 * 1e2, // 50%
+                        expandDuration: 6 hours, // 6 hours
+                        baseBorrowLimitInUSD: 15_000_000, // $15M base limit
+                        maxBorrowLimitInUSD: 70_000_000 // $70M max limit
+                    });
 
-            setBorrowProtocolLimits(protocolConfig_);
+                setBorrowProtocolLimits(protocolConfig_);
+            }
+            {
+                address ETH_cbBTC_VAULT_32 = getVaultAddress(32);
+
+                BorrowProtocolConfig
+                    memory protocolConfig_ = BorrowProtocolConfig({
+                        protocol: ETH_cbBTC_VAULT_32,
+                        borrowToken: cbBTC_ADDRESS,
+                        expandPercent: 50 * 1e2, // 50%
+                        expandDuration: 6 hours, // 6 hours
+                        baseBorrowLimitInUSD: 15_000_000, // $15M base limit
+                        maxBorrowLimitInUSD: 70_000_000 // $70M max limit
+                    });
+
+                setBorrowProtocolLimits(protocolConfig_);
+            }
+            {
+                address ETH_cbBTC_VAULT_33 = getVaultAddress(33);
+
+                BorrowProtocolConfig
+                    memory protocolConfig_ = BorrowProtocolConfig({
+                        protocol: ETH_cbBTC_VAULT_33,
+                        borrowToken: cbBTC_ADDRESS,
+                        expandPercent: 50 * 1e2, // 50%
+                        expandDuration: 6 hours, // 6 hours
+                        baseBorrowLimitInUSD: 15_000_000, // $15M base limit
+                        maxBorrowLimitInUSD: 70_000_000 // $70M max limit
+                    });
+
+                setBorrowProtocolLimits(protocolConfig_);
+            }
         }
+    }
+
+    // @notice Action 5: Absorb Dust Debt for wstETH-WBTC
+    function action5() internal isActionSkippable(5) {
+        address wstETH_WBTC_VAULT = getVaultAddress(25);
+
+        // Create array with all NFT IDs from 1 to 18 (total 18 positions)
+        uint[] memory nftIds = new uint[](18);
+        for (uint i = 1; i <= 18; i++) {
+            nftIds[i] = i ;
+        }
+        
+        IFluidVaultT1(wstETH_WBTC_VAULT).absorbDustDebt(nftIds);
     }
 
     /**
