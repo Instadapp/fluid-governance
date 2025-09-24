@@ -182,9 +182,9 @@ contract PayloadIGP107 is PayloadIGPMain {
             );
         }
         {
-            // dust limits for syrupUSDC/USDC vault
+            // launch limits for syrupUSDC/USDC vault
             address syrupUSDC__USDC_VAULT = getVaultAddress(146);
-            // [TYPE 1] syrupUSDC/USDC vault - Dust limits
+            // [TYPE 1] syrupUSDC/USDC vault - Launch limits
             VaultConfig memory VAULT_syrupUSDC__USDC = VaultConfig({
                 vault: syrupUSDC__USDC_VAULT,
                 vaultType: VAULT_TYPE.TYPE_1,
@@ -203,9 +203,9 @@ contract PayloadIGP107 is PayloadIGPMain {
             );
         }
         {
-            // dust limits for syrupUSDC/USDT vault
+            // launch limits for syrupUSDC/USDT vault
             address syrupUSDC__USDT_VAULT = getVaultAddress(147);
-            // [TYPE 1] syrupUSDC/USDT vault - Dust limits
+            // [TYPE 1] syrupUSDC/USDT vault - Launch limits
             VaultConfig memory VAULT_syrupUSDC__USDT = VaultConfig({
                 vault: syrupUSDC__USDT_VAULT,
                 vaultType: VAULT_TYPE.TYPE_1,
@@ -224,9 +224,9 @@ contract PayloadIGP107 is PayloadIGPMain {
             );
         }
         {
-            // dust limits for syrupUSDC/GHO vault
+            // launch limits for syrupUSDC/GHO vault
             address syrupUSDC__GHO_VAULT = getVaultAddress(148);
-            // [TYPE 1] syrupUSDC/GHO vault - Dust limits
+            // [TYPE 1] syrupUSDC/GHO vault - Launch limits
             VaultConfig memory VAULT_syrupUSDC__GHO = VaultConfig({
                 vault: syrupUSDC__GHO_VAULT,
                 vaultType: VAULT_TYPE.TYPE_1,
