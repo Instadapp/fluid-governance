@@ -63,6 +63,9 @@ contract PayloadIGP108 is PayloadIGPMain {
 
         // Action 5: Absorb Dust Debt for wstETH-WBTC
         action5();
+
+        // Action 6: Collect Revenue from Lite Vault and Transfer to Team Multisig
+        action6();
     }
 
     function verifyProposal() public view override {}
@@ -446,6 +449,39 @@ contract PayloadIGP108 is PayloadIGPMain {
         ];
 
         IFluidVaultT1(wstETH_WBTC_VAULT).absorbDustDebt(nftIds);
+    }
+
+    // @notice Action 6: Collect Revenue from Lite Vault and Transfer to Team Multisig
+    function action6() internal isActionSkippable(6) {
+        // Step 1: Collect stETH revenue from iETHv2
+        {
+            // 72 stETH in wei (1e18 per stETH)
+            ILite(IETHV2).collectRevenue(72 * 1e18);
+        }
+
+        // Step 2: Transfer 72 stETH from iETHv2 to Treasury DSA
+        {
+            string[] memory targets = new string[](1);
+            bytes[] memory encodedSpells = new bytes[](1);
+
+            string memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
+
+            // Spell 1: Transfer 72 stETH from iETHv2 to Treasury
+            {
+                uint256 STETH_AMOUNT = 72 * 1e18; // 72 stETH
+                targets[0] = "BASIC-D-V2";
+                encodedSpells[0] = abi.encodeWithSignature(
+                    withdrawSignature,
+                    IETHV2,
+                    STETH_AMOUNT,
+                    address(TREASURY),
+                    0,
+                    0
+                );
+            }
+
+            IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
+        }
     }
 
     /**

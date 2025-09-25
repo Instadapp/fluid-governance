@@ -22,6 +22,10 @@ interface ILite {
     function updateAggrMaxVaultRatio(uint256 newAggrMaxVaultRatio_) external;
 
     function addDSAAuth(address auth_) external;
+    
+    // Collect stETH revenue to the treasury address set in Lite
+    // amount_ is specified in stETH wei (1e18 per stETH)
+    function collectRevenue(uint256 amount_) external;
         
     function getImplementationSigs(address implementation_) external view returns (bytes4[] memory);
     function updateSecondaryAuth(address secondaryAuth_) external;
