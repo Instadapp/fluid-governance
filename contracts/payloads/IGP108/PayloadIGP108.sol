@@ -420,8 +420,8 @@ contract PayloadIGP108 is PayloadIGPMain {
         }
     }
 
-    // // @notice Action 5: Absorb Dust Debt for wstETH-WBTC
-    // function action5() internal isActionSkippable(5) {
+    // @notice Action 5: Absorb Dust Debt for wstETH-WBTC
+    function action5() internal isActionSkippable(5) {
     //     address wstETH_WBTC_VAULT = getVaultAddress(25);
 
     //     // Create array with all NFT IDs from 1 to 18 (total 18 positions)
@@ -431,7 +431,7 @@ contract PayloadIGP108 is PayloadIGPMain {
     //     }
         
     //     IFluidVaultT1(wstETH_WBTC_VAULT).absorbDustDebt(nftIds);
-    // }
+    }
 
     /**
      * |
