@@ -422,15 +422,30 @@ contract PayloadIGP108 is PayloadIGPMain {
 
     // @notice Action 5: Absorb Dust Debt for wstETH-WBTC
     function action5() internal isActionSkippable(5) {
-    //     address wstETH_WBTC_VAULT = getVaultAddress(25);
+        address wstETH_WBTC_VAULT = getVaultAddress(25);
 
-    //     // Create array with all NFT IDs from 1 to 18 (total 18 positions)
-    //     uint[] memory nftIds = new uint[](18);
-    //     for (uint i = 0; i < 18; i++) {
-    //         nftIds[i] = i + 1;
-    //     }
-        
-    //     IFluidVaultT1(wstETH_WBTC_VAULT).absorbDustDebt(nftIds);
+        uint[] memory nftIds = [
+            6585,
+            5167,
+            4795,
+            4560,
+            3739,
+            3726,
+            3557,
+            2989,
+            2188,
+            2042,
+            2027,
+            1857,
+            1776,
+            1639,
+            1480,
+            1323,
+            1286,
+            1245
+        ];
+
+        IFluidVaultT1(wstETH_WBTC_VAULT).absorbDustDebt(nftIds);
     }
 
     /**
