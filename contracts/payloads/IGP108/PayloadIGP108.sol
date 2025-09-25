@@ -37,8 +37,8 @@ import {PayloadIGPMain} from "../common/main.sol";
 import {ILite} from "../common/interfaces/ILite.sol";
 import {ILiteSigs} from "../common/interfaces/ILiteSigs.sol";
 
-contract PayloadIGP107 is PayloadIGPMain {
-    uint256 public constant PROPOSAL_ID = 107;
+contract PayloadIGP108 is PayloadIGPMain {
+    uint256 public constant PROPOSAL_ID = 108;
 
     /**
      * |
