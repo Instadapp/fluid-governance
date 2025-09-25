@@ -64,7 +64,7 @@ contract PayloadIGP108 is PayloadIGPMain {
         // Action 5: Absorb Dust Debt for wstETH-WBTC
         action5();
 
-        // Action 6: Transfer collected revenue of Lite to Team Multisig
+        // Action 6: Transfer iETHv2 Lite Vault Revenue to Team Multisig
         action6();
     }
 
@@ -427,7 +427,7 @@ contract PayloadIGP108 is PayloadIGPMain {
     function action5() internal isActionSkippable(5) {
         address wstETH_WBTC_VAULT = getVaultAddress(25);
 
-        uint[] memory nftIds = [
+        uint16[18] memory nftIds = [
             6585,
             5167,
             4795,
@@ -448,17 +448,25 @@ contract PayloadIGP108 is PayloadIGPMain {
             1245
         ];
 
-        IFluidVaultT1(wstETH_WBTC_VAULT).absorbDustDebt(nftIds);
+        for (uint256 i = 0; i < 18; i++) {
+            uint256[] memory nftIdsToAbsorb = new uint256[](1);
+            nftIdsToAbsorb[0] = nftIds[i];
+            try IFluidVaultT1(wstETH_WBTC_VAULT).absorbDustDebt(nftIdsToAbsorb) {
+            } catch {
+                continue;
+            }
+        }
+
     }
 
-    // @notice Action 6: Collect Revenue from Lite Vault and Transfer to Team Multisig
+    // @notice Action 6: Transfer iETHv2 Lite Vault Revenue to Team Multisig
     function action6() internal isActionSkippable(6) {
         string[] memory targets = new string[](1);
         bytes[] memory encodedSpells = new bytes[](1);
 
         string memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
 
-        // Spell 1: Transfer 71.85 stETH from iETHv2 to Treasury
+        // Spell 1: Transfer 71.85 stETH from iETHv2 to Team Multisig
         {
             uint256 STETH_AMOUNT = 71.85 * 1e18; // 72 stETH
             targets[0] = "BASIC-A";
