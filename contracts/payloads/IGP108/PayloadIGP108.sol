@@ -371,7 +371,7 @@ contract PayloadIGP108 is PayloadIGPMain {
             setBorrowProtocolLimits(protocolConfig_);
         }
         {
-            // Vault IDs 31,32,33: ETH/cbBTC Vaults - Max Borrow to $70M
+            // Vault IDs 31,32,33: ETH based/cbBTC Vaults - Max Borrow to $70M
             {
                 address ETH_cbBTC_VAULT_31 = getVaultAddress(31);
 
@@ -388,11 +388,11 @@ contract PayloadIGP108 is PayloadIGPMain {
                 setBorrowProtocolLimits(protocolConfig_);
             }
             {
-                address ETH_cbBTC_VAULT_32 = getVaultAddress(32);
+                address weETH_cbBTC_VAULT_32 = getVaultAddress(32);
 
                 BorrowProtocolConfig
                     memory protocolConfig_ = BorrowProtocolConfig({
-                        protocol: ETH_cbBTC_VAULT_32,
+                        protocol: weETH_cbBTC_VAULT_32,
                         borrowToken: cbBTC_ADDRESS,
                         expandPercent: 50 * 1e2, // 50%
                         expandDuration: 6 hours, // 6 hours
@@ -403,11 +403,11 @@ contract PayloadIGP108 is PayloadIGPMain {
                 setBorrowProtocolLimits(protocolConfig_);
             }
             {
-                address ETH_cbBTC_VAULT_33 = getVaultAddress(33);
+                address wstETH_cbBTC_VAULT_33 = getVaultAddress(33);
 
                 BorrowProtocolConfig
                     memory protocolConfig_ = BorrowProtocolConfig({
-                        protocol: ETH_cbBTC_VAULT_33,
+                        protocol: wstETH_cbBTC_VAULT_33,
                         borrowToken: cbBTC_ADDRESS,
                         expandPercent: 50 * 1e2, // 50%
                         expandDuration: 6 hours, // 6 hours
@@ -439,9 +439,9 @@ contract PayloadIGP108 is PayloadIGPMain {
      * |__________________________________
      */
     // Token Prices Constants
-    uint256 public constant ETH_USD_PRICE = 4_500 * 1e2;
-    uint256 public constant wstETH_USD_PRICE = 5_400 * 1e2;
-    uint256 public constant weETH_USD_PRICE = 5_400 * 1e2;
+    uint256 public constant ETH_USD_PRICE = 4_100 * 1e2;
+    uint256 public constant wstETH_USD_PRICE = 4_800 * 1e2;
+    uint256 public constant weETH_USD_PRICE = 4_400 * 1e2;
     uint256 public constant rsETH_USD_PRICE = 5_400 * 1e2;
     uint256 public constant weETHs_USD_PRICE = 5_400 * 1e2;
     uint256 public constant mETH_USD_PRICE = 5_400 * 1e2;
