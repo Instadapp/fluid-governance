@@ -12,3 +12,7 @@ interface IDSAV2 {
 
     function isAuth(address user) external view returns (bool);
 }
+
+interface IDSAConnectorsV2 {
+    function toggleChief(address _chiefAddress) external;
+}
