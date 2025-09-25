@@ -319,7 +319,7 @@ contract PayloadIGP108 is PayloadIGPMain {
                 expandPercent: 50 * 1e2, // 50%
                 expandDuration: 6 hours, // 6 hours
                 baseBorrowLimitInUSD: 45_000_000, // $45M base limit
-                maxBorrowLimitInUSD: 350_000_000 // $350M max limit
+                maxBorrowLimitInUSD: 500_000_000 // $500M max limit
             });
 
             setBorrowProtocolLimits(protocolConfig_);
@@ -368,7 +368,7 @@ contract PayloadIGP108 is PayloadIGPMain {
                 expandPercent: 50 * 1e2, // 50%
                 expandDuration: 6 hours, // 6 hours
                 baseBorrowLimitInUSD: 20_000_000, // $20M base limit
-                maxBorrowLimitInUSD: 250_000_000 // $250M max limit
+                maxBorrowLimitInUSD: 300_000_000 // $300M max limit
             });
 
             setBorrowProtocolLimits(protocolConfig_);
