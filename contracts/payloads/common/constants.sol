@@ -29,6 +29,8 @@ import {IDSAV2} from "./interfaces/IDSA.sol";
 
 import {ILite} from "./interfaces/ILite.sol";
 
+import { IDSAConnectorsV2 } from "./interfaces/IDSA.sol";
+
 contract PayloadIGPConstants {
     address public immutable ADDRESS_THIS;
 
@@ -53,6 +55,8 @@ contract PayloadIGPConstants {
         ITimelock(0x2386DC45AdDed673317eF068992F19421B481F4c);
     IDSAV2 public constant TREASURY =
         IDSAV2(0x28849D2b63fA8D361e5fc15cB8aBB13019884d09);
+    IDSAConnectorsV2 public constant DSA_CONNECTORS_V2 =
+        IDSAConnectorsV2(0x97b0B3A8bDeFE8cB9563a3c610019Ad10DB8aD11);
 
     // Team Multisig
     address public constant TEAM_MULTISIG =
@@ -129,6 +133,9 @@ contract PayloadIGPConstants {
         0xC139190F447e929f090Edeb554D95AbB8b18aC1C;
     address internal constant csUSDL_ADDRESS =
         0xbEeFc011e94f43b8B7b455eBaB290C7Ab4E216f1;
+
+    address internal constant syrupUSDC_ADDRESS =
+        0x80ac24aA929eaF5013f6436cdA2a7ba190f5Cc0b;
 
     address internal constant WBTC_ADDRESS =
         0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;

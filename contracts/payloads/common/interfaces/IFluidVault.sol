@@ -69,6 +69,8 @@ interface IFluidVaultT1 {
         external
         view
         returns (ConstantViews memory constantsView_);
+
+    function absorbDustDebt(uint[] memory nftIds) external;
 }
 
 interface IFluidSmartVault {
