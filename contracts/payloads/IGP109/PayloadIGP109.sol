@@ -45,12 +45,11 @@ contract PayloadIGP109 is PayloadIGPMain {
         // Action 2: Update CF, LT, LML, and LP for wstUSR Vaults
         action2();
 
-        // Action 3: Template action - Update DEX configuration
+        // Action 3: Transfer $FLUID to Team Multisig for Rewards on Plasma
         action3();
 
-        // Action 4: Template action - Set user borrow configs
+        // Action 4: Transfer $FLUID to Team Multisig for Rewards on Solana
         action4();
-
     }
 
     function verifyProposal() public view override {}
@@ -70,7 +69,7 @@ contract PayloadIGP109 is PayloadIGPMain {
         uint256 CF = 92 * 1e2; // 92% Collateral Factor
         uint256 LT = 94 * 1e2; // 94% Liquidation Threshold
         uint256 LML = 96 * 1e2; // 96% Liquidation Max Limit
-        
+
         // Vault IDs to update: 17, 18, 50, 56, 92, 98, 126
         uint256[] memory vaultIds = new uint256[](7);
         vaultIds[0] = 17;
@@ -80,10 +79,10 @@ contract PayloadIGP109 is PayloadIGPMain {
         vaultIds[4] = 92;
         vaultIds[5] = 98;
         vaultIds[6] = 126;
-        
+
         for (uint256 i = 0; i < vaultIds.length; i++) {
             address vaultAddress = getVaultAddress(vaultIds[i]);
-            
+
             IFluidVaultT1(vaultAddress).updateCollateralFactor(CF);
             IFluidVaultT1(vaultAddress).updateLiquidationThreshold(LT);
             IFluidVaultT1(vaultAddress).updateLiquidationMaxLimit(LML);
@@ -96,7 +95,7 @@ contract PayloadIGP109 is PayloadIGPMain {
         uint256 LT = 94 * 1e2; // 94% Liquidation Threshold
         uint256 LML = 96 * 1e2; // 96% Liquidation Max Limit
         uint256 LP = 2 * 1e2; // 2% Liquidation Penalty
-        
+
         // Vault IDs to update: 110, 111, 112, 133, 134, 135
         uint256[] memory vaultIds = new uint256[](6);
         vaultIds[0] = 110;
@@ -105,10 +104,10 @@ contract PayloadIGP109 is PayloadIGPMain {
         vaultIds[3] = 133;
         vaultIds[4] = 134;
         vaultIds[5] = 135;
-        
+
         for (uint256 i = 0; i < vaultIds.length; i++) {
             address vaultAddress = getVaultAddress(vaultIds[i]);
-            
+
             IFluidVaultT1(vaultAddress).updateCollateralFactor(CF);
             IFluidVaultT1(vaultAddress).updateLiquidationThreshold(LT);
             IFluidVaultT1(vaultAddress).updateLiquidationMaxLimit(LML);
@@ -116,14 +115,55 @@ contract PayloadIGP109 is PayloadIGPMain {
         }
     }
 
+    /// @notice Action 3: Transfer $FLUID to Team Multisig for Rewards on Plasma
     function action3() internal isActionSkippable(3) {
+        string[] memory targets = new string[](1);
+        bytes[] memory encodedSpells = new bytes[](1);
 
+        string
+            memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
+
+        // Spell 1: Transfer FLUID to Team Multisig for Plasma Rewards
+        {
+            uint256 FLUID_AMOUNT = 1_000_000 * 1e18; // 1M FLUID tokens
+            targets[0] = "BASIC-A";
+            encodedSpells[0] = abi.encodeWithSignature(
+                withdrawSignature,
+                FLUID_ADDRESS,
+                FLUID_AMOUNT,
+                TEAM_MULTISIG,
+                0,
+                0
+            );
+        }
+
+        IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
     }
 
+    /// @notice Action 4: Transfer $FLUID to Team Multisig for Rewards on Solana
     function action4() internal isActionSkippable(4) {
-        
-    }
+        string[] memory targets = new string[](1);
+        bytes[] memory encodedSpells = new bytes[](1);
 
+        string
+            memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
+
+        // Spell 1: Transfer FLUID to Team Multisig for Solana Rewards
+        {
+            uint256 FLUID_AMOUNT = 1_000_000 * 1e18; // 1M FLUID tokens
+            targets[0] = "BASIC-A";
+            encodedSpells[0] = abi.encodeWithSignature(
+                withdrawSignature,
+                FLUID_ADDRESS,
+                FLUID_AMOUNT,
+                TEAM_MULTISIG,
+                0,
+                0
+            );
+        }
+
+        IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
+    }
 
     /**
      * |
