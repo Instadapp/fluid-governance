@@ -45,11 +45,14 @@ contract PayloadIGP109 is PayloadIGPMain {
         // Action 2: Update CF, LT, LML, and LP for wstUSR Vaults
         action2();
 
-        // Action 3: Transfer $FLUID to Team Multisig for Rewards on Plasma
+        // Action 3: Transfer $FLUID to Team Multisig for Mainnet, Plasma, Arbitrum Rewards
         action3();
 
-        // Action 4: Transfer $FLUID to Team Multisig for Rewards on Solana
+        // Action 4: Transfer $FLUID to Team Multisig for Solana Rewards
         action4();
+
+        // Action 5: Pause limits for volatile DEXes and its vaults
+        action5();
     }
 
     function verifyProposal() public view override {}
@@ -83,9 +86,9 @@ contract PayloadIGP109 is PayloadIGPMain {
         for (uint256 i = 0; i < vaultIds.length; i++) {
             address vaultAddress = getVaultAddress(vaultIds[i]);
 
-            IFluidVaultT1(vaultAddress).updateCollateralFactor(CF);
-            IFluidVaultT1(vaultAddress).updateLiquidationThreshold(LT);
             IFluidVaultT1(vaultAddress).updateLiquidationMaxLimit(LML);
+            IFluidVaultT1(vaultAddress).updateLiquidationThreshold(LT);
+            IFluidVaultT1(vaultAddress).updateCollateralFactor(CF);
         }
     }
 
@@ -108,14 +111,15 @@ contract PayloadIGP109 is PayloadIGPMain {
         for (uint256 i = 0; i < vaultIds.length; i++) {
             address vaultAddress = getVaultAddress(vaultIds[i]);
 
-            IFluidVaultT1(vaultAddress).updateCollateralFactor(CF);
-            IFluidVaultT1(vaultAddress).updateLiquidationThreshold(LT);
+            // Update in safe order: LML first, then LT, then CF, then LP
             IFluidVaultT1(vaultAddress).updateLiquidationMaxLimit(LML);
+            IFluidVaultT1(vaultAddress).updateLiquidationThreshold(LT);
+            IFluidVaultT1(vaultAddress).updateCollateralFactor(CF);
             IFluidVaultT1(vaultAddress).updateLiquidationPenalty(LP);
         }
     }
 
-    /// @notice Action 3: Transfer $FLUID to Team Multisig for Rewards on Plasma
+    /// @notice Action 3: Transfer $FLUID to Team Multisig for for Mainnet, Plasma, Arbitrum Rewards
     function action3() internal isActionSkippable(3) {
         string[] memory targets = new string[](1);
         bytes[] memory encodedSpells = new bytes[](1);
@@ -123,7 +127,7 @@ contract PayloadIGP109 is PayloadIGPMain {
         string
             memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
 
-        // Spell 1: Transfer FLUID to Team Multisig for Plasma Rewards
+        // Spell 1: Transfer FLUID to Team Multisig for Mainnet, Plasma, Arbitrum Rewards
         {
             uint256 FLUID_AMOUNT = 1_000_000 * 1e18; // 1M FLUID tokens
             targets[0] = "BASIC-A";
@@ -140,7 +144,7 @@ contract PayloadIGP109 is PayloadIGPMain {
         IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
     }
 
-    /// @notice Action 4: Transfer $FLUID to Team Multisig for Rewards on Solana
+    /// @notice Action 4: Transfer $FLUID to Team Multisig for Solana Rewards
     function action4() internal isActionSkippable(4) {
         string[] memory targets = new string[](1);
         bytes[] memory encodedSpells = new bytes[](1);
@@ -163,6 +167,67 @@ contract PayloadIGP109 is PayloadIGPMain {
         }
 
         IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
+    }
+
+    /// @notice Action 5: Pause limits for volatile DEXes and its vaults
+    function action5() internal isActionSkippable(5) {
+        // Pause limits for cbBTC-ETH T4 Vault (Vault 106)
+        {
+            address cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS = getVaultAddress(106);
+            // Pause supply and borrow limits for cbBTC
+            setSupplyProtocolLimitsPaused(cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS, cbBTC_ADDRESS);
+            setBorrowProtocolLimitsPaused(cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS, cbBTC_ADDRESS);
+        }
+
+        // Pause limits for cbBTC-ETH DEX (DEX 26)
+        {
+            address cbBTC_ETH_DEX_ADDRESS = getDexAddress(26);
+            // Pause supply and borrow limits for both tokens
+            setSupplyProtocolLimitsPaused(cbBTC_ETH_DEX_ADDRESS, cbBTC_ADDRESS);
+            setSupplyProtocolLimitsPaused(cbBTC_ETH_DEX_ADDRESS, ETH_ADDRESS);
+            setBorrowProtocolLimitsPaused(cbBTC_ETH_DEX_ADDRESS, cbBTC_ADDRESS);
+            setBorrowProtocolLimitsPaused(cbBTC_ETH_DEX_ADDRESS, ETH_ADDRESS);
+
+            // Pause user operations
+            address[] memory supplyTokens = new address[](2);
+            supplyTokens[0] = cbBTC_ADDRESS;
+            supplyTokens[1] = ETH_ADDRESS;
+
+            address[] memory borrowTokens = new address[](2);
+            borrowTokens[0] = cbBTC_ADDRESS;
+            borrowTokens[1] = ETH_ADDRESS;
+
+            LIQUIDITY.pauseUser(cbBTC_ETH_DEX_ADDRESS, supplyTokens, borrowTokens);
+        }
+
+        // Pause limits for cbBTC-USDT T4 Vault (Vault 105)
+        {
+            address cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS = getVaultAddress(105);
+            // Pause supply and borrow limits for cbBTC
+            setSupplyProtocolLimitsPaused(cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS, cbBTC_ADDRESS);
+            setBorrowProtocolLimitsPaused(cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS, cbBTC_ADDRESS);
+        }
+
+        // Pause limits for cbBTC-USDT DEX (DEX 22)
+        {
+            address cbBTC_USDT_DEX_ADDRESS = getDexAddress(22);
+            // Pause supply and borrow limits for both tokens
+            setSupplyProtocolLimitsPaused(cbBTC_USDT_DEX_ADDRESS, cbBTC_ADDRESS);
+            setSupplyProtocolLimitsPaused(cbBTC_USDT_DEX_ADDRESS, USDT_ADDRESS);
+            setBorrowProtocolLimitsPaused(cbBTC_USDT_DEX_ADDRESS, cbBTC_ADDRESS);
+            setBorrowProtocolLimitsPaused(cbBTC_USDT_DEX_ADDRESS, USDT_ADDRESS);
+
+            // Pause user operations
+            address[] memory supplyTokens = new address[](2);
+            supplyTokens[0] = cbBTC_ADDRESS;
+            supplyTokens[1] = USDT_ADDRESS;
+
+            address[] memory borrowTokens = new address[](2);
+            borrowTokens[0] = cbBTC_ADDRESS;
+            borrowTokens[1] = USDT_ADDRESS;
+
+            LIQUIDITY.pauseUser(cbBTC_USDT_DEX_ADDRESS, supplyTokens, borrowTokens);
+        }
     }
 
     /**
