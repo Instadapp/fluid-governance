@@ -174,9 +174,10 @@ contract PayloadIGP109 is PayloadIGPMain {
         // Pause limits for cbBTC-ETH T4 Vault (Vault 106)
         {
             address cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS = getVaultAddress(106);
+            address cbBTC_ETH_DEX_ADDRESS = getDexAddress(26);
             // Pause supply and borrow limits for cbBTC
-            setSupplyProtocolLimitsPaused(cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS, cbBTC_ADDRESS);
-            setBorrowProtocolLimitsPaused(cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS, cbBTC_ADDRESS);
+            setSupplyProtocolLimitsPaused(cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS, cbBTC_ETH_DEX_ADDRESS);
+            setBorrowProtocolLimitsPaused(cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS, cbBTC_ETH_DEX_ADDRESS);
         }
 
         // Pause limits for cbBTC-ETH DEX (DEX 26)
@@ -203,9 +204,10 @@ contract PayloadIGP109 is PayloadIGPMain {
         // Pause limits for cbBTC-USDT T4 Vault (Vault 105)
         {
             address cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS = getVaultAddress(105);
+            address cbBTC_USDT_DEX_ADDRESS = getDexAddress(22);
             // Pause supply and borrow limits for cbBTC
-            setSupplyProtocolLimitsPaused(cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS, cbBTC_ADDRESS);
-            setBorrowProtocolLimitsPaused(cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS, cbBTC_ADDRESS);
+            setSupplyProtocolLimitsPaused(cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS, cbBTC_USDT_DEX_ADDRESS);
+            setBorrowProtocolLimitsPaused(cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS, cbBTC_USDT_DEX_ADDRESS);
         }
 
         // Pause limits for cbBTC-USDT DEX (DEX 22)
