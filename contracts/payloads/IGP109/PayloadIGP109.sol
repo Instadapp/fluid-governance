@@ -51,14 +51,20 @@ contract PayloadIGP109 is PayloadIGPMain {
         // Action 4: Transfer $FLUID to Team Multisig for Solana Rewards
         action4();
 
-        // Action 5: Pause limits for volatile DEXes and its vaults
+        // Action 5: Pause limits for cbBTC-USDT DEX and its vaults
         action5();
 
-        // Action 6: Set limits for fSUSDs
+        // Action 6: Pause limits for cbBTC-ETH DEX and its vault
         action6();
 
-        // Action 7: Pause limits for sUSDS vaults
+        // Action 7: Set limits for fSUSDs
         action7();
+
+        // Action 8: Pause limits for sUSDS vaults
+        action8();
+
+        // Action 9: Pause limits for sUSDS DEX and Smart Lending
+        action9();
     }
 
     function verifyProposal() public view override {}
@@ -179,48 +185,8 @@ contract PayloadIGP109 is PayloadIGPMain {
         IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
     }
 
-    /// @notice Action 5: Pause limits for volatile DEXes and its vaults
+    /// @notice Action 5: Pause limits for cbBTC-USDT DEX and its vault
     function action5() internal isActionSkippable(5) {
-        // Pause limits for cbBTC-ETH T4 Vault (Vault 106)
-        {
-            address cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS = getVaultAddress(106);
-            address cbBTC_ETH_DEX_ADDRESS = getDexAddress(26);
-            // Pause supply and borrow limits for cbBTC
-            setSupplyProtocolLimitsPaused(
-                cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS,
-                cbBTC_ETH_DEX_ADDRESS
-            );
-            setBorrowProtocolLimitsPaused(
-                cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS,
-                cbBTC_ETH_DEX_ADDRESS
-            );
-        }
-
-        // Pause limits for cbBTC-ETH DEX (DEX 26)
-        {
-            address cbBTC_ETH_DEX_ADDRESS = getDexAddress(26);
-            // Pause supply and borrow limits for both tokens
-            setSupplyProtocolLimitsPaused(cbBTC_ETH_DEX_ADDRESS, cbBTC_ADDRESS);
-            setSupplyProtocolLimitsPaused(cbBTC_ETH_DEX_ADDRESS, ETH_ADDRESS);
-            setBorrowProtocolLimitsPaused(cbBTC_ETH_DEX_ADDRESS, cbBTC_ADDRESS);
-            setBorrowProtocolLimitsPaused(cbBTC_ETH_DEX_ADDRESS, ETH_ADDRESS);
-
-            // Pause user operations
-            address[] memory supplyTokens = new address[](2);
-            supplyTokens[0] = cbBTC_ADDRESS;
-            supplyTokens[1] = ETH_ADDRESS;
-
-            address[] memory borrowTokens = new address[](2);
-            borrowTokens[0] = cbBTC_ADDRESS;
-            borrowTokens[1] = ETH_ADDRESS;
-
-            LIQUIDITY.pauseUser(
-                cbBTC_ETH_DEX_ADDRESS,
-                supplyTokens,
-                borrowTokens
-            );
-        }
-
         // Pause limits for cbBTC-USDT T4 Vault (Vault 105)
         {
             address cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS = getVaultAddress(105);
@@ -228,11 +194,25 @@ contract PayloadIGP109 is PayloadIGPMain {
             // Pause supply and borrow limits for cbBTC
             setSupplyProtocolLimitsPaused(
                 cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS,
-                cbBTC_USDT_DEX_ADDRESS
+                cbBTC_ADDRESS
+            );
+            setSupplyProtocolLimitsPaused(
+                cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS,
+                USDT_ADDRESS
             );
             setBorrowProtocolLimitsPaused(
                 cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS,
-                cbBTC_USDT_DEX_ADDRESS
+                cbBTC_ADDRESS
+            );
+            setSupplyProtocolLimitsPaused(
+                cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS,
+                USDT_ADDRESS
+            );
+            // Pause vault operations at DEX level
+            IFluidDex(cbBTC_USDT_DEX_ADDRESS).pauseUser(
+                cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS,
+                true,
+                true
             );
         }
 
@@ -268,46 +248,221 @@ contract PayloadIGP109 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 6: Set limits for fSUSDs
+    /// @notice Action 6: Pause limits for cbBTC-ETH DEX and its vault
     function action6() internal isActionSkippable(6) {
+        // Pause limits for cbBTC-ETH T4 Vault (Vault 106)
+        {
+            address cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS = getVaultAddress(106);
+            address cbBTC_ETH_DEX_ADDRESS = getDexAddress(26);
+            // Pause supply and borrow limits for cbBTC
+            setSupplyProtocolLimitsPaused(
+                cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS,
+                cbBTC_ADDRESS
+            );
+            setSupplyProtocolLimitsPaused(
+                cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS,
+                ETH_ADDRESS
+            );
+            setBorrowProtocolLimitsPaused(
+                cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS,
+                cbBTC_ADDRESS
+            );
+            setBorrowProtocolLimitsPaused(
+                cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS,
+                ETH_ADDRESS
+            );
+
+            // Pause vault operations at DEX level
+            IFluidDex(cbBTC_ETH_DEX_ADDRESS).pauseUser(
+                cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS,
+                true,
+                true
+            );
+        }
+
+        // Pause limits for cbBTC-ETH DEX (DEX 26)
+        {
+            address cbBTC_ETH_DEX_ADDRESS = getDexAddress(26);
+            // Pause supply and borrow limits for both tokens
+            setSupplyProtocolLimitsPaused(cbBTC_ETH_DEX_ADDRESS, cbBTC_ADDRESS);
+            setSupplyProtocolLimitsPaused(cbBTC_ETH_DEX_ADDRESS, ETH_ADDRESS);
+            setBorrowProtocolLimitsPaused(cbBTC_ETH_DEX_ADDRESS, cbBTC_ADDRESS);
+            setBorrowProtocolLimitsPaused(cbBTC_ETH_DEX_ADDRESS, ETH_ADDRESS);
+
+            // Pause user operations
+            address[] memory supplyTokens = new address[](2);
+            supplyTokens[0] = cbBTC_ADDRESS;
+            supplyTokens[1] = ETH_ADDRESS;
+
+            address[] memory borrowTokens = new address[](2);
+            borrowTokens[0] = cbBTC_ADDRESS;
+            borrowTokens[1] = ETH_ADDRESS;
+
+            LIQUIDITY.pauseUser(
+                cbBTC_ETH_DEX_ADDRESS,
+                supplyTokens,
+                borrowTokens
+            );
+        }
+    }
+
+    /// @notice Action 7: Set limits for fSUSDs
+    function action7() internal isActionSkippable(7) {
         IFTokenAdmin fSUSDs_ADDRESS = IFTokenAdmin(address(F_SUSDs_ADDRESS));
 
         SupplyProtocolConfig
             memory protocolConfigTokenB_ = SupplyProtocolConfig({
                 protocol: address(fSUSDs_ADDRESS),
                 supplyToken: sUSDs_ADDRESS,
-                expandPercent: 1, // 0.01%
-                expandDuration: 16777215, // max time
+                expandPercent: 25 * 1e2, // 25%
+                expandDuration: 6 hours, // 6 hours
                 baseWithdrawalLimitInUSD: 50_000 // $50K
             });
 
         setSupplyProtocolLimits(protocolConfigTokenB_);
     }
 
-    /// @notice Action 7: Pause limits for sUSDS vaults
-    function action7() internal isActionSkippable(7) {
-        // Pause limits for ETH-sUSDS T4 Vault (Vault 84)
+    /// @notice Action 8: Pause limits for sUSDS vaults
+    function action8() internal isActionSkippable(8) {
+        // Pause limits for ETH-sUSDS T1 Vault (Vault 84)
         {
             address ETH_sUSDS_VAULT_ADDRESS = getVaultAddress(84);
-            // Pause supply and borrow limits for sUSDs
-            setSupplyProtocolLimitsPaused(ETH_sUSDS_VAULT_ADDRESS, ETH_ADDRESS);
-            setBorrowProtocolLimitsPaused(ETH_sUSDS_VAULT_ADDRESS, sUSDs_ADDRESS);
+            // [TYPE 1] ETH<>sUSDs | collateral & debt
+            Vault memory VAULT_ETH_sUSDs = Vault({
+                vault: ETH_sUSDS_VAULT_ADDRESS,
+                vaultType: TYPE.TYPE_1,
+                supplyToken: ETH_ADDRESS,
+                borrowToken: sUSDs_ADDRESS,
+                baseWithdrawalLimitInUSD: 90, // $90
+                baseBorrowLimitInUSD: 4, // $4
+                maxBorrowLimitInUSD: 10 // $10
+            });
+
+            setVaultLimits(VAULT_ETH_sUSDs); // TYPE_1 => 84
         }
 
-        // Pause limits for cbBTC-sUSDS T4 Vault (Vault 86)
+        // Pause limits for wstETH-sUSDS T1 Vault (Vault 85)
+        {
+            address wstETH_sUSDs_VAULT = getVaultAddress(85);
+
+            // [TYPE 1] wstETH<>sUSDs | collateral & debt
+            Vault memory VAULT_wstETH_sUSDs = Vault({
+                vault: wstETH_sUSDs_VAULT,
+                vaultType: TYPE.TYPE_1,
+                supplyToken: wstETH_ADDRESS,
+                borrowToken: sUSDs_ADDRESS,
+                baseWithdrawalLimitInUSD: 100_000, // $100k
+                baseBorrowLimitInUSD: 10_000, // $10k
+                maxBorrowLimitInUSD: 30_000 // $30k
+            });
+
+            setVaultLimits(VAULT_wstETH_sUSDs); // TYPE_1 => 85
+        }
+
+        // Pause limits for cbBTC-sUSDS T1 Vault (Vault 86)
         {
             address cbBTC_sUSDS_VAULT_ADDRESS = getVaultAddress(86);
             // Pause supply and borrow limits for sUSDs
-            setSupplyProtocolLimitsPaused(cbBTC_sUSDS_VAULT_ADDRESS, cbBTC_ADDRESS);
-            setBorrowProtocolLimitsPaused(cbBTC_sUSDS_VAULT_ADDRESS, sUSDs_ADDRESS);
+            setSupplyProtocolLimitsPaused(
+                cbBTC_sUSDS_VAULT_ADDRESS,
+                cbBTC_ADDRESS
+            );
+            setBorrowProtocolLimitsPaused(
+                cbBTC_sUSDS_VAULT_ADDRESS,
+                sUSDs_ADDRESS
+            );
         }
 
-        // Pause limits for weETH-sUSDS T4 Vault (Vault 91)
+        // Pause limits for weETH-sUSDS T1 Vault (Vault 91)
         {
             address weETH_sUSDS_VAULT_ADDRESS = getVaultAddress(91);
-            // Pause supply and borrow limits for sUSDs
-            setSupplyProtocolLimitsPaused(weETH_sUSDS_VAULT_ADDRESS, weETH_ADDRESS);
-            setBorrowProtocolLimitsPaused(weETH_sUSDS_VAULT_ADDRESS, sUSDs_ADDRESS);
+            // [TYPE 1] weETH<>sUSDs | collateral & debt
+            Vault memory VAULT_weETH_sUSDs = Vault({
+                vault: weETH_sUSDS_VAULT_ADDRESS,
+                vaultType: TYPE.TYPE_1,
+                supplyToken: weETH_ADDRESS,
+                borrowToken: sUSDs_ADDRESS,
+                baseWithdrawalLimitInUSD: 60, // $60
+                baseBorrowLimitInUSD: 4, // $4
+                maxBorrowLimitInUSD: 10 // $10
+            });
+
+            setVaultLimits(VAULT_weETH_sUSDs); // TYPE_1 => 91
+        }
+    }
+
+    /// @notice Action 9: Pause limits for sUSDS DEX and Smart Lending
+    function action9() internal isActionSkippable(9) {
+        // Pause limits for sUSDS DEX (DEX 31)
+        {
+            address sUSDS_USDT_DEX_ADDRESS = getDexAddress(31);
+            // Pause supply and borrow limits for both tokens
+            setSupplyProtocolLimitsPaused(
+                sUSDS_USDT_DEX_ADDRESS,
+                sUSDs_ADDRESS
+            );
+            setSupplyProtocolLimitsPaused(
+                sUSDS_USDT_DEX_ADDRESS,
+                USDT_ADDRESS
+            );
+            setBorrowProtocolLimitsPaused(
+                sUSDS_USDT_DEX_ADDRESS,
+                sUSDs_ADDRESS
+            );
+            setBorrowProtocolLimitsPaused(
+                sUSDS_USDT_DEX_ADDRESS,
+                USDT_ADDRESS
+            );
+                // Pause user operations
+                address[] memory supplyTokens = new address[](2);
+                supplyTokens[0] = sUSDs_ADDRESS;
+                supplyTokens[1] = USDT_ADDRESS;
+
+                address[] memory borrowTokens = new address[](2);
+                borrowTokens[0] = sUSDs_ADDRESS;
+                borrowTokens[1] = USDT_ADDRESS;
+
+                LIQUIDITY.pauseUser(
+                    sUSDS_USDT_DEX_ADDRESS,
+                    supplyTokens,
+                borrowTokens
+            );
+        }
+
+        // Pause limits for sUSDS Smart Lending (Smart Lending 31)
+        {
+            address sUSDS_SMART_LENDING_ADDRESS = getSmartLendingAddress(31);
+            // Pause supply and borrow limits for both tokens
+            setSupplyProtocolLimitsPaused(
+                sUSDS_SMART_LENDING_ADDRESS,
+                sUSDs_ADDRESS
+            );
+            setBorrowProtocolLimitsPaused(
+                sUSDS_SMART_LENDING_ADDRESS,
+                sUSDs_ADDRESS
+            );
+        }
+
+        address sUSDS_USDT_SL_ADDRESS = getSmartLendingAddress(31);
+        {
+            // USDC-BOLD DEX
+            {
+                setSupplyProtocolLimitsPaused(sUSDS_USDT_SL_ADDRESS, sUSDs_ADDRESS);
+
+                setSupplyProtocolLimitsPaused(sUSDS_USDT_SL_ADDRESS, USDT_ADDRESS);
+            }
+        }
+
+        {
+            // Pause user supply and borrow
+            address[] memory supplyTokens = new address[](2);
+            supplyTokens[0] = sUSDs_ADDRESS;
+            supplyTokens[1] = USDT_ADDRESS;
+
+            address[] memory borrowTokens = new address[](0);
+
+            // Pause the user operations
+            LIQUIDITY.pauseUser(sUSDS_USDT_SL_ADDRESS, supplyTokens, borrowTokens);
         }
     }
 
