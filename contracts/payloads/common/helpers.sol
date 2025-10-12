@@ -234,6 +234,51 @@ contract PayloadIGPHelpers is PayloadIGPConstants {
         }
     }
 
+    function setSupplyProtocolLimitsPausedDex(
+        address dex_,
+        address user_
+    ) internal {
+        {
+            // Supply Limits for DEX - using DEX-specific interface
+            IFluidAdminDex.UserSupplyConfig[]
+                memory configs_ = new IFluidAdminDex.UserSupplyConfig[](
+                    1
+                );
+
+            configs_[0] = IFluidAdminDex.UserSupplyConfig({
+                user: user_,
+                expandPercent: 1, // 0.01%
+                expandDuration: 16777215, // max time
+                baseWithdrawalLimit: 10 // minimal limit for pausing
+            });
+
+            IFluidDex(dex_).updateUserSupplyConfigs(configs_);
+        }
+    }
+
+    function setBorrowProtocolLimitsPausedDex(
+        address dex_,
+        address user_
+    ) internal {
+        {
+            // Borrow Limits for DEX - using DEX-specific interface
+            IFluidAdminDex.UserBorrowConfig[]
+                memory configs_ = new IFluidAdminDex.UserBorrowConfig[](
+                    1
+                );
+
+            configs_[0] = IFluidAdminDex.UserBorrowConfig({
+                user: user_,
+                expandPercent: 1, // 0.01%
+                expandDuration: 16777215, // max time
+                baseDebtCeiling: 10, // minimal limit for pausing
+                maxDebtCeiling: 20 // minimal limit for pausing
+            });
+
+            IFluidDex(dex_).updateUserBorrowConfigs(configs_);
+        }
+    }
+
     struct DexBorrowProtocolConfigInShares {
         address dex;
         address protocol;

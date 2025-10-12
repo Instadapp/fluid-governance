@@ -191,22 +191,14 @@ contract PayloadIGP109 is PayloadIGPMain {
         {
             address cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS = getVaultAddress(105);
             address cbBTC_USDT_DEX_ADDRESS = getDexAddress(22);
-            // Pause supply and borrow limits for cbBTC
-            setSupplyProtocolLimitsPaused(
-                cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS,
-                cbBTC_ADDRESS
+            // Pause supply and borrow limits for smart vault at DEX level
+            setSupplyProtocolLimitsPausedDex(
+                cbBTC_USDT_DEX_ADDRESS,
+                cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS
             );
-            setSupplyProtocolLimitsPaused(
-                cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS,
-                USDT_ADDRESS
-            );
-            setBorrowProtocolLimitsPaused(
-                cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS,
-                cbBTC_ADDRESS
-            );
-            setSupplyProtocolLimitsPaused(
-                cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS,
-                USDT_ADDRESS
+            setBorrowProtocolLimitsPausedDex(
+                cbBTC_USDT_DEX_ADDRESS,
+                cbBTC_USDT__cbBTC_USDT_VAULT_ADDRESS
             );
             // Pause vault operations at DEX level
             IFluidDex(cbBTC_USDT_DEX_ADDRESS).pauseUser(
@@ -254,22 +246,14 @@ contract PayloadIGP109 is PayloadIGPMain {
         {
             address cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS = getVaultAddress(106);
             address cbBTC_ETH_DEX_ADDRESS = getDexAddress(26);
-            // Pause supply and borrow limits for cbBTC
-            setSupplyProtocolLimitsPaused(
-                cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS,
-                cbBTC_ADDRESS
+            // Pause supply and borrow limits for smart vault at DEX level
+            setSupplyProtocolLimitsPausedDex(
+                cbBTC_ETH_DEX_ADDRESS,
+                cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS
             );
-            setSupplyProtocolLimitsPaused(
-                cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS,
-                ETH_ADDRESS
-            );
-            setBorrowProtocolLimitsPaused(
-                cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS,
-                cbBTC_ADDRESS
-            );
-            setBorrowProtocolLimitsPaused(
-                cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS,
-                ETH_ADDRESS
+            setBorrowProtocolLimitsPausedDex(
+                cbBTC_ETH_DEX_ADDRESS,
+                cbBTC_ETH__cbBTC_ETH_VAULT_ADDRESS
             );
 
             // Pause vault operations at DEX level
@@ -327,36 +311,49 @@ contract PayloadIGP109 is PayloadIGPMain {
         // Pause limits for ETH-sUSDS T1 Vault (Vault 84)
         {
             address ETH_sUSDS_VAULT_ADDRESS = getVaultAddress(84);
-            // [TYPE 1] ETH<>sUSDs | collateral & debt
-            Vault memory VAULT_ETH_sUSDs = Vault({
-                vault: ETH_sUSDS_VAULT_ADDRESS,
-                vaultType: TYPE.TYPE_1,
-                supplyToken: ETH_ADDRESS,
-                borrowToken: sUSDs_ADDRESS,
-                baseWithdrawalLimitInUSD: 90, // $90
-                baseBorrowLimitInUSD: 4, // $4
-                maxBorrowLimitInUSD: 10 // $10
+            // Set supply limits paused for ETH
+            AdminModuleStructs.UserSupplyConfig[]
+                memory configs_ = new AdminModuleStructs.UserSupplyConfig[](1);
+
+            configs_[0] = AdminModuleStructs.UserSupplyConfig({
+                user: ETH_sUSDS_VAULT_ADDRESS,
+                token: ETH_ADDRESS,
+                mode: 1,
+                expandPercent: 25 * 1e2, // 25%
+                expandDuration: 6 hours,
+                baseWithdrawalLimit: 90 * 1e18 // $90
             });
 
-            setVaultLimits(VAULT_ETH_sUSDs); // TYPE_1 => 84
+            LIQUIDITY.updateUserSupplyConfigs(configs_);
+            // Set borrow limits paused for sUSDs
+            setBorrowProtocolLimitsPaused(
+                ETH_sUSDS_VAULT_ADDRESS,
+                sUSDs_ADDRESS
+            );
         }
 
         // Pause limits for wstETH-sUSDS T1 Vault (Vault 85)
         {
             address wstETH_sUSDs_VAULT = getVaultAddress(85);
+            // Set supply limits paused for ETH
+            AdminModuleStructs.UserSupplyConfig[]
+                memory configs_ = new AdminModuleStructs.UserSupplyConfig[](1);
 
-            // [TYPE 1] wstETH<>sUSDs | collateral & debt
-            Vault memory VAULT_wstETH_sUSDs = Vault({
-                vault: wstETH_sUSDs_VAULT,
-                vaultType: TYPE.TYPE_1,
-                supplyToken: wstETH_ADDRESS,
-                borrowToken: sUSDs_ADDRESS,
-                baseWithdrawalLimitInUSD: 100_000, // $100k
-                baseBorrowLimitInUSD: 10_000, // $10k
-                maxBorrowLimitInUSD: 30_000 // $30k
+            configs_[0] = AdminModuleStructs.UserSupplyConfig({
+                user: wstETH_sUSDs_VAULT,
+                token: wstETH_ADDRESS,
+                mode: 1,
+                expandPercent: 25 * 1e2, // 25%
+                expandDuration: 6 hours,
+                baseWithdrawalLimit: 100_000 * 1e18 // $100k
             });
 
-            setVaultLimits(VAULT_wstETH_sUSDs); // TYPE_1 => 85
+            LIQUIDITY.updateUserSupplyConfigs(configs_);
+            // Set borrow limits paused for sUSDs
+            setBorrowProtocolLimitsPaused(
+                wstETH_sUSDs_VAULT,
+                sUSDs_ADDRESS
+            );
         }
 
         // Pause limits for cbBTC-sUSDS T1 Vault (Vault 86)
@@ -371,23 +368,43 @@ contract PayloadIGP109 is PayloadIGPMain {
                 cbBTC_sUSDS_VAULT_ADDRESS,
                 sUSDs_ADDRESS
             );
+
+            // Pause user operations
+            address[] memory supplyTokens = new address[](1);
+            supplyTokens[0] = cbBTC_ADDRESS;
+
+            address[] memory borrowTokens = new address[](1);
+            borrowTokens[0] = sUSDs_ADDRESS;
+
+            LIQUIDITY.pauseUser(
+                cbBTC_sUSDS_VAULT_ADDRESS,
+                supplyTokens,
+                borrowTokens
+            );
         }
 
         // Pause limits for weETH-sUSDS T1 Vault (Vault 91)
         {
             address weETH_sUSDS_VAULT_ADDRESS = getVaultAddress(91);
-            // [TYPE 1] weETH<>sUSDs | collateral & debt
-            Vault memory VAULT_weETH_sUSDs = Vault({
-                vault: weETH_sUSDS_VAULT_ADDRESS,
-                vaultType: TYPE.TYPE_1,
-                supplyToken: weETH_ADDRESS,
-                borrowToken: sUSDs_ADDRESS,
-                baseWithdrawalLimitInUSD: 60, // $60
-                baseBorrowLimitInUSD: 4, // $4
-                maxBorrowLimitInUSD: 10 // $10
+            // Set supply limits paused for ETH
+            AdminModuleStructs.UserSupplyConfig[]
+                memory configs_ = new AdminModuleStructs.UserSupplyConfig[](1);
+
+            configs_[0] = AdminModuleStructs.UserSupplyConfig({
+                user: weETH_sUSDS_VAULT_ADDRESS,
+                token: weETH_ADDRESS,
+                mode: 1,
+                expandPercent: 25 * 1e2, // 25%
+                expandDuration: 6 hours,
+                baseWithdrawalLimit: 60 * 1e18 // $60
             });
 
-            setVaultLimits(VAULT_weETH_sUSDs); // TYPE_1 => 91
+            LIQUIDITY.updateUserSupplyConfigs(configs_);
+            // Set borrow limits paused for sUSDs
+            setBorrowProtocolLimitsPaused(
+                weETH_sUSDS_VAULT_ADDRESS,
+                sUSDs_ADDRESS
+            );
         }
     }
 
@@ -432,37 +449,19 @@ contract PayloadIGP109 is PayloadIGPMain {
         // Pause limits for sUSDS Smart Lending (Smart Lending 31)
         {
             address sUSDS_SMART_LENDING_ADDRESS = getSmartLendingAddress(31);
-            // Pause supply and borrow limits for both tokens
-            setSupplyProtocolLimitsPaused(
-                sUSDS_SMART_LENDING_ADDRESS,
-                sUSDs_ADDRESS
+            address sUSDS_USDT_DEX_ADDRESS = getDexAddress(31);
+            // Pause supply and borrow limits for smart lending at DEX level
+            setSupplyProtocolLimitsPausedDex(
+                sUSDS_USDT_DEX_ADDRESS,
+                sUSDS_SMART_LENDING_ADDRESS
             );
-            setBorrowProtocolLimitsPaused(
+            
+            // Pause smart lending operations at DEX level
+            IFluidDex(sUSDS_USDT_DEX_ADDRESS).pauseUser(
                 sUSDS_SMART_LENDING_ADDRESS,
-                sUSDs_ADDRESS
+                true,
+                true
             );
-        }
-
-        address sUSDS_USDT_SL_ADDRESS = getSmartLendingAddress(31);
-        {
-            // USDC-BOLD DEX
-            {
-                setSupplyProtocolLimitsPaused(sUSDS_USDT_SL_ADDRESS, sUSDs_ADDRESS);
-
-                setSupplyProtocolLimitsPaused(sUSDS_USDT_SL_ADDRESS, USDT_ADDRESS);
-            }
-        }
-
-        {
-            // Pause user supply and borrow
-            address[] memory supplyTokens = new address[](2);
-            supplyTokens[0] = sUSDs_ADDRESS;
-            supplyTokens[1] = USDT_ADDRESS;
-
-            address[] memory borrowTokens = new address[](0);
-
-            // Pause the user operations
-            LIQUIDITY.pauseUser(sUSDS_USDT_SL_ADDRESS, supplyTokens, borrowTokens);
         }
     }
 
