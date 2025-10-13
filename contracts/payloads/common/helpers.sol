@@ -251,10 +251,6 @@ contract PayloadIGPHelpers is PayloadIGPConstants {
             });
 
             IFluidDex(dex_).updateUserSupplyConfigs(configs_);
-            
-            // Set max supply shares to 0 and pause swap and arbitrage
-            IFluidDex(dex_).updateMaxSupplyShares(0);
-            IFluidDex(dex_).pauseSwapAndArbitrage();
         }
     }
 
@@ -276,10 +272,6 @@ contract PayloadIGPHelpers is PayloadIGPConstants {
             });
 
             IFluidDex(dex_).updateUserBorrowConfigs(configs_);
-            
-            // Set max borrow shares to 0 and pause swap and arbitrage
-            IFluidDex(dex_).updateMaxBorrowShares(0);
-            IFluidDex(dex_).pauseSwapAndArbitrage();
         }
     }
 

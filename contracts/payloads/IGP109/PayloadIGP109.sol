@@ -237,6 +237,11 @@ contract PayloadIGP109 is PayloadIGPMain {
                 supplyTokens,
                 borrowTokens
             );
+
+            // Set max shares to 0 and pause swap and arbitrage
+            IFluidDex(cbBTC_USDT_DEX_ADDRESS).updateMaxSupplyShares(0);
+            IFluidDex(cbBTC_USDT_DEX_ADDRESS).updateMaxBorrowShares(0);
+            IFluidDex(cbBTC_USDT_DEX_ADDRESS).pauseSwapAndArbitrage();
         }
     }
 
@@ -287,6 +292,11 @@ contract PayloadIGP109 is PayloadIGPMain {
                 supplyTokens,
                 borrowTokens
             );
+
+            // Set max shares to 0 and pause swap and arbitrage
+            IFluidDex(cbBTC_ETH_DEX_ADDRESS).updateMaxSupplyShares(0);
+            IFluidDex(cbBTC_ETH_DEX_ADDRESS).updateMaxBorrowShares(0);
+            IFluidDex(cbBTC_ETH_DEX_ADDRESS).pauseSwapAndArbitrage();
         }
     }
 
@@ -407,27 +417,22 @@ contract PayloadIGP109 is PayloadIGPMain {
         // Pause limits for sUSDS-GHO T1 Vault (Vault 58)
         {
             address sUSDS_GHO_VAULT_ADDRESS = getVaultAddress(58);
-            // Pause supply and borrow limits for sUSDs and GHO
-            setSupplyProtocolLimitsPaused(
-                sUSDS_GHO_VAULT_ADDRESS,
-                sUSDs_ADDRESS
-            );
+            // Set supply limits dust for SUSDS
+            AdminModuleStructs.UserSupplyConfig[]
+                memory configs_ = new AdminModuleStructs.UserSupplyConfig[](1);
 
-            // Set supply limits paused for WEETH
-            AdminModuleStructs.UserBorrowConfig[]
-                memory configs_ = new AdminModuleStructs.UserBorrowConfig[](1);
-
-            configs_[0] = AdminModuleStructs.UserBorrowConfig({
+            configs_[0] = AdminModuleStructs.UserSupplyConfig({
                 user: sUSDS_GHO_VAULT_ADDRESS,
-                token: GHO_ADDRESS,
+                token: sUSDs_ADDRESS,
                 mode: 1,
-                expandPercent: 20 * 1e2, // 25%
+                expandPercent: 25 * 1e2, // 25%
                 expandDuration: 6 hours,
-                baseDebtCeiling: 8_200_000 * 1e18, // 8.2M GHO
-                maxDebtCeiling:  22_000_000 * 1e18 // 22M GHO
+                baseWithdrawalLimit: 20_000 * 1e18 // 20k SUSDS
             });
 
-            LIQUIDITY.updateUserBorrowConfigs(configs_);
+            LIQUIDITY.updateUserSupplyConfigs(configs_);
+
+            setBorrowProtocolLimitsPaused(sUSDS_GHO_VAULT_ADDRESS, GHO_ADDRESS);
         }
     }
 
@@ -479,6 +484,10 @@ contract PayloadIGP109 is PayloadIGPMain {
                 true,
                 false
             );
+
+            // Set max shares to 0 and pause swap and arbitrage
+            IFluidDex(sUSDS_USDT_DEX_ADDRESS).updateMaxSupplyShares(0);
+            IFluidDex(sUSDS_USDT_DEX_ADDRESS).pauseSwapAndArbitrage();
         }
     }
 

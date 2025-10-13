@@ -121,6 +121,8 @@ interface IFluidAdminDex {
     /// @param pauseSupply_ whether to pause supply operations
     /// @param pauseBorrow_ whether to pause borrow operations
     function pauseUser(address user_, bool pauseSupply_, bool pauseBorrow_) external;
+
+    function pauseSwapAndArbitrage() external;
 }
 
 interface IFluidUserDex {
