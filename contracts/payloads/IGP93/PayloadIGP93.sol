@@ -22,6 +22,7 @@ import {IFTokenAdmin, ILendingRewards} from "../common/interfaces/IFToken.sol";
 
 import {ISmartLendingAdmin} from "../common/interfaces/ISmartLending.sol";
 import {ISmartLendingFactory} from "../common/interfaces/ISmartLendingFactory.sol";
+import {IFluidLendingFactory} from "../common/interfaces/IFluidLendingFactory.sol";
 
 import {ICodeReader} from "../common/interfaces/ICodeReader.sol";
 
@@ -32,8 +33,8 @@ import {PayloadIGPConstants} from "../common/constants.sol";
 import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 
-contract PayloadIGP94 is PayloadIGPMain {
-    uint256 public constant PROPOSAL_ID = 94;
+contract PayloadIGP93 is PayloadIGPMain {
+    uint256 public constant PROPOSAL_ID = 93;
 
     function execute() public virtual override {
         super.execute();
@@ -47,26 +48,29 @@ contract PayloadIGP94 is PayloadIGPMain {
         // Action 3: Adjust Rate curves of WBTC & cbBTC
         action3();
 
-        // Action4: Update expand percentage and duration for fTokens
+        // Action 4: Adjust CF, LT, LML for GHO Vaults
         action4();
 
-        // Action 5: Reduce limits on unused USDE debt vaults
+        // Action5: Update expand percentage and duration for fTokens
         action5();
 
-        // Action 6: Readjust the Max Borrow Limit for LBTC-cbBTC<>cbBTC vault
+        // Action 6: Reduce limits on unused USDE debt vaults
         action6();
 
-        // Action 7: Set dust limits for Gold based vaults and DEX
+        // Action 7: Readjust the Max Borrow Limit for LBTC-cbBTC<>cbBTC vault
         action7();
 
-        // Action 8: Transfer $FLUID to Team Multisig for Rewards
+        // Action 8: Set dust limits for Gold based vaults and DEX
         action8();
 
-        // Action 9: Update borrow caps for cbBTC-wBTC Dex pool and USDC-USDT pool
+        // Action 9: Transfer $FLUID to Team Multisig for Rewards
         action9();
 
-        // Action 10: Update lower range of weETHs-ETH & lower range and fees of rsETH-ETH
+        // Action 10: Update borrow caps for cbBTC-wBTC Dex pool and USDC-USDT pool
         action10();
+
+        // Action 11: Update lower range of weETHs-ETH & lower range and fees of rsETH-ETH
+        action11();
     }
 
     function verifyProposal() public view override {}
@@ -138,8 +142,40 @@ contract PayloadIGP94 is PayloadIGPMain {
         }
     }
 
-    // @notice Action 4: Update expand percentage and duration for fTokens
+    // @notice Action 4: Adjust CF, LT, LML for GHO Vaults
     function action4() internal isActionSkippable(4) {
+        {
+            address GHO_USDC__GHO_USDC = getVaultAddress(61);
+            address sUSDe_GHO = getVaultAddress(56);
+
+            uint256 CF = 90 * 1e2;
+            uint256 LT = 92 * 1e2;
+            uint256 LML = 95 * 1e2;
+
+            IFluidVaultT1(GHO_USDC__GHO_USDC).updateCollateralFactor(CF);
+            IFluidVaultT1(GHO_USDC__GHO_USDC).updateLiquidationThreshold(LT);
+            IFluidVaultT1(GHO_USDC__GHO_USDC).updateLiquidationMaxLimit(LML);
+
+            IFluidVaultT1(sUSDe_GHO).updateLiquidationMaxLimit(LML);
+            IFluidVaultT1(sUSDe_GHO).updateLiquidationThreshold(LT);
+            IFluidVaultT1(sUSDe_GHO).updateCollateralFactor(CF);
+        }
+
+        {
+            address ETH_GHO = getVaultAddress(54);
+
+            uint256 CF = 87 * 1e2;
+            uint256 LT = 92 * 1e2;
+            uint256 LML = 94 * 1e2;
+
+            IFluidVaultT1(ETH_GHO).updateLiquidationMaxLimit(LML);
+            IFluidVaultT1(ETH_GHO).updateLiquidationThreshold(LT);
+            IFluidVaultT1(ETH_GHO).updateCollateralFactor(CF);
+        }
+    }
+
+    // @notice Action 5: Update expand percentage and duration for fTokens
+    function action5() internal isActionSkippable(5) {
         uint256 EXPAND_PERCENT = 35 * 1e2; // 35%
         uint256 EXPAND_DURATION = 6 hours;
         // Update fUSDC
@@ -191,8 +227,8 @@ contract PayloadIGP94 is PayloadIGPMain {
         );
     }
 
-    // @notice Action 5: Reduce limits on unused USDE debt vaults
-    function action5() internal isActionSkippable(5) {
+    // @notice Action 6: Reduce limits on unused USDE debt vaults
+    function action6() internal isActionSkippable(6) {
         {
             address vault_eth_usde = getVaultAddress(69);
             // Pause supply and borrow limits
@@ -229,8 +265,8 @@ contract PayloadIGP94 is PayloadIGPMain {
         }
     }
 
-    // @notice Action 6: Readjust the Max Borrow Limit for LBTC-cbBTC<>cbBTC vault
-    function action6() internal isActionSkippable(6) {
+    // @notice Action 7: Readjust the Max Borrow Limit for LBTC-cbBTC<>cbBTC vault
+    function action7() internal isActionSkippable(7) {
         address LBTC_cbBTC__cbBTC_VAULT = getVaultAddress(114);
 
         {
@@ -248,8 +284,8 @@ contract PayloadIGP94 is PayloadIGPMain {
         }
     }
 
-    // @notice Action 7: Set dust limits for Gold based vaults and DEX
-    function action7() internal isActionSkippable(7) {
+    // @notice Action 8: Set dust limits for Gold based vaults and DEX
+    function action8() internal isActionSkippable(8) {
         {
             // PAXG-XAUT DEX
             address PAXG_XAUT_DEX = getDexAddress(32);
@@ -482,8 +518,8 @@ contract PayloadIGP94 is PayloadIGPMain {
         }
     }
 
-    // @notice Action 8: Transfer $FLUID to Team Multisig for Rewards
-    function action8() internal isActionSkippable(8) {
+    // @notice Action 9: Transfer $FLUID to Team Multisig for Rewards
+    function action9() internal isActionSkippable(9) {
         string[] memory targets = new string[](1);
         bytes[] memory encodedSpells = new bytes[](1);
 
@@ -507,8 +543,8 @@ contract PayloadIGP94 is PayloadIGPMain {
         IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
     }
 
-    // @notice Action 9: Update borrow shares for cbBTC-wBTC Dex pool and USDC-USDT pool
-    function action9() internal isActionSkippable(9) {
+    // @notice Action 10: Update borrow shares for cbBTC-wBTC Dex pool and USDC-USDT pool
+    function action10() internal isActionSkippable(10) {
         {
             address CBBTC_WBTC_DEX_ADDRESS = getDexAddress(3);
 
@@ -528,8 +564,8 @@ contract PayloadIGP94 is PayloadIGPMain {
         }
     }
 
-    // @notice Action 10: Update lower range of weETHs-ETH & lower range and fees of rsETH-ETH
-    function action10() internal isActionSkippable(10) {
+    // @notice Action 11: Update lower range of weETHs-ETH & lower range and fees of rsETH-ETH
+    function action11() internal isActionSkippable(11) {
         {
             address weETHs_ETH_DEX_ADDRESS = getDexAddress(14);
             {
