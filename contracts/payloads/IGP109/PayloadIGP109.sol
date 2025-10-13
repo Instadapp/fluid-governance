@@ -321,7 +321,7 @@ contract PayloadIGP109 is PayloadIGPMain {
                 mode: 1,
                 expandPercent: 25 * 1e2, // 25%
                 expandDuration: 6 hours,
-                baseWithdrawalLimit: 90 * 1e18 // $90
+                baseWithdrawalLimit: 0.02 * 1e18 // 0.02 ETH
             });
 
             LIQUIDITY.updateUserSupplyConfigs(configs_);
@@ -345,7 +345,7 @@ contract PayloadIGP109 is PayloadIGPMain {
                 mode: 1,
                 expandPercent: 25 * 1e2, // 25%
                 expandDuration: 6 hours,
-                baseWithdrawalLimit: 100_000 * 1e18 // $100k
+                baseWithdrawalLimit: 21 * 1e18 // 21 wstETH
             });
 
             LIQUIDITY.updateUserSupplyConfigs(configs_);
@@ -393,7 +393,7 @@ contract PayloadIGP109 is PayloadIGPMain {
                 mode: 1,
                 expandPercent: 25 * 1e2, // 25%
                 expandDuration: 6 hours,
-                baseWithdrawalLimit: 60 * 1e18 // $60
+                baseWithdrawalLimit: 0.015 * 1e18 // 0.015 weETH
             });
 
             LIQUIDITY.updateUserSupplyConfigs(configs_);
@@ -402,6 +402,32 @@ contract PayloadIGP109 is PayloadIGPMain {
                 weETH_sUSDS_VAULT_ADDRESS,
                 sUSDs_ADDRESS
             );
+        }
+
+        // Pause limits for sUSDS-GHO T1 Vault (Vault 58)
+        {
+            address sUSDS_GHO_VAULT_ADDRESS = getVaultAddress(58);
+            // Pause supply and borrow limits for sUSDs and GHO
+            setSupplyProtocolLimitsPaused(
+                sUSDS_GHO_VAULT_ADDRESS,
+                sUSDs_ADDRESS
+            );
+
+            // Set supply limits paused for WEETH
+            AdminModuleStructs.UserBorrowConfig[]
+                memory configs_ = new AdminModuleStructs.UserBorrowConfig[](1);
+
+            configs_[0] = AdminModuleStructs.UserBorrowConfig({
+                user: sUSDS_GHO_VAULT_ADDRESS,
+                token: GHO_ADDRESS,
+                mode: 1,
+                expandPercent: 20 * 1e2, // 25%
+                expandDuration: 6 hours,
+                baseDebtCeiling: 8_200_000 * 1e18, // 8.2M GHO
+                maxDebtCeiling:  22_000_000 * 1e18 // 22M GHO
+            });
+
+            LIQUIDITY.updateUserBorrowConfigs(configs_);
         }
     }
 
