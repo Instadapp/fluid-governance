@@ -350,10 +350,7 @@ contract PayloadIGP109 is PayloadIGPMain {
 
             LIQUIDITY.updateUserSupplyConfigs(configs_);
             // Set borrow limits paused for sUSDs
-            setBorrowProtocolLimitsPaused(
-                wstETH_sUSDs_VAULT,
-                sUSDs_ADDRESS
-            );
+            setBorrowProtocolLimitsPaused(wstETH_sUSDs_VAULT, sUSDs_ADDRESS);
         }
 
         // Pause limits for cbBTC-sUSDS T1 Vault (Vault 86)
@@ -386,7 +383,7 @@ contract PayloadIGP109 is PayloadIGPMain {
         // Pause limits for weETH-sUSDS T1 Vault (Vault 91)
         {
             address weETH_sUSDS_VAULT_ADDRESS = getVaultAddress(91);
-            // Set supply limits paused for ETH
+            // Set supply limits paused for WEETH
             AdminModuleStructs.UserSupplyConfig[]
                 memory configs_ = new AdminModuleStructs.UserSupplyConfig[](1);
 
@@ -418,30 +415,24 @@ contract PayloadIGP109 is PayloadIGPMain {
                 sUSDS_USDT_DEX_ADDRESS,
                 sUSDs_ADDRESS
             );
-            setSupplyProtocolLimitsPaused(
-                sUSDS_USDT_DEX_ADDRESS,
-                USDT_ADDRESS
-            );
+            setSupplyProtocolLimitsPaused(sUSDS_USDT_DEX_ADDRESS, USDT_ADDRESS);
             setBorrowProtocolLimitsPaused(
                 sUSDS_USDT_DEX_ADDRESS,
                 sUSDs_ADDRESS
             );
-            setBorrowProtocolLimitsPaused(
+            setBorrowProtocolLimitsPaused(sUSDS_USDT_DEX_ADDRESS, USDT_ADDRESS);
+            // Pause user operations
+            address[] memory supplyTokens = new address[](2);
+            supplyTokens[0] = sUSDs_ADDRESS;
+            supplyTokens[1] = USDT_ADDRESS;
+
+            address[] memory borrowTokens = new address[](2);
+            borrowTokens[0] = sUSDs_ADDRESS;
+            borrowTokens[1] = USDT_ADDRESS;
+
+            LIQUIDITY.pauseUser(
                 sUSDS_USDT_DEX_ADDRESS,
-                USDT_ADDRESS
-            );
-                // Pause user operations
-                address[] memory supplyTokens = new address[](2);
-                supplyTokens[0] = sUSDs_ADDRESS;
-                supplyTokens[1] = USDT_ADDRESS;
-
-                address[] memory borrowTokens = new address[](2);
-                borrowTokens[0] = sUSDs_ADDRESS;
-                borrowTokens[1] = USDT_ADDRESS;
-
-                LIQUIDITY.pauseUser(
-                    sUSDS_USDT_DEX_ADDRESS,
-                    supplyTokens,
+                supplyTokens,
                 borrowTokens
             );
         }
@@ -455,12 +446,12 @@ contract PayloadIGP109 is PayloadIGPMain {
                 sUSDS_USDT_DEX_ADDRESS,
                 sUSDS_SMART_LENDING_ADDRESS
             );
-            
+
             // Pause smart lending operations at DEX level
             IFluidDex(sUSDS_USDT_DEX_ADDRESS).pauseUser(
                 sUSDS_SMART_LENDING_ADDRESS,
                 true,
-                true
+                false
             );
         }
     }

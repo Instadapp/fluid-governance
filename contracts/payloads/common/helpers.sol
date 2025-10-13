@@ -241,9 +241,7 @@ contract PayloadIGPHelpers is PayloadIGPConstants {
         {
             // Supply Limits for DEX - using DEX-specific interface
             IFluidAdminDex.UserSupplyConfig[]
-                memory configs_ = new IFluidAdminDex.UserSupplyConfig[](
-                    1
-                );
+                memory configs_ = new IFluidAdminDex.UserSupplyConfig[](1);
 
             configs_[0] = IFluidAdminDex.UserSupplyConfig({
                 user: user_,
@@ -263,9 +261,7 @@ contract PayloadIGPHelpers is PayloadIGPConstants {
         {
             // Borrow Limits for DEX - using DEX-specific interface
             IFluidAdminDex.UserBorrowConfig[]
-                memory configs_ = new IFluidAdminDex.UserBorrowConfig[](
-                    1
-                );
+                memory configs_ = new IFluidAdminDex.UserBorrowConfig[](1);
 
             configs_[0] = IFluidAdminDex.UserBorrowConfig({
                 user: user_,
