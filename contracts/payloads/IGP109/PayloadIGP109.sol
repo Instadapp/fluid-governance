@@ -48,7 +48,7 @@ contract PayloadIGP109 is PayloadIGPMain {
         // Action 3: Transfer $FLUID to Team Multisig for Mainnet, Plasma, Arbitrum Rewards
         action3();
 
-        // Action 4: Transfer $FLUID to Team Multisig for Solana Rewards
+        // Action 4: Transfer iETHv2 to Team Multisig for Solana Rewards
         action4();
 
         // Action 5: Pause limits for cbBTC-USDT DEX and its vaults
@@ -160,7 +160,7 @@ contract PayloadIGP109 is PayloadIGPMain {
         IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
     }
 
-    /// @notice Action 4: Transfer $FLUID to Team Multisig for Solana Rewards
+    /// @notice Action 4: Transfer iETHv2 to Team Multisig for Solana Rewards
     function action4() internal isActionSkippable(4) {
         string[] memory targets = new string[](1);
         bytes[] memory encodedSpells = new bytes[](1);
@@ -168,14 +168,14 @@ contract PayloadIGP109 is PayloadIGPMain {
         string
             memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
 
-        // Spell 1: Transfer FLUID to Team Multisig for Solana Rewards
+        // Spell 1: Transfer iETHv2 to Team Multisig for Solana Rewards
         {
-            uint256 FLUID_AMOUNT = 1_000_000 * 1e18; // 1M FLUID tokens
+             uint256 IETHV2_AMOUNT = 152.2 * 1e18; // 152.2 IETHv2 or ~180 ETH tokens
             targets[0] = "BASIC-A";
             encodedSpells[0] = abi.encodeWithSignature(
                 withdrawSignature,
-                FLUID_ADDRESS,
-                FLUID_AMOUNT,
+                address(IETHV2),
+                IETHV2_AMOUNT,
                 TEAM_MULTISIG,
                 0,
                 0
@@ -418,10 +418,10 @@ contract PayloadIGP109 is PayloadIGPMain {
         {
             address sUSDS_GHO_VAULT_ADDRESS = getVaultAddress(58);
             // Set supply limits dust for SUSDS
-            AdminModuleStructs.UserSupplyConfig[]
-                memory configs_ = new AdminModuleStructs.UserSupplyConfig[](1);
+            FluidLiquidityAdminStructs.UserSupplyConfig[]
+                memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](1);
 
-            configs_[0] = AdminModuleStructs.UserSupplyConfig({
+            configs_[0] = FluidLiquidityAdminStructs.UserSupplyConfig({
                 user: sUSDS_GHO_VAULT_ADDRESS,
                 token: sUSDs_ADDRESS,
                 mode: 1,
