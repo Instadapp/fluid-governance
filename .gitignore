@@ -20,3 +20,5 @@
 /coverage
 
 .env
+
+/ignition/deployments/simulation-1
