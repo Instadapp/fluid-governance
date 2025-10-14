@@ -86,7 +86,7 @@ contract PayloadIGP109 is PayloadIGPMain {
         uint256 LML = 96 * 1e2; // 96% Liquidation Max Limit
 
         // Vault IDs to update: 17, 18, 50, 56, 92, 98, 125, 126
-        uint256[] memory vaultIds = new uint256[](7);
+        uint256[] memory vaultIds = new uint256[](8);
         vaultIds[0] = 17;
         vaultIds[1] = 18;
         vaultIds[2] = 50;
@@ -113,7 +113,7 @@ contract PayloadIGP109 is PayloadIGPMain {
         uint256 LP = 2 * 1e2; // 2% Liquidation Penalty
 
         // Vault IDs to update: 110, 111, 112, 133, 134, 135
-        uint256[] memory vaultIds = new uint256[](6);
+        uint256[] memory vaultIds = new uint256[](9);
         vaultIds[0] = 110;
         vaultIds[1] = 111;
         vaultIds[2] = 112;
@@ -322,10 +322,10 @@ contract PayloadIGP109 is PayloadIGPMain {
         {
             address ETH_sUSDS_VAULT_ADDRESS = getVaultAddress(84);
             // Set supply limits paused for ETH
-            AdminModuleStructs.UserSupplyConfig[]
-                memory configs_ = new AdminModuleStructs.UserSupplyConfig[](1);
+            FluidLiquidityAdminStructs.UserSupplyConfig[]
+                memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](1);
 
-            configs_[0] = AdminModuleStructs.UserSupplyConfig({
+            configs_[0] = FluidLiquidityAdminStructs.UserSupplyConfig({
                 user: ETH_sUSDS_VAULT_ADDRESS,
                 token: ETH_ADDRESS,
                 mode: 1,
@@ -346,10 +346,10 @@ contract PayloadIGP109 is PayloadIGPMain {
         {
             address wstETH_sUSDs_VAULT = getVaultAddress(85);
             // Set supply limits paused for ETH
-            AdminModuleStructs.UserSupplyConfig[]
-                memory configs_ = new AdminModuleStructs.UserSupplyConfig[](1);
+            FluidLiquidityAdminStructs.UserSupplyConfig[]
+                memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](1);
 
-            configs_[0] = AdminModuleStructs.UserSupplyConfig({
+            configs_[0] = FluidLiquidityAdminStructs.UserSupplyConfig({
                 user: wstETH_sUSDs_VAULT,
                 token: wstETH_ADDRESS,
                 mode: 1,
@@ -394,10 +394,10 @@ contract PayloadIGP109 is PayloadIGPMain {
         {
             address weETH_sUSDS_VAULT_ADDRESS = getVaultAddress(91);
             // Set supply limits paused for WEETH
-            AdminModuleStructs.UserSupplyConfig[]
-                memory configs_ = new AdminModuleStructs.UserSupplyConfig[](1);
+            FluidLiquidityAdminStructs.UserSupplyConfig[]
+                memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](1);
 
-            configs_[0] = AdminModuleStructs.UserSupplyConfig({
+            configs_[0] = FluidLiquidityAdminStructs.UserSupplyConfig({
                 user: weETH_sUSDS_VAULT_ADDRESS,
                 token: weETH_ADDRESS,
                 mode: 1,
