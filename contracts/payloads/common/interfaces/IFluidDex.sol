@@ -115,6 +115,14 @@ interface IFluidAdminDex {
     /// @param fee_ in 4 decimals, 10000 = 1%
     /// @param revenueCut_ in 4 decimals, 100000 = 10%, 10% cut on fee_, so if fee is 1% and cut is 10% then cut in swap amount will be 10% of 1% = 0.1%
     function updateFeeAndRevenueCut(uint fee_, uint revenueCut_) external;
+
+    /// @notice pause user operations at DEX level
+    /// @param user_ address of user to pause operations for
+    /// @param pauseSupply_ whether to pause supply operations
+    /// @param pauseBorrow_ whether to pause borrow operations
+    function pauseUser(address user_, bool pauseSupply_, bool pauseBorrow_) external;
+
+    function pauseSwapAndArbitrage() external;
 }
 
 interface IFluidUserDex {
