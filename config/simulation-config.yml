@@ -1,0 +1,20 @@
+tenderly:
+  access_key: ""
+  account_id: "umgbhalla"
+  project_slug: "project"
+
+addresses:
+  inst: "0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb"
+  governor: "0x0204Cd037B2ec03605CFdFe482D8e257C765fA1B"
+  proposer: "0xA45f7bD6A5Ff45D31aaCE6bCD3d426D9328cea01"
+  delegator: "0x5AAB0630aaCa6d0bf1c310aF6C2BB3826A951cFb"
+  castVotes:
+    - "0x5AAB0630aaCa6d0bf1c310aF6C2BB3826A951cFb"
+    - "0xA45f7bD6A5Ff45D31aaCE6bCD3d426D9328cea01"
+governance:
+  voting_delay: 13140
+  voting_period: 13140
+  timelock_delay: 86400
+fluid:
+  staging_url: "https://staging.fluid.io"
+  production_url: "https://fluid.instadapp.io"
