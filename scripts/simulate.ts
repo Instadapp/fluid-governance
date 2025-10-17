@@ -276,12 +276,6 @@ class TenderlyGovernanceSimulator {
     console.log('  Day 2-3: Execution queuing');
     console.log('  Day 3-4: Execution');
     console.log('');
-    console.log('[INFO]  Block advancement method:');
-    console.log(`        - Using: evm_increaseBlocks (instant)`);
-    console.log(`        - Voting delay: ~13,140 blocks`);
-    console.log(`        - Voting period: ~13,140 blocks`);
-    console.log(`        - Total blocks: ~26,000 (advanced instantly)`);
-    console.log('');
 
     const provider = new JsonRpcProvider(vnetConfig.adminRpc);
 

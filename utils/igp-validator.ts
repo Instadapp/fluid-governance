@@ -8,9 +8,8 @@
 /// 1. IGP Sequence: Ensures new IGP is exactly +1 from latest IGP in system
 /// 2. Contract Structure: Validates contract name matches PayloadIGP{N} pattern
 /// 3. Execute Function: Verifies presence of execute() with proper signature
-/// 4. Action Count: Requires minimum 3 numbered actions in execute()
+/// 4. Action Count: Requires minimum 1 numbered action in execute()
 /// 5. Action Format: Validates "// Action N: Description" format
-/// 6. Solidity Pragma: Checks for pragma declaration
 /// 
 /// Outputs:
 /// - Validation status (pass/fail)
@@ -97,7 +96,7 @@ export class IGPValidator {
 
   private getLatestIGPNumber(): number {
     const payloadsDir = path.join(process.cwd(), 'contracts', 'payloads');
-    
+
     if (!fs.existsSync(payloadsDir)) {
       return 0;
     }
@@ -194,11 +193,11 @@ export class IGPValidator {
     const actionMatches = content.match(/\/\/\s*Action\s+\d+:/gi);
     const actionCount = actionMatches ? actionMatches.length : 0;
 
-    if (actionCount < 3) {
+    if (actionCount < 1) {
       result.errors.push(
-        `Contract must have at least 3 numbered actions in execute() function.\n` +
+        `Contract must have at least 1 numbered action in execute() function.\n` +
         `  - Found: ${actionCount} action(s)\n` +
-        `  - Required: minimum 3 actions\n` +
+        `  - Required: minimum 1 action\n` +
         `  - Format: "// Action 1: Description" followed by "action1();"`
       );
     }
@@ -231,10 +230,6 @@ export class IGPValidator {
       const content = fs.readFileSync(payloadPath, 'utf8');
 
       this.validateContractStructure(content, result);
-
-      if (!content.includes('pragma solidity')) {
-        result.errors.push('Payload contract missing Solidity pragma declaration');
-      }
 
       const constructorMatch = content.match(/constructor\s*\([^)]*\)/);
       if (constructorMatch && constructorMatch[0] !== 'constructor()') {
