@@ -1,7 +1,7 @@
-tenderly:
-  access_key: ""
-  account_id: "umgbhalla"
-  project_slug: "project"
+# tenderly:
+#   access_key: ""
+#   account_id: ""
+#   project_slug: ""
 
 addresses:
   inst: "0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb"
