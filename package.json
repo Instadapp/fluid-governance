@@ -1,7 +1,7 @@
 {
   "name": "fluid-governance",
   "version": "1.0.0",
-  "description": "Fluid Governance CI/CD System with Tenderly Integration",
+  "description": "Fluid Governance",
   "main": "",
   "scripts": {
     "deploy:payload": "npx hardhat ignition deploy ignition/modules/Payload.ts --network mainnet --verify",
