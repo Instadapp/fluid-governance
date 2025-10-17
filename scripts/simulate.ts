@@ -162,35 +162,6 @@ class TenderlyGovernanceSimulator {
   async deployPayload(vnetRpc: string): Promise<string> {
     console.log('\n=== Step 2: Getting Payload Address ===');
 
-    // Check for pre-deployed address first (fast path)
-    const payloadConfigPath = path.join(process.cwd(), 'config', 'payload-addresses.json');
-
-    if (fs.existsSync(payloadConfigPath)) {
-      try {
-        const payloadConfig = JSON.parse(fs.readFileSync(payloadConfigPath, 'utf8'));
-        const preDeployedAddress = payloadConfig.addresses[this.igpId];
-
-        if (preDeployedAddress && preDeployedAddress !== '0x0000000000000000000000000000000000000000') {
-          // Validate address format
-          if (!ethers.isAddress(preDeployedAddress)) {
-            console.warn(`[WARN]  Invalid address format in config: ${preDeployedAddress}`);
-            console.warn(`[WARN]  Falling back to deployment`);
-          } else {
-            console.log(`[SUCCESS] Using pre-deployed payload address: ${preDeployedAddress}`);
-            console.log('   (Skipping deployment for faster execution)');
-            console.log('[STAGE:COMPLETED] preDeployedPayload');
-            return preDeployedAddress;
-          }
-        }
-      } catch (error) {
-        console.warn('[WARN]  Could not read payload addresses config');
-        console.warn(`[WARN]  Error: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
-
-    // Deploy using direct ethers.js deployment
-    console.log('[INFO]  No pre-deployed address found, deploying to VNet...');
-
     try {
       const provider = new JsonRpcProvider(vnetRpc);
 
