@@ -5,7 +5,7 @@
   "main": "",
   "scripts": {
     "deploy:payload": "npx hardhat ignition deploy ignition/modules/Payload.ts --network mainnet --verify",
-    "simulate:payload": "npx hardhat ignition deploy ignition/modules/PayloadIGP${IGP_ID}.ts --network simulation --reset",
+    "simulate:payload": "npx hardhat ignition deploy ignition/modules/Payload.ts --network simulation --deployment-id simulation-1 && npx hardhat ignition wipe simulation-1 PayloadModule#PayloadIGP${IGP_ID}"
     "simulate": "ts-node scripts/simulate.ts",
     "compile": "npx hardhat compile"
   },
