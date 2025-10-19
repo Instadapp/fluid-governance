@@ -17,4 +17,4 @@ governance:
   timelock_delay: 86400
 fluid:
   staging_url: "https://staging.fluid.io"
-  production_url: "https://fluid.instadapp.io"
+  production_url: "https://fluid.io"
