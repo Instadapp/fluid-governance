@@ -135,9 +135,6 @@ contract PayloadIGPConstants {
         0xC139190F447e929f090Edeb554D95AbB8b18aC1C;
     address internal constant csUSDL_ADDRESS =
         0xbEeFc011e94f43b8B7b455eBaB290C7Ab4E216f1;
-
-    address internal constant syrupUSDC_ADDRESS =
-        0x80ac24aA929eaF5013f6436cdA2a7ba190f5Cc0b;
     address internal constant syrupUSDT_ADDRESS =
         0x356B8d89c1e1239Cbbb9dE4815c39A1474d5BA7D;
 
