@@ -42,10 +42,10 @@ contract PayloadIGP110 is PayloadIGPMain {
         // Action 1: Cleanup allowances from Reserve contract
         action1();
 
-        // Action 2: Empty function for future implementation
+        // Action 2: Revenue collection for buyback
         action2();
 
-        // Action 3: Empty function for future implementation
+        // Action 3: Set dust limits for syrupUSDT DEX and vaults
         action3();
     }
 
@@ -159,14 +159,178 @@ contract PayloadIGP110 is PayloadIGPMain {
         IFluidReserveContract(RESERVE_CONTRACT_PROXY).revoke(protocols_, tokens_);
     }
 
-    /// @notice Action 2: Empty function for future implementation
+    /// @notice Action 2: Revenue collection for buyback
     function action2() internal isActionSkippable(2) {
-        // TODO: Implement action 2
+        {
+            address[] memory tokens = new address[](9);
+
+            tokens[0] = USDT_ADDRESS;
+            tokens[1] = wstETH_ADDRESS;
+            tokens[2] = ETH_ADDRESS;
+            tokens[3] = USDC_ADDRESS;
+            tokens[4] = sUSDe_ADDRESS;
+            tokens[5] = cbBTC_ADDRESS;
+            tokens[6] = WBTC_ADDRESS;
+            tokens[7] = GHO_ADDRESS;
+            tokens[8] = USDe_ADDRESS;
+
+            LIQUIDITY.collectRevenue(tokens);
+        }
+        {
+            address[] memory tokens = new address[](9);
+            uint256[] memory amounts = new uint256[](9);
+
+            tokens[0] = USDT_ADDRESS;
+            amounts[0] =
+                IERC20(USDT_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+
+            tokens[1] = wstETH_ADDRESS;
+            amounts[1] =
+                IERC20(wstETH_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                0.1 ether;
+
+            tokens[2] = ETH_ADDRESS;
+            amounts[2] = address(FLUID_RESERVE).balance - 0.1 ether; // 0.1 ETH
+
+            tokens[3] = USDC_ADDRESS;
+            amounts[3] =
+                IERC20(USDC_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+
+            tokens[4] = sUSDe_ADDRESS;
+            amounts[4] =
+                IERC20(sUSDe_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                0.1 ether;
+
+            tokens[5] = cbBTC_ADDRESS;
+            amounts[5] =
+                IERC20(cbBTC_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+
+            tokens[6] = WBTC_ADDRESS;
+            amounts[6] =
+                IERC20(WBTC_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+
+            tokens[7] = GHO_ADDRESS;
+            amounts[7] =
+                IERC20(GHO_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+
+            tokens[8] = USDe_ADDRESS;
+            amounts[8] =
+                IERC20(USDe_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+
+            FLUID_RESERVE.withdrawFunds(tokens, amounts, TEAM_MULTISIG);
+        }
     }
 
-    /// @notice Action 3: Empty function for future implementation
+    /// @notice Action 3: Set dust limits for syrupUSDT DEX and vaults
     function action3() internal isActionSkippable(3) {
-        // TODO: Implement action 3
+        {
+            // dust limits for SYRUPUSDT-USDT DEX (DEX ID 40)
+            address syrupUSDT_USDT_DEX = getDexAddress(40);
+            // SYRUPUSDT-USDT DEX
+            DexConfig memory DEX_syrupUSDT_USDT = DexConfig({
+                dex: syrupUSDT_USDT_DEX,
+                tokenA: syrupUSDT_ADDRESS,
+                tokenB: USDT_ADDRESS,
+                smartCollateral: true,
+                smartDebt: false,
+                baseWithdrawalLimitInUSD: 7_000_000, // $7M
+                baseBorrowLimitInUSD: 0, // $0
+                maxBorrowLimitInUSD: 0 // $0
+            });
+            setDexLimits(DEX_syrupUSDT_USDT); // Smart Collateral
+
+            DEX_FACTORY.setDexAuth(syrupUSDT_USDT_DEX, TEAM_MULTISIG, false);
+        }
+        {
+            // dust limits for SYRUPUSDT-USDT/USDT vault (Vault ID 149)
+            address syrupUSDT_USDT__USDT_VAULT = getVaultAddress(149);
+            // [TYPE 2] SYRUPUSDT-USDT<>USDT | smart collateral & debt
+            VaultConfig memory VAULT_syrupUSDT_USDT__USDT = VaultConfig({
+                vault: syrupUSDT_USDT__USDT_VAULT,
+                vaultType: VAULT_TYPE.TYPE_2,
+                supplyToken: address(0),
+                borrowToken: USDT_ADDRESS,
+                baseWithdrawalLimitInUSD: 0,
+                baseBorrowLimitInUSD: 5_000_000, // $5M
+                maxBorrowLimitInUSD: 20_000_000 // $20M
+            });
+
+            setVaultLimits(VAULT_syrupUSDT_USDT__USDT); // TYPE_2 => 149
+            VAULT_FACTORY.setVaultAuth(
+                syrupUSDT_USDT__USDT_VAULT,
+                TEAM_MULTISIG,
+                false
+            );
+        }
+        {
+            // dust limits for SYRUPUSDT/USDC vault (Vault ID 150)
+            address syrupUSDT__USDC_VAULT = getVaultAddress(150);
+            // [TYPE 1] SYRUPUSDT/USDC vault - Dust limits
+            VaultConfig memory VAULT_syrupUSDT__USDC = VaultConfig({
+                vault: syrupUSDT__USDC_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: syrupUSDT_ADDRESS,
+                borrowToken: USDC_ADDRESS,
+                baseWithdrawalLimitInUSD: 7_000, // $7k
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 9_000 // $9k
+            });
+
+            setVaultLimits(VAULT_syrupUSDT__USDC);
+            VAULT_FACTORY.setVaultAuth(
+                syrupUSDT__USDC_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
+        {
+            // dust limits for SYRUPUSDT/USDT vault (Vault ID 151)
+            address syrupUSDT__USDT_VAULT = getVaultAddress(151);
+            // [TYPE 1] SYRUPUSDT/USDT vault - Dust limits
+            VaultConfig memory VAULT_syrupUSDT__USDT = VaultConfig({
+                vault: syrupUSDT__USDT_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: syrupUSDT_ADDRESS,
+                borrowToken: USDT_ADDRESS,
+                baseWithdrawalLimitInUSD: 7_000, // $7k
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 9_000 // $9k
+            });
+
+            setVaultLimits(VAULT_syrupUSDT__USDT);
+            VAULT_FACTORY.setVaultAuth(
+                syrupUSDT__USDT_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
+        {
+            // dust limits for SYRUPUSDT/GHO vault (Vault ID 152)
+            address syrupUSDT__GHO_VAULT = getVaultAddress(152);
+            // [TYPE 1] SYRUPUSDT/GHO vault - Dust limits
+            VaultConfig memory VAULT_syrupUSDT__GHO = VaultConfig({
+                vault: syrupUSDT__GHO_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: syrupUSDT_ADDRESS,
+                borrowToken: GHO_ADDRESS,
+                baseWithdrawalLimitInUSD: 7_000, // $7k
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 9_000 // $9k
+            });
+
+            setVaultLimits(VAULT_syrupUSDT__GHO);
+            VAULT_FACTORY.setVaultAuth(
+                syrupUSDT__GHO_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
     }
 
     /**
@@ -190,6 +354,7 @@ contract PayloadIGP110 is PayloadIGPMain {
     uint256 public constant sUSDe_USD_PRICE = 1.17 * 1e2;
     uint256 public constant sUSDs_USD_PRICE = 1.05 * 1e2;
 
+    uint256 public constant syrupUSDT_USD_PRICE = 1.10 * 1e2;
     uint256 public constant FLUID_USD_PRICE = 4.2 * 1e2;
 
     uint256 public constant RLP_USD_PRICE = 1.18 * 1e2;
@@ -261,6 +426,9 @@ contract PayloadIGP110 is PayloadIGPMain {
         } else if (token == sUSDs_ADDRESS) {
             usdPrice = sUSDs_USD_PRICE;
             decimals = 18;
+        } else if (token == syrupUSDT_ADDRESS) {
+            usdPrice = syrupUSDT_USD_PRICE;
+            decimals = 6;
         } else if (
             token == GHO_ADDRESS ||
             token == USDe_ADDRESS ||
