@@ -44,6 +44,9 @@ contract PayloadIGP110 is PayloadIGPMain {
 
         // Action 2: Set dust limits for syrupUSDT DEX and vaults
         action2();
+
+        // Action 3: Increase borrow caps for syrupUSDC/USDC T1 Vault
+        action3();
     }
 
     function verifyProposal() public view override {}
@@ -260,6 +263,22 @@ contract PayloadIGP110 is PayloadIGPMain {
                 true
             );
         }
+    }
+
+    /// @notice Action 3: Increase borrow caps for syrupUSDC/USDC T1 Vault
+    function action3() internal isActionSkippable(3) {
+        // Increase borrow caps for syrupUSDC/USDC T1 Vault (Vault ID 146)
+        address syrupUSDC__USDC_VAULT = getVaultAddress(146);
+        // [TYPE 1] syrupUSDC/USDC vault - Increase max borrow cap to $50M
+        VaultConfig memory VAULT_syrupUSDC__USDC = VaultConfig({
+            vault: syrupUSDC__USDC_VAULT,
+            vaultType: VAULT_TYPE.TYPE_1,
+            supplyToken: syrupUSDC_ADDRESS,
+            borrowToken: USDC_ADDRESS,
+                baseWithdrawalLimitInUSD: 7_000_000, // $7M
+                baseBorrowLimitInUSD: 5_000_000, // $5M
+                maxBorrowLimitInUSD: 50_000_000 // $50M
+        });
     }
 
     /**
