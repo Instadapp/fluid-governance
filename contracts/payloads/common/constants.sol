@@ -69,6 +69,8 @@ contract PayloadIGPConstants {
         IFluidLiquidityAdmin(0x52Aa899454998Be5b000Ad077a46Bbe360F4e497);
     IFluidReserveContract public constant FLUID_RESERVE =
         IFluidReserveContract(0x264786EF916af64a1DB19F513F24a3681734ce92);
+    address public constant RESERVE_CONTRACT_PROXY =
+        0x264786EF916af64a1DB19F513F24a3681734ce92;
 
     // Fluid Factory Addresses
     IFluidVaultFactory public constant VAULT_FACTORY =
@@ -136,6 +138,8 @@ contract PayloadIGPConstants {
 
     address internal constant syrupUSDC_ADDRESS =
         0x80ac24aA929eaF5013f6436cdA2a7ba190f5Cc0b;
+    address internal constant syrupUSDT_ADDRESS =
+        0x356B8d89c1e1239Cbbb9dE4815c39A1474d5BA7D;
 
     address internal constant WBTC_ADDRESS =
         0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
