@@ -42,7 +42,7 @@ contract PayloadIGP110 is PayloadIGPMain {
         // Action 1: Cleanup allowances from Reserve contract
         action1();
 
-        // Action 2: Revenue collection for buyback
+        // Action 2: Set dust limits for syrupUSDT DEX and vaults
         action2();
     }
 
