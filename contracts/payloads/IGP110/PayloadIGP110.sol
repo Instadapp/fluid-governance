@@ -44,9 +44,6 @@ contract PayloadIGP110 is PayloadIGPMain {
 
         // Action 2: Revenue collection for buyback
         action2();
-
-        // Action 3: Set dust limits for syrupUSDT DEX and vaults
-        action3();
     }
 
     function verifyProposal() public view override {}
