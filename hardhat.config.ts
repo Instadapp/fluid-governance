@@ -48,7 +48,7 @@ const config: HardhatUserConfig = {
     },
     simulation: {
       type: "http",
-      url: `https://virtual.mainnet.rpc.tenderly.co/${process.env.SIMULATION_ID}`,
+      url: process.env.TENDERLY_RPC_URL || `https://virtual.mainnet.rpc.tenderly.co/${process.env.SIMULATION_ID}`,
     },
   },
   verify: {

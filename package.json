@@ -1,11 +1,13 @@
 {
   "name": "fluid-governance",
   "version": "1.0.0",
-  "description": "",
+  "description": "Fluid Governance",
   "main": "",
   "scripts": {
     "deploy:payload": "npx hardhat ignition deploy ignition/modules/Payload.ts --network mainnet --verify",
-    "simulate:payload": "npx hardhat ignition deploy ignition/modules/Payload.ts --network simulation --deployment-id simulation-1 && npx hardhat ignition wipe simulation-1 PayloadModule#PayloadIGP${IGP_ID}"
+    "simulate:payload": "npx hardhat ignition deploy ignition/modules/Payload.ts --network simulation --deployment-id simulation-1 && npx hardhat ignition wipe simulation-1 PayloadModule#PayloadIGP${IGP_ID}",
+    "simulate": "ts-node scripts/simulate.ts",
+    "compile": "npx hardhat compile"
   },
   "keywords": [],
   "author": "",
@@ -17,11 +19,16 @@
     "@types/node": "^22.18.10",
     "forge-std": "github:foundry-rs/forge-std#v1.9.4",
     "hardhat": "^3.0.7",
+    "ts-node": "^10.9.2",
     "typescript": "~5.8.0",
     "viem": "^2.38.2"
   },
   "dependencies": {
+    "@tenderly/sdk": "^0.3.1",
+    "@types/js-yaml": "^4.0.9",
+    "axios": "^1.6.2",
     "dotenv": "^17.2.3",
+    "js-yaml": "^4.1.0",
     "rlp": "^2.2.6"
   },
   "type": "module"

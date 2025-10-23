@@ -1,0 +1,443 @@
+name: Governance Proposal Simulation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+      - develop
+      - igp-validation-pipeline
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  detect-igp:
+    runs-on: ubuntu-latest
+    outputs:
+      igp_number: ${{ steps.detect.outputs.igp_number }}
+      igp_id: ${{ steps.detect.outputs.igp_id }}
+      has_igp: ${{ steps.detect.outputs.has_igp }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect IGP from PR title or branch
+        id: detect
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_BRANCH="${{ github.head_ref }}"
+
+          echo "PR Title: $PR_TITLE"
+          echo "PR Branch: $PR_BRANCH"
+
+          # Extract IGP number
+          if echo "$PR_TITLE" | grep -iE "IGP[_-]?[0-9]+" > /dev/null; then
+            IGP_ID=$(echo "$PR_TITLE" | grep -oiE "IGP[_-]?[0-9]+" | grep -oE "[0-9]+" | head -1)
+          elif echo "$PR_BRANCH" | grep -iE "IGP[_-]?[0-9]+" > /dev/null; then
+            IGP_ID=$(echo "$PR_BRANCH" | grep -oiE "IGP[_-]?[0-9]+" | grep -oE "[0-9]+" | head -1)
+          else
+            echo "has_igp=false" >> $GITHUB_OUTPUT
+            echo "No IGP detected"
+            exit 0
+          fi
+
+          echo "igp_number=igp-$IGP_ID" >> $GITHUB_OUTPUT
+          echo "igp_id=$IGP_ID" >> $GITHUB_OUTPUT
+          echo "has_igp=true" >> $GITHUB_OUTPUT
+          echo "Detected IGP: igp-$IGP_ID"
+
+  simulate-governance:
+    needs: detect-igp
+    if: needs.detect-igp.outputs.has_igp == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Validate IGP structure
+        id: validate_igp
+        run: |
+          IGP_ID=${{ needs.detect-igp.outputs.igp_id }}
+
+          echo "=== Validating IGP ${IGP_ID} Structure ==="
+
+          # Validation checks:
+          # 1. IGP Sequence: Ensures new IGP is exactly +1 from latest IGP
+          # 2. Contract Name: Must be PayloadIGP{N}
+          # 3. Execute Function: Must have execute() public virtual override
+          # 4. Minimum Actions: At least 3 numbered actions required
+          # 5. Action Format: "// Action N: Description" format
+
+          # Run validation script with JSON output
+          # Redirect stderr to filter out Node warnings, keep only JSON stdout
+          set +e
+          node --loader ts-node/esm utils/igp-validator.ts --id=$IGP_ID --json 2>/tmp/validation_stderr.log > /tmp/validation_output.json
+          EXIT_CODE=$?
+          set -e
+
+          JSON_OUTPUT=$(cat /tmp/validation_output.json)
+
+          echo "JSON Output:"
+          echo "$JSON_OUTPUT"
+          echo "---"
+
+          # Parse JSON using jq
+          VALID=$(echo "$JSON_OUTPUT" | jq -r '.valid // false')
+          EXECUTE_CONTENT=$(echo "$JSON_OUTPUT" | jq -r '.executeContent // ""')
+          ACTIONS_SUMMARY=$(echo "$JSON_OUTPUT" | jq -r '.actionsSummary // ""')
+
+          # Save parsed data to outputs
+          echo "status=$([ "$VALID" = "true" ] && echo "valid" || echo "invalid")" >> $GITHUB_OUTPUT
+
+          if [ -n "$EXECUTE_CONTENT" ] && [ "$EXECUTE_CONTENT" != "null" ]; then
+            echo "execute_content<<EOF" >> $GITHUB_OUTPUT
+            echo "$EXECUTE_CONTENT" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "Debug: Execute content captured (${#EXECUTE_CONTENT} chars)"
+          else
+            echo "Debug: No execute content found"
+          fi
+
+          if [ -n "$ACTIONS_SUMMARY" ] && [ "$ACTIONS_SUMMARY" != "null" ]; then
+            echo "actions_summary=$ACTIONS_SUMMARY" >> $GITHUB_OUTPUT
+          fi
+
+          # Save full JSON for PR comment
+          echo "validation_json<<EOF" >> $GITHUB_OUTPUT
+          echo "$JSON_OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          # Check validation result and fail the step if invalid
+          if [ "$VALID" = "true" ]; then
+            echo ""
+            echo "[SUCCESS] Validation passed - proceeding to simulation"
+            exit 0
+          else
+            echo ""
+            echo "[FAILURE] Validation failed - blocking PR merge"
+            ERRORS=$(echo "$JSON_OUTPUT" | jq -r '.errors | join("\n")')
+            echo "Errors:"
+            echo "$ERRORS"
+            exit 1
+          fi
+
+      - name: Update PR description with actions
+        if: steps.validate_igp.outputs.status == 'valid' && steps.validate_igp.outputs.execute_content != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            const igpId = '${{ needs.detect-igp.outputs.igp_id }}';
+            const executeContent = `${{ steps.validate_igp.outputs.execute_content }}`;
+
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+
+            const currentBody = pr.data.body || '';
+            const actionsSectionMarker = '## IGP Actions';
+
+            let newBody;
+            if (currentBody.includes(actionsSectionMarker)) {
+              const beforeMarker = currentBody.substring(0, currentBody.indexOf(actionsSectionMarker));
+              newBody = beforeMarker + `${actionsSectionMarker}\n\n\`\`\`solidity\n${executeContent}\n\`\`\``;
+            } else {
+              newBody = currentBody + `\n\n${actionsSectionMarker}\n\n\`\`\`solidity\n${executeContent}\n\`\`\``;
+            }
+
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+              body: newBody
+            });
+
+            console.log(`Updated PR #${prNumber} description with IGP ${igpId} actions`);
+
+      - name: Step 1 - Compile contracts
+        if: steps.validate_igp.outputs.status == 'valid'
+        run: |
+          echo "=== Step 1: Compiling Contracts ==="
+          npx hardhat compile
+
+      - name: Step 2 - Run simulation
+        if: steps.validate_igp.outputs.status == 'valid'
+        id: simulation
+        timeout-minutes: 10
+        env:
+          TENDERLY_ACCESS_KEY: ${{ secrets.TENDERLY_ACCESS_KEY }}
+          TENDERLY_ACCOUNT_ID: ${{ secrets.TENDERLY_ACCOUNT_ID }}
+          TENDERLY_PROJECT_SLUG: ${{ secrets.TENDERLY_PROJECT_SLUG }}
+        run: |
+          set +e  # Don't exit on error yet, we need to capture output and set status
+
+          IGP_ID=${{ needs.detect-igp.outputs.igp_id }}
+
+          echo "=== Step 2: Running Simulation for IGP $IGP_ID ==="
+          echo "Start time: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo ""
+
+          # Run simulation with live output streaming AND capture for parsing
+          npx ts-node scripts/simulate.ts --id=$IGP_ID 2>&1 | tee /tmp/simulation_output.log
+          EXIT_CODE=${PIPESTATUS[0]}
+
+          # Read captured output for parsing stages/errors
+          OUTPUT=$(cat /tmp/simulation_output.log)
+
+          echo ""
+          echo "End time: $(date '+%Y-%m-%d %H:%M:%S')"
+
+          # Extract completed stages
+          COMPLETED_STAGES=$(echo "$OUTPUT" | grep "\[STAGE:COMPLETED\]" | sed 's/.*\[STAGE:COMPLETED\] //' | tr '\n' ',' | sed 's/,$//')
+
+          # Extract VNet information
+          VNET_ID=$(echo "$OUTPUT" | grep "VNet Created:" | sed 's/.*VNet Created: //')
+          VNET_LINK=$(echo "$OUTPUT" | grep "Link: https://dashboard.tenderly.co" | sed 's/.*Link: //')
+
+          # Extract transaction hash if proposal was sent
+          PROPOSAL_TX=$(echo "$OUTPUT" | grep "Proposal transaction sent:" | sed 's/.*Proposal transaction sent: //')
+
+          # Extract block search range
+          BLOCK_RANGE=$(echo "$OUTPUT" | grep "Searching for events from block" | sed 's/.*Searching for events from block //')
+
+          # Extract proposal ID if created
+          PROPOSAL_ID=$(echo "$OUTPUT" | grep "Proposal Created: ID" | sed 's/.*Proposal Created: ID //' | awk '{print $1}')
+
+          # Set outputs including stage information
+          echo "completed_stages=$COMPLETED_STAGES" >> $GITHUB_OUTPUT
+          echo "vnet_id=$VNET_ID" >> $GITHUB_OUTPUT
+          echo "vnet_link=$VNET_LINK" >> $GITHUB_OUTPUT
+          echo "proposal_id=$PROPOSAL_ID" >> $GITHUB_OUTPUT
+          echo "proposal_tx=$PROPOSAL_TX" >> $GITHUB_OUTPUT
+          echo "block_range=$BLOCK_RANGE" >> $GITHUB_OUTPUT
+
+          # Check if simulation was successful
+          if echo "$OUTPUT" | grep -q "Simulation Completed Successfully"; then
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "[SUCCESS] Simulation completed successfully"
+            exit 0
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+            
+            # Extract error message
+            ERROR_MSG=$(echo "$OUTPUT" | grep -A 5 "\[ERROR\] Simulation Failed" || echo "$OUTPUT" | tail -20)
+            echo "error_message<<EOF" >> $GITHUB_OUTPUT
+            echo "$ERROR_MSG" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            
+            echo "[ERROR] Simulation failed with exit code $EXIT_CODE"
+            exit 1  # Fail the workflow step
+          fi
+
+      - name: Comment simulation results on PR
+        if: steps.validate_igp.outputs.status == 'valid' && steps.simulation.outputs.success == 'true'
+        uses: actions/github-script@v7
+        env:
+          EXECUTE_CONTENT: ${{ steps.validate_igp.outputs.execute_content }}
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            const igpNumber = '${{ needs.detect-igp.outputs.igp_number }}';
+            const igpId = '${{ needs.detect-igp.outputs.igp_id }}';
+            const proposalId = '${{ steps.simulation.outputs.proposal_id }}';
+            const vnetId = '${{ steps.simulation.outputs.vnet_id }}';
+            const txHash = '${{ steps.simulation.outputs.transaction_hash }}';
+            const tenderlyLink = '${{ steps.simulation.outputs.tenderly_execution_link }}';
+            const fluidLink = '${{ steps.simulation.outputs.fluid_ui_link }}';
+            const executeContent = process.env.EXECUTE_CONTENT;
+
+            let actionsSection = '';
+            if (executeContent && executeContent.trim()) {
+              actionsSection = `\n### Proposal Actions\n\`\`\`solidity\n${executeContent}\n\`\`\`\n`;
+            }
+
+            const body = `## Governance Simulation Completed - ${igpNumber.toUpperCase()}
+
+            **Payload Contract:** \`PayloadIGP${igpId}\`
+            ${actionsSection}
+            ### Simulation Results
+            | Parameter | Value |
+            |-----------|-------|
+            | **Proposal ID** | ${proposalId} |
+            | **Virtual Network ID** | \`${vnetId}\` |
+            | **Transaction Hash** | \`${txHash}\` |
+
+            ### Links
+            - [Tenderly Dashboard](${tenderlyLink})
+            - [Fluid UI (Staging)](${fluidLink})
+            ---
+            *Automated governance simulation via GitHub Actions*`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: body
+            });
+
+      - name: Comment if simulation failed
+        if: always() && steps.validate_igp.outputs.status == 'valid' && steps.simulation.conclusion == 'failure'
+        uses: actions/github-script@v7
+        env:
+          SIMULATION_OUTPUT: ${{ steps.simulation.outputs.error_message }}
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            const igpNumber = '${{ needs.detect-igp.outputs.igp_number }}';
+            const igpId = '${{ needs.detect-igp.outputs.igp_id }}';
+            const proposalId = '${{ steps.simulation.outputs.proposal_id }}';
+            const vnetId = '${{ steps.simulation.outputs.vnet_id }}';
+            const vnetLink = '${{ steps.simulation.outputs.vnet_link }}';
+            const completedStages = '${{ steps.simulation.outputs.completed_stages }}';
+            const proposalTx = '${{ steps.simulation.outputs.proposal_tx }}';
+            const blockRange = '${{ steps.simulation.outputs.block_range }}';
+
+            const stageMap = {
+              'vnetCreation': 'Create Virtual TestNet',
+              'payloadDeployment': 'Deploy payload contract',
+              'setExecutable': 'Set payload as executable',
+              'delegation': 'Delegate voting power',
+              'proposalTransaction': 'Send proposal transaction',
+              'proposalCreation': 'Create proposal',
+              'votingStartAdvancement': 'Advance to voting start',
+              'voting': 'Cast votes',
+              'votingEndAdvancement': 'Advance to voting end',
+              'queueing': 'Queue proposal',
+              'timelockDelay': 'Wait timelock delay',
+              'execution': 'Execute proposal'
+            };
+
+            const completedList = completedStages.split(',').filter(s => s).map(s => `- ${stageMap[s.trim()] || s} ✓`).join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: `## Simulation Failed - ${igpNumber.toUpperCase()}
+
+            **Payload Contract:** \`PayloadIGP${igpId}\`
+
+            ### Simulation Progress
+            ${proposalId ? `**Proposal ID:** ${proposalId}` : '**Proposal:** Not created'}
+            ${vnetLink ? `**Virtual TestNet:** [View on Tenderly](${vnetLink})` : (vnetId ? `**VNet ID:** ${vnetId}` : '**VNet:** Failed to create')}
+            ${proposalTx ? `**Proposal TX:** \`${proposalTx}\`` : ''}
+            ${blockRange ? `**Block Search:** ${blockRange}` : ''}
+
+            ${completedList ? `\n**Completed Stages:**\n${completedList}\n` : ''}
+
+            ### Error Details
+            \`\`\`
+            ${{ steps.simulation.outputs.error_message || 'See action logs for details' }}
+            \`\`\`
+
+            ### Next Steps
+            1. Review the [full action logs](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            2. Check the error details and completed stages above
+            3. Fix the issue and push changes to re-trigger simulation
+
+            ---
+            *Automated governance simulation via GitHub Actions*`
+            });
+
+      - name: Comment if validation failed
+        if: failure() && steps.validate_igp.outputs.status == 'invalid'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            const igpNumber = '${{ needs.detect-igp.outputs.igp_number }}';
+            const igpId = '${{ needs.detect-igp.outputs.igp_id }}';
+            const validationJson = `${{ steps.validate_igp.outputs.validation_json }}`;
+
+            let validation;
+            try {
+              validation = JSON.parse(validationJson);
+            } catch (e) {
+              validation = { errors: ['Failed to parse validation output'], warnings: [] };
+            }
+
+            const errorsList = validation.errors.map((e, i) => `${i + 1}. ${e}`).join('\n');
+            const warningsList = validation.warnings.length > 0 
+              ? '\n\n**Warnings:**\n' + validation.warnings.map((w, i) => `${i + 1}. ${w}`).join('\n')
+              : '';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: `## IGP Validation Failed - ${igpNumber.toUpperCase()}
+              
+              The IGP structure does not meet the required standards for automated simulation.
+              
+              ### Validation Errors
+              \`\`\`
+              ${errorsList}
+              \`\`\`
+              ${warningsList}
+              
+              ### Required Structure
+              
+              **Mandatory Requirements:**
+              1. **IGP Sequence:** Must be exactly +1 from the latest IGP in the system
+              2. **Contract Location:** \`contracts/payloads/IGP${igpId}/PayloadIGP${igpId}.sol\`
+              3. **Contract Name:** Must be \`PayloadIGP${igpId}\`
+              4. **Contract Inheritance:** Must inherit from \`PayloadIGPMain\`
+              5. **Execute Function:** Must have \`function execute() public virtual override\`
+              6. **Minimum Actions:** At least 3 numbered actions in execute() function
+                 - Format: \`// Action 1: Description\` followed by \`action1();\`
+              7. **Compilation:** Must compile successfully with \`npx hardhat compile\`
+              
+              **Optional but Recommended:**
+              - \`contracts/payloads/IGP${igpId}/description.md\` - Proposal description
+              - \`ignition/modules/PayloadIGP${igpId}.ts\` - Ignition deployment module
+              - \`contracts/payloads/IGP${igpId}/simulation/setup.ts\` - Pre-simulation setup script
+              
+              ### Next Steps
+              1. Review and fix the validation errors listed above
+              2. Ensure your IGP number follows the sequence
+              3. Verify the contract name and structure match requirements
+              4. Push changes to re-trigger validation and simulation
+              
+              ---
+              *Automated IGP validation via GitHub Actions*`
+            });
+
+      - name: Upload simulation artifacts
+        if: always() && steps.validate_igp.outputs.status == 'valid'
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulation-artifacts-${{ needs.detect-igp.outputs.igp_number }}
+          path: |
+            artifacts/
+            cache/
+          retention-days: 7
+
+  skip-simulation:
+    needs: detect-igp
+    if: needs.detect-igp.outputs.has_igp == 'false'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Skip simulation
+        run: |
+          echo "No IGP detected in PR title or branch name."
+          echo "Skipping governance simulation."
+          echo ""
+          echo "To trigger simulation, include 'IGP-XXX' or 'IGP XXX' in:"
+          echo "  - PR title, or"
+          echo "  - Branch name"
