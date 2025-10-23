@@ -506,7 +506,7 @@ class TenderlyGovernanceSimulator {
       const result = await this.runGovernanceSimulation(vnetConfig, payloadAddress);
 
       const adminRpcId = vnetConfig.adminRpc.split('/')[3] || vnetConfig.adminRpc.split('/').pop();
-      const tenderlyExecutionLink = `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetConfig.id}/${result.transactionHash}`;
+      const tenderlyExecutionLink = `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetConfig.id}/tx/${result.transactionHash}`;
       const fluidUiLink = `https://staging.fluid.io/?isCustomVnet=true&tenderlyId=${adminRpcId}`;
 
       console.log(`\n${'='.repeat(70)}`);
