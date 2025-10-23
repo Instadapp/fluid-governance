@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 import axios from 'axios';
-import { ethers, Contract, JsonRpcProvider, EventLog } from 'ethers';
+import { ethers, Contract, JsonRpcProvider, EventLog, AbiCoder } from 'ethers';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
@@ -467,6 +467,40 @@ class TenderlyGovernanceSimulator {
         gas: "0x2625A00", // 40M gas
         gasPrice: "0x0"
       }]);
+
+      // Wait for transaction to be mined and verify it succeeded
+      console.log(`[INFO]  Waiting for execution transaction to be mined...`);
+      const receipt = await provider.waitForTransaction(executeTxHash);
+
+      if (!receipt) {
+        throw new Error(`Transaction ${executeTxHash} was not mined`);
+      }
+
+      if (receipt.status !== 1) {
+        // Transaction failed - get detailed error information
+        const tx = await provider.getTransaction(executeTxHash);
+        const code = await provider.call({
+          from: tx?.from,
+          to: tx?.to,
+          data: tx?.data,
+          gasLimit: tx?.gasLimit,
+          gasPrice: tx?.gasPrice,
+          value: tx?.value
+        });
+
+        let errorMessage = 'Transaction execution reverted';
+        if (code && code !== '0x') {
+          // Try to decode the revert reason
+          try {
+            const revertReason = AbiCoder.defaultAbiCoder().decode(['string'], '0x' + code.slice(138));
+            errorMessage = `Transaction execution reverted: ${revertReason[0]}`;
+          } catch {
+            errorMessage = `Transaction execution reverted with data: ${code}`;
+          }
+        }
+
+        throw new Error(errorMessage);
+      }
 
       console.log('[SUCCESS] Proposal executed!');
       console.log('[STAGE:COMPLETED] execution');
