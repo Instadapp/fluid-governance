@@ -10,10 +10,10 @@ This proposal implements three key operations: (1) cleans up allowances from the
 
 - **Reserve Contract Operation**:
   - Revoke allowances for 44 protocol-token pairs from Reserve Contract Proxy
-  - Remove permissions for protocols that no longer need access as rewards are no longer ongoing
+  - Remove permissions for protocols that no longer have rewards running or had dust allowances
   - **Protocols**: 44 different protocol addresses across various token pairs
   - **Tokens**: GHO, sUSDe, wstETH, weETH, USDT, USDC, WBTC
-  - **Purpose**: Standardize to no allowance towards protocols and explicitly add when needed
+  - **Purpose**: Cleanup allowances from Reserve contract as no rewards are ongoing anymore and standardize to no allowance towards protocols. At the very beginning of Fluid, we gave minor amounts to protocols, which is no longer needed. We will explicitly add allowances whenever needed going forward.
 
 ### Action 2: Set Dust Limits for syrupUSDT DEX and Vaults
 
@@ -67,7 +67,8 @@ This proposal implements three key operations: (1) cleans up allowances from the
 This proposal implements three major changes to enhance protocol security, integrate new offerings, and optimize existing vault capacity:
 
 1. **Reserve Contract Security Enhancement**
-   - Removes unnecessary allowances from the Reserve contract for 44 protocol-token pairs where rewards are no longer ongoing
+   - Removes unnecessary allowances from the Reserve contract for 44 protocol-token pairs where rewards are no longer ongoing or had dust allowances
+   - Most protocols only have dust allowances that were granted in the first few weeks of Fluid's existence, while only a few fTokens had larger allowances due to ongoing rewards
    - Standardizes the protocol approach to explicitly grant allowances only when needed rather than maintaining broad permissions
    - Improves security posture by reducing attack surface and potential misuse of unused allowances
 
