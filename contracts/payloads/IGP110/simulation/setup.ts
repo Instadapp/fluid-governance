@@ -48,7 +48,7 @@ export async function preSetup(provider: JsonRpcProvider): Promise<void> {
         }]) 
     }
 
-    // T1
+    // T1 [TYPE 1] SYRUPUSDT<>USDC - 150
     {   
         const vaultType = "T1"
         const supplyToken = "0x356b8d89c1e1239cbbb9de4815c39a1474d5ba7d"
@@ -64,7 +64,7 @@ export async function preSetup(provider: JsonRpcProvider): Promise<void> {
         }]) 
     }
 
-    // T1
+    // T1 [TYPE 1] SYRUPUSDT<>USDT - 151
     {   
       const vaultType = "T1"
       const supplyToken = "0x356b8d89c1e1239cbbb9de4815c39a1474d5ba7d"
@@ -78,7 +78,23 @@ export async function preSetup(provider: JsonRpcProvider): Promise<void> {
           "gas":"0x9896800",
           "gasPrice":"0x0"
       }]) 
-  }
+    }
+
+    // T1 [TYPE 1] SYRUPUSDT<>GHO - 152
+    {   
+      const vaultType = "T1"
+      const supplyToken = "0x356b8d89c1e1239cbbb9de4815c39a1474d5ba7d"
+      const borrowToken = "0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f"
+
+      await provider.send("eth_sendTransaction", [{
+          from: "0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e",
+          to: "0x324c5Dc1fC42c7a4D43d92df1eBA58a54d13Bf2d",
+          data: getDeployVaultCalldata(vaultType, VAULT_LOGIC_ADDRESS(vaultType), supplyToken, borrowToken),
+          value: "",
+          "gas":"0x9896800",
+          "gasPrice":"0x0"
+      }]) 
+    }
 
     console.log('[SETUP] Pre-setup completed successfully');
   } catch (error: any) {
