@@ -279,6 +279,8 @@ contract PayloadIGP110 is PayloadIGPMain {
                 baseBorrowLimitInUSD: 5_000_000, // $5M
                 maxBorrowLimitInUSD: 50_000_000 // $50M
         });
+
+        setVaultLimits(VAULT_syrupUSDC__USDC);
     }
 
     /**
