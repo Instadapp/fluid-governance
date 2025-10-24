@@ -304,6 +304,7 @@ contract PayloadIGP110 is PayloadIGPMain {
     uint256 public constant sUSDe_USD_PRICE = 1.17 * 1e2;
     uint256 public constant sUSDs_USD_PRICE = 1.05 * 1e2;
     uint256 public constant syrupUSDT_USD_PRICE = 1.10 * 1e2;
+    uint256 public constant syrupUSDC_USD_PRICE = 1.13 * 1e2;
 
     uint256 public constant FLUID_USD_PRICE = 4.2 * 1e2;
 
