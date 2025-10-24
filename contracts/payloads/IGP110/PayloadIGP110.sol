@@ -377,6 +377,9 @@ contract PayloadIGP110 is PayloadIGPMain {
         } else if (token == syrupUSDT_ADDRESS) {
             usdPrice = syrupUSDT_USD_PRICE;
             decimals = 6;
+        } else if (token == syrupUSDC_ADDRESS) {
+            usdPrice = syrupUSDC_USD_PRICE;
+            decimals = 6;
         } else if (token == sUSDs_ADDRESS) {
             usdPrice = sUSDs_USD_PRICE;
             decimals = 18;
