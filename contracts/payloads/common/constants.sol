@@ -133,6 +133,10 @@ contract PayloadIGPConstants {
         0xC139190F447e929f090Edeb554D95AbB8b18aC1C;
     address internal constant csUSDL_ADDRESS =
         0xbEeFc011e94f43b8B7b455eBaB290C7Ab4E216f1;
+    address internal constant JRUSDE_ADDRESS =
+        0xC58D044404d8B14e953C115E67823784dEA53d8F;
+    address internal constant SRUSDE_ADDRESS =
+        0x3d7d6fdf07EE548B939A80edbc9B2256d0cdc003;
 
     address internal constant WBTC_ADDRESS =
         0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;

@@ -72,7 +72,7 @@ contract PayloadIGP111 is PayloadIGPMain {
                 tokenB: USDT_ADDRESS,
                 smartCollateral: true,
                 smartDebt: false,
-                baseWithdrawalLimitInUSD: 7_000_000, // $7M
+                baseWithdrawalLimitInUSD: 10_000_000, // $10M
                 baseBorrowLimitInUSD: 0, // $0
                 maxBorrowLimitInUSD: 0 // $0
             });
@@ -89,7 +89,7 @@ contract PayloadIGP111 is PayloadIGPMain {
                 supplyToken: address(0),
                 borrowToken: USDT_ADDRESS,
                 baseWithdrawalLimitInUSD: 0,
-                baseBorrowLimitInUSD: 5_000_000, // $5M
+                baseBorrowLimitInUSD: 10_000_000, // $10M
                 maxBorrowLimitInUSD: 20_000_000 // $20M
             });
 
@@ -109,8 +109,8 @@ contract PayloadIGP111 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: syrupUSDT_ADDRESS,
                 borrowToken: USDC_ADDRESS,
-                baseWithdrawalLimitInUSD: 7_000_000, // $7M
-                baseBorrowLimitInUSD: 5_000_000, // $5M
+                baseWithdrawalLimitInUSD: 10_000_000, // $10M
+                baseBorrowLimitInUSD: 10_000_000, // $10M
                 maxBorrowLimitInUSD: 20_000_000 // $20M
             });
 
@@ -130,8 +130,8 @@ contract PayloadIGP111 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: syrupUSDT_ADDRESS,
                 borrowToken: USDT_ADDRESS,
-                baseWithdrawalLimitInUSD: 7_000_000, // $7M
-                baseBorrowLimitInUSD: 5_000_000, // $5M
+                baseWithdrawalLimitInUSD: 10_000_000, // $10M
+                baseBorrowLimitInUSD: 10_000_000, // $10M
                 maxBorrowLimitInUSD: 20_000_000 // $20M
             });
 
@@ -151,8 +151,8 @@ contract PayloadIGP111 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: syrupUSDT_ADDRESS,
                 borrowToken: GHO_ADDRESS,
-                baseWithdrawalLimitInUSD: 7_000_000, // $7M
-                baseBorrowLimitInUSD: 5_000_000, // $5M
+                baseWithdrawalLimitInUSD: 10_000_000, // $10M
+                baseBorrowLimitInUSD: 10_000_000, // $10M
                 maxBorrowLimitInUSD: 20_000_000 // $20M
             });
 
@@ -165,88 +165,49 @@ contract PayloadIGP111 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 2: Revenue collection for buyback
+    /// @notice Action 2: Update revenue collector address
     function action2() internal isActionSkippable(2) {
-        {
-            address[] memory tokens = new address[](14);
-            tokens[0] = USDT_ADDRESS;
-            tokens[1] = wstETH_ADDRESS;
-            tokens[2] = ETH_ADDRESS;
-            tokens[3] = USDC_ADDRESS;
-            tokens[4] = sUSDe_ADDRESS;
-            tokens[5] = cbBTC_ADDRESS;
-            tokens[6] = WBTC_ADDRESS;
-            tokens[7] = GHO_ADDRESS;
-            tokens[8] = USDe_ADDRESS;
-            tokens[9] = wstUSR_ADDRESS;
-            tokens[10] = ezETH_ADDRESS;
-            tokens[11] = lBTC_ADDRESS;
-            tokens[12] = USDTb_ADDRESS;
-            tokens[13] = RLP_ADDRESS;
-
-            LIQUIDITY.collectRevenue(tokens);
-        }
-        {
-            address[] memory tokens = new address[](14);
-            uint256[] memory amounts = new uint256[](14);
-
-            tokens[0] = USDT_ADDRESS;
-            amounts[0] = IERC20(USDT_ADDRESS).balanceOf(address(FLUID_RESERVE)) - 10;
-
-            tokens[1] = wstETH_ADDRESS;
-            amounts[1] = IERC20(wstETH_ADDRESS).balanceOf(address(FLUID_RESERVE)) - 0.1 ether;
-
-            tokens[2] = ETH_ADDRESS;
-            amounts[2] = address(FLUID_RESERVE).balance - 0.1 ether; // 0.1 ETH
-
-            tokens[3] = USDC_ADDRESS;
-            amounts[3] = IERC20(USDC_ADDRESS).balanceOf(address(FLUID_RESERVE)) - 10;
-
-            tokens[4] = sUSDe_ADDRESS;
-            amounts[4] = IERC20(sUSDe_ADDRESS).balanceOf(address(FLUID_RESERVE)) - 0.1 ether;
-
-            tokens[5] = cbBTC_ADDRESS;
-            amounts[5] = IERC20(cbBTC_ADDRESS).balanceOf(address(FLUID_RESERVE)) - 10;
-
-            tokens[6] = WBTC_ADDRESS;
-            amounts[6] = IERC20(WBTC_ADDRESS).balanceOf(address(FLUID_RESERVE)) - 10;
-
-            tokens[7] = GHO_ADDRESS;
-            amounts[7] = IERC20(GHO_ADDRESS).balanceOf(address(FLUID_RESERVE)) - 10;
-
-            tokens[8] = USDe_ADDRESS;
-            amounts[8] = IERC20(USDe_ADDRESS).balanceOf(address(FLUID_RESERVE)) - 10;
-
-            tokens[9] = wstUSR_ADDRESS;
-            amounts[9] = IERC20(wstUSR_ADDRESS).balanceOf(address(FLUID_RESERVE)) - 10;
-
-            tokens[10] = ezETH_ADDRESS;
-            amounts[10] = IERC20(ezETH_ADDRESS).balanceOf(address(FLUID_RESERVE)) - 0.1 ether;
-
-            tokens[11] = lBTC_ADDRESS;
-            amounts[11] = IERC20(lBTC_ADDRESS).balanceOf(address(FLUID_RESERVE)) - 10;
-
-            tokens[12] = USDTb_ADDRESS;
-            amounts[12] = IERC20(USDTb_ADDRESS).balanceOf(address(FLUID_RESERVE)) - 10;
-
-            tokens[13] = RLP_ADDRESS;
-            amounts[13] = IERC20(RLP_ADDRESS).balanceOf(address(FLUID_RESERVE)) - 10;
-
-            FLUID_RESERVE.withdrawFunds(tokens, amounts, TEAM_MULTISIG);
-        }
+        LIQUIDITY.updateRevenueCollector(
+            0x9Afb8C1798B93a8E04a18553eE65bAFa41a012F1
+        );
     }
 
-    /// @notice Action 3: Update CollectRevenueAuth on Liquidity
+    /// @notice Action 3: Set dust limits for USDE-JRUSDE and SRUSDE-USDE DEXes
     function action3() internal isActionSkippable(3) {
-                AdminModuleStructs.AddressBool[] memory addrBools_ = new AdminModuleStructs.AddressBool[](1);
+        {
+            // DEX 41: USDE-JRUSDE
+            address USDE_JRUSDE_DEX = getDexAddress(41);
+            DexConfig memory DEX_USDE_JRUSDE = DexConfig({
+                dex: USDE_JRUSDE_DEX,
+                tokenA: USDe_ADDRESS,
+                tokenB: JRUSDE_ADDRESS,
+                smartCollateral: true,
+                smartDebt: false,
+                baseWithdrawalLimitInUSD: 10_000, // $10k
+                baseBorrowLimitInUSD: 0, // $0
+                maxBorrowLimitInUSD: 0 // $0
+            });
+            setDexLimits(DEX_USDE_JRUSDE); // Smart Collateral
 
-        // CollectRevenueAuth
-        addrBools_[0] = AdminModuleStructs.AddressBool({
-            addr: 0x9Afb8C1798B93a8E04a18553eE65bAFa41a012F1,
-            value: true
-        });
+            DEX_FACTORY.setDexAuth(USDE_JRUSDE_DEX, TEAM_MULTISIG, true);
+        }
+        {
+            // DEX 42: SRUSDE-USDE
+            address SRUSDE_USDE_DEX = getDexAddress(42);
+            DexConfig memory DEX_SRUSDE_USDE = DexConfig({
+                dex: SRUSDE_USDE_DEX,
+                tokenA: SRUSDE_ADDRESS,
+                tokenB: USDe_ADDRESS,
+                smartCollateral: true,
+                smartDebt: false,
+                baseWithdrawalLimitInUSD: 10_000, // $10k
+                baseBorrowLimitInUSD: 0, // $0
+                maxBorrowLimitInUSD: 0 // $0
+            });
+            setDexLimits(DEX_SRUSDE_USDE); // Smart Collateral
 
-        LIQUIDITY.updateAuths(addrBools_);
+            DEX_FACTORY.setDexAuth(SRUSDE_USDE_DEX, TEAM_MULTISIG, true);
+        }
     }
 
     /**
@@ -278,6 +239,8 @@ contract PayloadIGP111 is PayloadIGPMain {
     uint256 public constant wstUSR_USD_PRICE = 1.07 * 1e2;
     uint256 public constant XAUT_USD_PRICE = 3_240 * 1e2;
     uint256 public constant PAXG_USD_PRICE = 3_240 * 1e2;
+    uint256 public constant JRUSDE_USD_PRICE = 1.00 * 1e2;
+    uint256 public constant SRUSDE_USD_PRICE = 1.00 * 1e2;
 
     function getRawAmount(
         address token,
@@ -349,6 +312,12 @@ contract PayloadIGP111 is PayloadIGPMain {
         } else if (token == syrupUSDC_ADDRESS) {
             usdPrice = syrupUSDC_USD_PRICE;
             decimals = 6;
+        } else if (token == JRUSDE_ADDRESS) {
+            usdPrice = JRUSDE_USD_PRICE;
+            decimals = 18;
+        } else if (token == SRUSDE_ADDRESS) {
+            usdPrice = SRUSDE_USD_PRICE;
+            decimals = 18;
         } else if (
             token == GHO_ADDRESS ||
             token == USDe_ADDRESS ||
