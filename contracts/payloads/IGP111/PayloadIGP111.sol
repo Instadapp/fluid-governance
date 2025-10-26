@@ -45,7 +45,7 @@ contract PayloadIGP111 is PayloadIGPMain {
         // Action 2: Revenue collection for buyback
         action2();
 
-        // Action 3: USD Lite Address
+        // Action 3: Update CollectRevenueAuth on Liquidity
         action3();
     }
 
@@ -236,9 +236,17 @@ contract PayloadIGP111 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 3: USD Lite Address
+    /// @notice Action 3: Update CollectRevenueAuth on Liquidity
     function action3() internal isActionSkippable(3) {
-        // TODO: Implement action 3
+                AdminModuleStructs.AddressBool[] memory addrBools_ = new AdminModuleStructs.AddressBool[](1);
+
+        // CollectRevenueAuth
+        addrBools_[0] = AdminModuleStructs.AddressBool({
+            addr: 0x9Afb8C1798B93a8E04a18553eE65bAFa41a012F1,
+            value: true
+        });
+
+        LIQUIDITY.updateAuths(addrBools_);
     }
 
     /**
