@@ -494,8 +494,10 @@ class TenderlyGovernanceSimulator {
     console.log(`[START] Governance Simulation for IGP ${this.igpId}`);
     console.log(`${'='.repeat(70)}`);
 
+    let vnetConfig: VNetConfig | undefined;
+
     try {
-      const vnetConfig = await this.createVnet();
+      vnetConfig = await this.createVnet();
       const payloadAddress = await this.deployPayload(vnetConfig.adminRpc);
 
       const provider = new JsonRpcProvider(vnetConfig.adminRpc);
@@ -504,7 +506,7 @@ class TenderlyGovernanceSimulator {
       const result = await this.runGovernanceSimulation(vnetConfig, payloadAddress);
 
       const adminRpcId = vnetConfig.adminRpc.split('/')[3] || vnetConfig.adminRpc.split('/').pop();
-      const tenderlyExecutionLink = `${vnetConfig.link}/tx/mainnet/${result.transactionHash}`;
+      const tenderlyExecutionLink = `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetConfig.id}/tx/${result.transactionHash}`;
       const fluidUiLink = `https://staging.fluid.io/?isCustomVnet=true&tenderlyId=${adminRpcId}`;
 
       console.log(`\n${'='.repeat(70)}`);
@@ -527,6 +529,41 @@ class TenderlyGovernanceSimulator {
 
     } catch (error: any) {
       console.error(`\n[ERROR] Simulation Failed: ${error.message}`);
+
+      // Enhanced error reporting
+      if (error.message.includes('execution reverted')) {
+        console.error('\n[ERROR] Transaction execution reverted. This usually indicates:');
+        console.error('  - Contract call failed due to business logic');
+        console.error('  - Insufficient permissions or state');
+        console.error('  - Invalid parameters or preconditions');
+        console.error('  - Check the Tenderly debugger for detailed stack trace');
+      }
+
+      if (error.message.includes('Called function does not exist')) {
+        console.error('\n[ERROR] Function does not exist in contract. This usually indicates:');
+        console.error('  - Incorrect function signature or ABI');
+        console.error('  - Contract not properly deployed or initialized');
+        console.error('  - Wrong contract address being called');
+      }
+
+      if (error.message.includes('AdminModule__AddressNotAContract')) {
+        console.error('\n[ERROR] Address is not a contract. This usually indicates:');
+        console.error('  - Missing contract deployment in pre-setup');
+        console.error('  - Incorrect contract address configuration');
+        console.error('  - Contract deployment failed silently');
+        console.error('  - Check if pre-setup script needs to deploy required contracts');
+      }
+
+      // Output error details for GitHub Actions
+      if (process.env.GITHUB_OUTPUT) {
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `simulation_status=failed\n`);
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `error_message=${error.message}\n`);
+        if (vnetConfig) {
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `vnet_id=${vnetConfig.id}\n`);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `vnet_link=${vnetConfig.link}\n`);
+        }
+      }
+
       throw error;
     }
   }
