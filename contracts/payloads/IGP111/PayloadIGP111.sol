@@ -45,8 +45,11 @@ contract PayloadIGP111 is PayloadIGPMain {
         // Action 2: Revenue collection for buyback
         action2();
 
-        // Action 3: Update CollectRevenueAuth on Liquidity
+        // Action 3: Collect revenue from Liquidity Layer
         action3();
+
+        // Action 4: Set dust limits for USDE-JRUSDE and SRUSDE-USDE DEXes
+        action4();
     }
 
     function verifyProposal() public view override {}
@@ -172,8 +175,30 @@ contract PayloadIGP111 is PayloadIGPMain {
         );
     }
 
-    /// @notice Action 3: Set dust limits for USDE-JRUSDE and SRUSDE-USDE DEXes
+    /// @notice Action 3: Update Multisig Authorization for USDE-JRUSDE and SRUSDE-USDE DEXes
     function action3() internal isActionSkippable(3) {
+        {
+            address[] memory tokens = new address[](14);
+            tokens[0] = USDT_ADDRESS;
+            tokens[1] = wstETH_ADDRESS;
+            tokens[2] = ETH_ADDRESS;
+            tokens[3] = USDC_ADDRESS;
+            tokens[4] = sUSDe_ADDRESS;
+            tokens[5] = cbBTC_ADDRESS;
+            tokens[6] = WBTC_ADDRESS;
+            tokens[7] = GHO_ADDRESS;
+            tokens[8] = USDe_ADDRESS;
+            tokens[9] = wstUSR_ADDRESS;
+            tokens[10] = ezETH_ADDRESS;
+            tokens[11] = lBTC_ADDRESS;
+            tokens[12] = USDTb_ADDRESS;
+            tokens[13] = RLP_ADDRESS;
+            LIQUIDITY.collectRevenue(tokens);
+        }
+    }
+
+    /// @notice Action 4: Set dust limits for USDE-JRUSDE and SRUSDE-USDE DEXes
+    function action4() internal isActionSkippable(3) {
         {
             // DEX 41: USDE-JRUSDE
             address USDE_JRUSDE_DEX = getDexAddress(41);
