@@ -45,8 +45,8 @@ contract PayloadIGP111 is PayloadIGPMain {
         // Action 2: Collect Revenue from Liquidity Layer for Buybacks
         action2();
 
-        // Action 4: Set dust limits for USDE-JRUSDE and SRUSDE-USDE DEXes
-        action4();
+        // Action 3: Set dust limits for USDE-JRUSDE and SRUSDE-USDE DEXes
+        action3();
     }
 
     function verifyProposal() public view override {}
@@ -165,7 +165,7 @@ contract PayloadIGP111 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 2: Collect revenue from Liquidity Layer 
+    /// @notice Action 2: Collect revenue from Liquidity Layer
     function action2() internal isActionSkippable(2) {
         {
             address[] memory tokens = new address[](14);
@@ -246,8 +246,8 @@ contract PayloadIGP111 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 4: Set dust limits for USDE-JRUSDE and SRUSDE-USDE DEXes
-    function action4() internal isActionSkippable(4) {
+    /// @notice Action 3: Set dust limits for USDE-JRUSDE and SRUSDE-USDE DEXes
+    function action3() internal isActionSkippable(3) {
         {
             // DEX 41: USDE-JRUSDE
             address USDE_JRUSDE_DEX = getDexAddress(41);
