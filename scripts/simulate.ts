@@ -77,6 +77,8 @@ interface TransactionDetails {
   status?: 'pending' | 'success' | 'failed';
   error?: string;
   tenderlyUrl?: string;
+  step: string;
+  description: string;
 }
 
 interface TenderlyTransactionResponse {
@@ -118,8 +120,52 @@ class TenderlyGovernanceSimulator {
       gasLimit: txDetails.gasLimit || '0x0',
       gasPrice: txDetails.gasPrice || '0x0',
       status: 'pending',
-      tenderlyUrl
+      tenderlyUrl,
+      step: txDetails.step || 'unknown',
+      description: txDetails.description || 'Transaction'
     });
+  }
+
+  private updateTransactionStatus(txHash: string, status: 'success' | 'failed', error?: string): void {
+    const transaction = this.trackedTransactions.get(txHash);
+    if (transaction) {
+      transaction.status = status;
+      if (error) {
+        transaction.error = error;
+      }
+      this.trackedTransactions.set(txHash, transaction);
+    }
+  }
+
+  private generateTransactionSummary(): string {
+    const transactions = Array.from(this.trackedTransactions.values());
+
+    if (transactions.length === 0) {
+      return 'No transactions tracked.';
+    }
+
+    let summary = '### 📊 Transaction Summary\n\n';
+    summary += '| Step | Description | Status | Transaction |\n';
+    summary += '|------|------------|--------|-------------|\n';
+
+    // Sort transactions by step order
+    const stepOrder = ['deployment', 'setExecutable', 'delegation', 'proposalCreation', 'voting', 'queueing', 'execution'];
+
+    for (const step of stepOrder) {
+      const stepTransactions = transactions.filter(tx => tx.step === step);
+      for (const tx of stepTransactions) {
+        const status = tx.status === 'success' ? '✅ Success' :
+          tx.status === 'failed' ? '❌ Failed' : '⏳ Pending';
+        const txLink = tx.tenderlyUrl ? `[View](${tx.tenderlyUrl})` : tx.hash.substring(0, 10) + '...';
+        summary += `| ${tx.step} | ${tx.description} | ${status} | ${txLink} |\n`;
+
+        if (tx.error) {
+          summary += `| | | | **Error:** ${tx.error} |\n`;
+        }
+      }
+    }
+
+    return summary;
   }
 
   private async waitForTransactionWithTenderlyStatus(txHash: string, vnetId: string, vnetRpc: string): Promise<{ success: boolean; error?: string; tenderlyUrl: string }> {
@@ -406,19 +452,36 @@ class TenderlyGovernanceSimulator {
 
       console.log(`[INFO]  Deployment transaction sent: ${deployTxHash}`);
 
+      // Track the deployment transaction
+      await this.trackTransaction(deployTxHash, {
+        from: fundedDeployerAddress,
+        to: '',
+        data: artifact.bytecode,
+        value: "0x0",
+        gasLimit: "0x9896800",
+        gasPrice: "0x0",
+        step: 'deployment',
+        description: 'Deploy PayloadIGP111 Contract'
+      }, 'temp'); // We'll update with real VNet ID later
+
       // Wait for transaction to be mined
       const receipt = await provider.waitForTransaction(deployTxHash);
-      
+
       if (!receipt) {
+        this.updateTransactionStatus(deployTxHash, 'failed', 'Transaction was not mined');
         throw new Error('Deployment transaction was not mined');
       }
 
       // Get the deployed contract address from the receipt
       const deployedAddress = receipt.contractAddress;
-      
+
       if (!deployedAddress) {
+        this.updateTransactionStatus(deployTxHash, 'failed', 'Contract address not found in receipt');
         throw new Error('Contract address not found in deployment receipt');
       }
+
+      // Update transaction status to success
+      this.updateTransactionStatus(deployTxHash, 'success');
 
       console.log(`[SUCCESS] Payload deployed: ${deployedAddress}`);
       console.log('[STAGE:COMPLETED] payloadDeployment');
@@ -482,7 +545,7 @@ class TenderlyGovernanceSimulator {
     try {
       // Step 4.1: Set payload as executable (like original script)
       console.log('Setting payload as executable...');
-      await provider.send("eth_sendTransaction", [{
+      const setExecutableTxHash = await provider.send("eth_sendTransaction", [{
         from: "0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e",
         to: payloadAddress,
         data: "0x0e6a204c0000000000000000000000000000000000000000000000000000000000000001", // setExecutable(true)
@@ -490,7 +553,28 @@ class TenderlyGovernanceSimulator {
         gas: "0x9896800",
         gasPrice: "0x0"
       }]);
-      console.log('[SUCCESS] Payload set as executable');
+
+      // Track the setExecutable transaction
+      await this.trackTransaction(setExecutableTxHash, {
+        from: "0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e",
+        to: payloadAddress,
+        data: "0x0e6a204c0000000000000000000000000000000000000000000000000000000000000001",
+        value: "0x0",
+        gasLimit: "0x9896800",
+        gasPrice: "0x0",
+        step: 'setExecutable',
+        description: 'Set Payload as Executable'
+      }, vnetConfig.id);
+
+      // Wait for transaction and update status
+      const setExecutableReceipt = await provider.waitForTransaction(setExecutableTxHash);
+      if (setExecutableReceipt && setExecutableReceipt.status === 1) {
+        this.updateTransactionStatus(setExecutableTxHash, 'success');
+        console.log('[SUCCESS] Payload set as executable');
+      } else {
+        this.updateTransactionStatus(setExecutableTxHash, 'failed', 'Transaction failed or reverted');
+        throw new Error('Failed to set payload as executable');
+      }
       console.log('[STAGE:COMPLETED] setExecutable');
 
       // Step 4.2: Delegate voting power to payload
@@ -499,7 +583,7 @@ class TenderlyGovernanceSimulator {
       // Use eth_sendTransaction directly like original script
       const delegateData = new ethers.Interface(['function delegate(address delegatee)']).encodeFunctionData('delegate', [payloadAddress]);
 
-      await provider.send("eth_sendTransaction", [{
+      const delegateTxHash = await provider.send("eth_sendTransaction", [{
         from: this.config.addresses.delegator,
         to: this.config.addresses.inst,
         data: delegateData,
@@ -507,7 +591,28 @@ class TenderlyGovernanceSimulator {
         gas: "0x9896800",
         gasPrice: "0x0"
       }]);
-      console.log('[SUCCESS] Delegation completed');
+
+      // Track the delegation transaction
+      await this.trackTransaction(delegateTxHash, {
+        from: this.config.addresses.delegator,
+        to: this.config.addresses.inst,
+        data: delegateData,
+        value: "0x0",
+        gasLimit: "0x9896800",
+        gasPrice: "0x0",
+        step: 'delegation',
+        description: 'Delegate Voting Power to Payload'
+      }, vnetConfig.id);
+
+      // Wait for transaction and update status
+      const delegateReceipt = await provider.waitForTransaction(delegateTxHash);
+      if (delegateReceipt && delegateReceipt.status === 1) {
+        this.updateTransactionStatus(delegateTxHash, 'success');
+        console.log('[SUCCESS] Delegation completed');
+      } else {
+        this.updateTransactionStatus(delegateTxHash, 'failed', 'Transaction failed or reverted');
+        throw new Error('Failed to delegate voting power');
+      }
       console.log('[STAGE:COMPLETED] delegation');
 
       // Step 4.3: Create governance proposal
@@ -545,7 +650,9 @@ class TenderlyGovernanceSimulator {
         data: proposeData,
         value: "0x0",
         gasLimit: "0x9896800",
-        gasPrice: "0x0"
+        gasPrice: "0x0",
+        step: 'proposalCreation',
+        description: 'Create Governance Proposal'
       }, vnetConfig.id);
 
       console.log(`Proposal transaction sent: ${proposeTxHash}`);
@@ -776,10 +883,13 @@ Gas Price: ${proposalTxDetails.gasPrice}
 ### Proposal Actions
 ${this.getProposalActionsDescription()}
 
+${this.generateTransactionSummary()}
+
 ### Simulation Results
 
 | Parameter | Value |
 |-----------|-------|
+| Proposal ID | \`${result.proposalId}\` |
 | Virtual Network ID | \`${vnetConfig.id}\` |
 | Execution Transaction Hash | \`${result.transactionHash}\` |
 
@@ -891,6 +1001,8 @@ ${proposalTxSection}
 ## Governance Simulation Failed - IGP-${this.igpId}
 
 **Payload Contract:** \`PayloadIGP${this.igpId}\`
+
+${this.generateTransactionSummary()}
 
 ### Error Details
 
