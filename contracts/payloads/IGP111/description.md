@@ -1,8 +1,8 @@
-# Launch syrupUSDT DEX and Vaults, Collect Revenue for Buyback, and Configure USDE-JRUSDE and SRUSDE-USDE Dust Limits
+# Launch syrupUSDT DEX and Vaults, Collect Revenue, Configure USDE-JRUSDE and SRUSDE-USDE Dust Limits, and Collect Lite Revenue
 
 ## Summary
 
-This proposal implements three key protocol upgrades: (1) launches the syrupUSDT DEX and associated vaults with launch limits and removes Team Multisig authorization post-launch, (2) collects accrued protocol revenue across multiple assets and withdraws it to Team Multisig for October buyback operations, and (3) sets conservative dust limits for USDE-JRUSDE and SRUSDE-USDE DEXes. These changes aim to expand protocol offerings with safe integration parameters, optimize revenue collection mechanisms, and prepare for continued ecosystem growth.
+This proposal implements four key protocol upgrades: (1) launches the syrupUSDT DEX and associated vaults with launch limits and removes Team Multisig authorization post-launch, (2) collects accrued protocol revenue across multiple assets and withdraws it to Team Multisig for October buyback operations, (3) sets conservative dust limits for USDE-JRUSDE and SRUSDE-USDE DEXes, and (4) collects Lite revenue by transferring 50 stETH from iETHv2 to Team Multisig for buyback operations. These changes aim to expand protocol offerings with safe integration parameters, optimize revenue collection mechanisms from both Fluid and Lite platforms, and prepare for continued ecosystem growth.
 
 ## Code Changes
 
@@ -74,6 +74,16 @@ This proposal implements three key protocol upgrades: (1) launches the syrupUSDT
   - **Max Borrow Limit**: $0
   - **Authorization**: Add Team Multisig auth
 
+### Action 4: Collect Lite Revenue and Transfer to Team Multisig
+
+- **Lite Vault Revenue Collection**:
+  - Transfer 50 stETH from iETHv2 Lite vault to Team Multisig
+  - Transfer executed through Treasury DSA via BASIC-A connector
+  - **Amount**: 50 stETH (50 * 1e18 wei)
+  - **Source**: iETHv2 Lite vault
+  - **Destination**: Team Multisig
+  - Purpose: Collect accumulated Lite vault revenue for October buyback operations
+
 ## Description
 
 This proposal implements three major changes to enhance protocol functionality, optimize revenue management, and expand market offerings:
@@ -96,6 +106,12 @@ This proposal implements three major changes to enhance protocol functionality, 
    - Configures smart collateral functionality with Team Multisig authorization for proper governance oversight
    - These conservative limits support gradual scaling and risk management for new market integrations
 
+4. **Lite Vault Revenue Management**
+   - Collects accumulated stETH revenue from the iETHv2 Lite vault and transfers it to Team Multisig for buyback operations
+   - Executes transfer through Treasury DSA via BASIC-A connector to ensure proper treasury management
+   - Demonstrates active revenue collection from both Fluid and Lite platform streams
+   - Supports October buyback program by consolidating revenue from all protocol sources
+
 ## Conclusion
 
-IGP-111 delivers targeted protocol upgrades: it launches the syrupUSDT market with appropriate limits and decentralized post-launch controls, collects and withdraws accumulated revenue to Team Multisig for October buyback operations, and introduces conservative dust limits for new USDE-related DEX integrations. The proposal balances expansion goals with risk management, ensuring safe integration of new markets while maintaining operational efficiency and treasury management best practices. These changes support sustainable growth and improved revenue distribution across the platform.
+IGP-111 delivers targeted protocol upgrades: it launches the syrupUSDT market with appropriate limits and decentralized post-launch controls, collects and withdraws accumulated revenue from both Fluid and Lite platforms to Team Multisig for October buyback operations, and introduces conservative dust limits for new USDE-related DEX integrations. The proposal balances expansion goals with risk management, ensuring safe integration of new markets while maintaining operational efficiency and treasury management best practices. These changes support sustainable growth and improved revenue distribution across both the Fluid and Lite ecosystems.
