@@ -371,22 +371,9 @@ class TenderlyGovernanceSimulator {
         polling: false
       });
 
-      let deployer;
-      try {
-        await provider.send('hardhat_impersonateAccount', ['0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045']);
-        deployer = await provider.getSigner('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045');
-        console.log('[INFO]  Using impersonated funded account for deployment');
-      } catch (impersonateError: any) {
-        console.warn(`[WARN]  Could not impersonate funded account: ${impersonateError.message}`);
-        // Fallback to Hardhat's default test account
-        deployer = new ethers.Wallet(
-          '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
-          provider
-        );
-        console.log(`[INFO]  Using original deployer: ${deployer.address}`);
-      }
-
-      console.log(`[INFO]  Deploying from: ${deployer.address}`);
+      // Use eth_sendTransaction with a funded address (like original script)
+      const fundedDeployerAddress = '0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e';
+      console.log(`[INFO]  Deploying from funded address: ${fundedDeployerAddress}`);
 
       const artifactPath = path.join(
         process.cwd(),
@@ -408,14 +395,31 @@ class TenderlyGovernanceSimulator {
       const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
       console.log(`[INFO]  Loaded artifact: PayloadIGP${this.igpId}`);
 
-      // Deploy contract
-      const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, deployer);
-      const contract = await factory.deploy();
+      // Deploy contract using eth_sendTransaction (like original script)
+      const deployTxHash = await provider.send("eth_sendTransaction", [{
+        from: fundedDeployerAddress,
+        data: artifact.bytecode,
+        value: "0x0",
+        gas: "0x9896800", // 10M gas
+        gasPrice: "0x0"
+      }]);
 
-      console.log('[INFO]  Waiting for deployment confirmation...');
-      await contract.waitForDeployment();
+      console.log(`[INFO]  Deployment transaction sent: ${deployTxHash}`);
 
-      const deployedAddress = await contract.getAddress();
+      // Wait for transaction to be mined
+      const receipt = await provider.waitForTransaction(deployTxHash);
+      
+      if (!receipt) {
+        throw new Error('Deployment transaction was not mined');
+      }
+
+      // Get the deployed contract address from the receipt
+      const deployedAddress = receipt.contractAddress;
+      
+      if (!deployedAddress) {
+        throw new Error('Contract address not found in deployment receipt');
+      }
+
       console.log(`[SUCCESS] Payload deployed: ${deployedAddress}`);
       console.log('[STAGE:COMPLETED] payloadDeployment');
 
