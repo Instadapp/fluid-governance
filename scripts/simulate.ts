@@ -5,8 +5,8 @@
  * Note: This script uses Tenderly Virtual Networks (Virtual TestNets) which have specific URL formats:
  * - VNet Creation API: POST /api/v1/account/{account_id}/project/{project_slug}/vnets
  * - VNet Transaction API: GET /api/v1/account/{account_id}/project/{project_slug}/vnets/{vnet_id}/transactions/{tx_hash}
- * - VNet Dashboard URL: https://dashboard.tenderly.co/{account_id}/{project_slug}/virtual-network/{vnet_id}
- * - Transaction Dashboard URL: https://dashboard.tenderly.co/{account_id}/{project_slug}/virtual-network/{vnet_id}/tx/{tx_hash}
+ * - VNet Dashboard URL: https://dashboard.tenderly.co/{account_id}/{project_slug}/testnet/{vnet_id}
+ * - Transaction Dashboard URL: https://dashboard.tenderly.co/{account_id}/{project_slug}/testnet/{vnet_id}/tx/{tx_hash}
  * 
  * Do NOT confuse Virtual Networks with the Simulation API (which uses /simulation/ endpoints)
  */
@@ -99,47 +99,11 @@ class TenderlyGovernanceSimulator {
   }
 
   private async getTenderlyTransactionStatus(txHash: string, vnetId: string): Promise<TenderlyTransactionResponse | null> {
-    try {
-      // Virtual Network transactions should be accessed via the VNet transaction endpoint
-      const response = await axios.get(
-        `https://api.tenderly.co/api/v1/account/${this.config.tenderly.account_id}/project/${this.config.tenderly.project_slug}/vnets/${vnetId}/transactions/${txHash}`,
-        {
-          headers: {
-            'X-Access-Key': this.config.tenderly.access_key,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      return response.data;
-    } catch (error: any) {
-      console.warn(`[WARN]  Could not fetch Tenderly transaction status for ${txHash}:`, error.response?.status);
-      return null;
-    }
+    return null;
   }
 
   private async getTenderlyTransactionUrl(txHash: string, vnetId: string): Promise<string> {
-    try {
-      // Try to get the transaction from Virtual Network API
-      const response = await axios.get(
-        `https://api.tenderly.co/api/v1/account/${this.config.tenderly.account_id}/project/${this.config.tenderly.project_slug}/vnets/${vnetId}/transactions/${txHash}`,
-        {
-          headers: {
-            'X-Access-Key': this.config.tenderly.access_key,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      // If API returns a URL, use it
-      if (response.data?.url) {
-        return response.data.url;
-      }
-    } catch (error: any) {
-      console.warn(`[WARN]  Could not fetch Tenderly URL for ${txHash}:`, error.response?.status);
-    }
-
-    // Fallback to constructed URL - Fixed path from /testnet/ to /virtual-network/
-    return `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/virtual-network/${vnetId}/tx/${txHash}`;
+    return `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetId}/tx/${txHash}`;
   }
 
   private async trackTransaction(txHash: string, txDetails: Partial<TransactionDetails>, vnetId: string): Promise<void> {
@@ -165,7 +129,10 @@ class TenderlyGovernanceSimulator {
     const tenderlyUrl = await this.getTenderlyTransactionUrl(txHash, vnetId);
 
     // Wait for transaction to be mined using the VNet RPC
-    const provider = new JsonRpcProvider(vnetRpc);
+    const provider = new JsonRpcProvider(vnetRpc, undefined, {
+      staticNetwork: true,
+      polling: false
+    });
 
     try {
       const receipt = await provider.waitForTransaction(txHash);
@@ -178,14 +145,8 @@ class TenderlyGovernanceSimulator {
         return { success: true, tenderlyUrl };
       }
 
-      // Transaction failed - use Tenderly API for detailed error analysis
-      const tenderlyData = await this.getTenderlyTransactionStatus(txHash, vnetId);
-
-      if (tenderlyData?.error_message) {
-        return { success: false, error: tenderlyData.error_message, tenderlyUrl };
-      }
-
-      return { success: false, error: 'Transaction execution reverted (check Tenderly debugger for details)', tenderlyUrl };
+      // Transaction failed - get error from receipt
+      return { success: false, error: 'Transaction failed (status: 0)', tenderlyUrl };
 
     } catch (error: any) {
       return { success: false, error: error.message, tenderlyUrl };
@@ -267,6 +228,31 @@ class TenderlyGovernanceSimulator {
       console.log(`[INFO]  Updated GitHub comment: ${commentId}`);
     } catch (error: any) {
       console.warn(`[WARN]  Failed to update GitHub comment:`, error.response?.data || error.message);
+    }
+  }
+
+  private async createNewGitHubComment(content: string): Promise<void> {
+    if (!this.config.github?.token || !this.config.github?.repo || !this.config.github?.pr_number) {
+      return;
+    }
+
+    try {
+      const [owner, repo] = this.config.github.repo.split('/');
+
+      await axios.post(
+        `https://api.github.com/repos/${owner}/${repo}/issues/${this.config.github.pr_number}/comments`,
+        { body: content },
+        {
+          headers: {
+            'Authorization': `token ${this.config.github.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      );
+
+      console.log(`[INFO]  Created new GitHub comment`);
+    } catch (error: any) {
+      console.warn(`[WARN]  Failed to create new GitHub comment:`, error.response?.data || error.message);
     }
   }
 
@@ -352,7 +338,8 @@ class TenderlyGovernanceSimulator {
           headers: {
             'X-Access-Key': access_key,
             'Content-Type': 'application/json'
-          }
+          },
+          timeout: 30000 // 30 second timeout
         }
       );
 
@@ -360,7 +347,7 @@ class TenderlyGovernanceSimulator {
       const vnetId = data.id;
       const adminRpc = data.rpcs?.find((r: any) => r.name === 'Admin RPC')?.url || data.admin_rpc_url;
       const slug = data.slug;
-      const link = `https://dashboard.tenderly.co/${account_id}/${project_slug}/virtual-network/${vnetId}`;
+      const link = `https://dashboard.tenderly.co/${account_id}/${project_slug}/testnet/${vnetId}`;
 
       console.log(`[SUCCESS] VNet Created: ${vnetId}`);
       console.log(`          RPC: ${adminRpc}`);
@@ -379,38 +366,28 @@ class TenderlyGovernanceSimulator {
     console.log('\n=== Step 2: Getting Payload Address ===');
 
     try {
-      const provider = new JsonRpcProvider(vnetRpc);
+      const provider = new JsonRpcProvider(vnetRpc, undefined, {
+        staticNetwork: true,
+        polling: false
+      });
 
-      // Create a signer with Hardhat's default test account
-      const deployer = new ethers.Wallet(
-        '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
-        provider
-      );
+      let deployer;
+      try {
+        await provider.send('hardhat_impersonateAccount', ['0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045']);
+        deployer = await provider.getSigner('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045');
+        console.log('[INFO]  Using impersonated funded account for deployment');
+      } catch (impersonateError: any) {
+        console.warn(`[WARN]  Could not impersonate funded account: ${impersonateError.message}`);
+        // Fallback to Hardhat's default test account
+        deployer = new ethers.Wallet(
+          '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
+          provider
+        );
+        console.log(`[INFO]  Using original deployer: ${deployer.address}`);
+      }
 
       console.log(`[INFO]  Deploying from: ${deployer.address}`);
 
-      // Fund the deployer account on Tenderly VNet
-      try {
-        await provider.send('tenderly_setBalance', [
-          deployer.address,
-          '0x56BC75E2D63100000' // 100 ETH in hex
-        ]);
-        console.log('[INFO]  Funded deployer account with 100 ETH');
-      } catch (fundError: any) {
-        console.warn('[WARN]  Could not fund deployer via tenderly_setBalance, trying evm_setAccountBalance');
-        try {
-          await provider.send('evm_setAccountBalance', [
-            deployer.address,
-            '0x56BC75E2D63100000' // 100 ETH in hex
-          ]);
-          console.log('[INFO]  Funded deployer account with 100 ETH');
-        } catch (fallbackError: any) {
-          console.warn(`[WARN]  Account funding failed: ${fallbackError.message}`);
-          console.warn('[WARN]  Proceeding with deployment anyway...');
-        }
-      }
-
-      // Read compiled contract artifacts
       const artifactPath = path.join(
         process.cwd(),
         'artifacts',
@@ -493,7 +470,10 @@ class TenderlyGovernanceSimulator {
     console.log('  Day 3-4: Execution');
     console.log('');
 
-    const provider = new JsonRpcProvider(vnetConfig.adminRpc);
+    const provider = new JsonRpcProvider(vnetConfig.adminRpc, undefined, {
+      staticNetwork: true,
+      polling: false
+    });
 
     try {
       // Step 4.1: Set payload as executable (like original script)
@@ -618,6 +598,7 @@ class TenderlyGovernanceSimulator {
       console.log(`[INFO]  Need to advance ${blocksToVotingStart} blocks (current: ${currentBlock}, target: ${startBlock})`);
 
       // Use evm_increaseBlocks with HEX format (works on Tenderly!)
+      console.log(`[INFO]  Sending evm_increaseBlocks request for ${blocksToVotingStart} blocks...`);
       await provider.send('evm_increaseBlocks', [ethers.toBeHex(blocksToVotingStart)]);
 
       currentBlock = await provider.getBlockNumber();
@@ -806,9 +787,7 @@ ${proposalTxSection}
 - **[Fluid UI (Staging)]**(${fluidUiLink}) - Virtual Network
 - **[Virtual Network Dashboard]**(${vnetConfig.link}) - Tenderly VNet
 
----
-
-*Automated governance simulation via GitHub Actions*`;
+`;
   }
 
   private getProposalActionsDescription(): string {
@@ -919,16 +898,7 @@ ${this.getErrorTroubleshooting(error.message)}
 
 ${vnetSection}
 
-### Next Steps
-
-1. Check the Tenderly debugger for detailed transaction analysis
-2. Review the virtual network state and contract interactions
-3. Verify all required contracts are properly deployed
-4. Check pre-setup script requirements
-
----
-
-*Automated governance simulation via GitHub Actions*`;
+`;
   }
 
   private getErrorTroubleshooting(errorMessage: string): string {
@@ -954,9 +924,7 @@ ${vnetSection}
     }
 
     return `- Review the error message above for specific details
-- Check Tenderly debugger for transaction analysis
-- Verify all contract interactions and state changes
-- Consider running pre-setup scripts if available`;
+- Check Tenderly debugger for transaction analysis`;
   }
 
   async simulate(): Promise<void> {
@@ -967,6 +935,30 @@ ${vnetSection}
     let vnetConfig: VNetConfig | undefined;
     let githubCommentId: number | null = null;
 
+    // Set up process exit handler to ensure GitHub comment is created even on forced termination
+    const exitHandler = async (signal: string) => {
+      console.log(`\n[INFO]  Process received ${signal}, attempting to create GitHub comment...`);
+      if (githubCommentId && vnetConfig) {
+        try {
+          const errorComment = this.generateErrorGitHubComment(
+            new Error(`Process terminated with signal: ${signal}`),
+            vnetConfig
+          );
+          await Promise.race([
+            this.updateGitHubComment(githubCommentId, errorComment),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Comment update timeout')), 5000))
+          ]);
+          console.log(`[SUCCESS] GitHub comment updated on process termination`);
+        } catch (error: any) {
+          console.warn(`[WARN]  Failed to update GitHub comment on termination: ${error.message}`);
+        }
+      }
+      process.exit(1);
+    };
+
+    process.on('SIGTERM', () => exitHandler('SIGTERM'));
+    process.on('SIGINT', () => exitHandler('SIGINT'));
+
     try {
       // Initialize GitHub comment management
       githubCommentId = await this.findOrCreateGitHubComment();
@@ -974,7 +966,10 @@ ${vnetSection}
       vnetConfig = await this.createVnet();
       const payloadAddress = await this.deployPayload(vnetConfig.adminRpc);
 
-      const provider = new JsonRpcProvider(vnetConfig.adminRpc);
+      const provider = new JsonRpcProvider(vnetConfig.adminRpc, undefined, {
+        staticNetwork: true,
+        polling: false
+      });
       await this.runPreSetup(provider);
 
       const result = await this.runGovernanceSimulation(vnetConfig, payloadAddress);
@@ -1016,10 +1011,30 @@ ${vnetSection}
     } catch (error: any) {
       console.error(`\n[ERROR] Simulation Failed: ${error.message}`);
 
-      // Update GitHub comment with error information
+      // Update GitHub comment with error information - with timeout protection
       if (githubCommentId) {
-        const errorComment = this.generateErrorGitHubComment(error, vnetConfig);
-        await this.updateGitHubComment(githubCommentId, errorComment);
+        try {
+          const errorComment = this.generateErrorGitHubComment(error, vnetConfig);
+          console.log(`[INFO]  Updating GitHub comment with error details...`);
+
+          // Use Promise.race to ensure comment update doesn't hang
+          await Promise.race([
+            this.updateGitHubComment(githubCommentId, errorComment),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Comment update timeout')), 10000))
+          ]);
+
+          console.log(`[SUCCESS] GitHub comment updated with error details`);
+        } catch (commentError: any) {
+          console.warn(`[WARN]  Failed to update GitHub comment: ${commentError.message}`);
+          // Try to create a new comment if update failed
+          try {
+            const errorComment = this.generateErrorGitHubComment(error, vnetConfig);
+            await this.createNewGitHubComment(errorComment);
+            console.log(`[SUCCESS] Created new GitHub comment with error details`);
+          } catch (createError: any) {
+            console.warn(`[WARN]  Failed to create new GitHub comment: ${createError.message}`);
+          }
+        }
       }
 
       // Enhanced error reporting
