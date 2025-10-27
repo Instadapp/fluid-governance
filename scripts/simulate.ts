@@ -25,6 +25,9 @@ dotenv.config();
 
 const execAsync = promisify(exec);
 
+// Global timeout configuration (10 minutes)
+const GLOBAL_TIMEOUT_MS = 10 * 60 * 1000;
+
 interface VNetConfig {
   id: string;
   adminRpc: string;
@@ -137,6 +140,24 @@ class TenderlyGovernanceSimulator {
     }
   }
 
+  private async verifyTransactionStatus(txHash: string, provider: JsonRpcProvider): Promise<'success' | 'failed'> {
+    try {
+      const receipt = await Promise.race([
+        provider.waitForTransaction(txHash),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), GLOBAL_TIMEOUT_MS))
+      ]);
+
+      if (receipt && (receipt as any).status === 1) {
+        return 'success';
+      } else {
+        return 'failed';
+      }
+    } catch (error: any) {
+      console.warn(`[WARN]  Could not verify transaction ${txHash}: ${error.message}`);
+      return 'failed';
+    }
+  }
+
   private generateTransactionSummary(): string {
     const transactions = Array.from(this.trackedTransactions.values());
 
@@ -145,8 +166,8 @@ class TenderlyGovernanceSimulator {
     }
 
     let summary = '### 📊 Transaction Summary\n\n';
-    summary += '| Step | Description | Status | Transaction |\n';
-    summary += '|------|------------|--------|-------------|\n';
+    summary += '| Step | Status | Transaction |\n';
+    summary += '|------|--------|-------------|\n';
 
     // Sort transactions by step order
     const stepOrder = ['deployment', 'setExecutable', 'delegation', 'proposalCreation', 'voting', 'queueing', 'execution'];
@@ -157,10 +178,10 @@ class TenderlyGovernanceSimulator {
         const status = tx.status === 'success' ? '✅ Success' :
           tx.status === 'failed' ? '❌ Failed' : '⏳ Pending';
         const txLink = tx.tenderlyUrl ? `[View](${tx.tenderlyUrl})` : tx.hash.substring(0, 10) + '...';
-        summary += `| ${tx.step} | ${tx.description} | ${status} | ${txLink} |\n`;
+        summary += `| ${tx.step} | ${status} | ${txLink} |\n`;
 
         if (tx.error) {
-          summary += `| | | | **Error:** ${tx.error} |\n`;
+          summary += `| | | **Error:** ${tx.error} |\n`;
         }
       }
     }
@@ -385,7 +406,7 @@ class TenderlyGovernanceSimulator {
             'X-Access-Key': access_key,
             'Content-Type': 'application/json'
           },
-          timeout: 30000 // 30 second timeout
+          timeout: GLOBAL_TIMEOUT_MS
         }
       );
 
@@ -468,20 +489,22 @@ class TenderlyGovernanceSimulator {
       });
 
       // Get the deployed contract address from the transaction receipt
-      // Use a timeout to avoid hanging
       let deployedAddress = '0x0000000000000000000000000000000000000000';
       try {
         const receipt = await Promise.race([
           provider.waitForTransaction(deployTxHash),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), GLOBAL_TIMEOUT_MS))
         ]);
 
         if (receipt && (receipt as any).contractAddress) {
           deployedAddress = (receipt as any).contractAddress;
+        } else {
+          throw new Error('No contract address in receipt');
         }
       } catch (error: any) {
-        console.warn(`[WARN]  Could not get deployment receipt: ${error.message}`);
-        console.warn('[WARN]  Using placeholder address');
+        console.error(`[ERROR] Could not get deployment receipt: ${error.message}`);
+        console.error('[ERROR] Deployment failed - cannot proceed without contract address');
+        throw new Error(`Deployment failed: ${error.message}`);
       }
 
       console.log(`[SUCCESS] Payload deployed: ${deployedAddress}`);
@@ -615,7 +638,7 @@ class TenderlyGovernanceSimulator {
         'description.md'
       );
 
-      let description = `IGP-${this.igpId}: Governance Proposal`;
+      let description = `IGP-${this.igpId}`;
       if (fs.existsSync(descriptionPath)) {
         description = fs.readFileSync(descriptionPath, 'utf8');
       }
@@ -634,7 +657,7 @@ class TenderlyGovernanceSimulator {
         gasPrice: "0x0"
       }]);
 
-      // Track proposal creation transaction (fire-and-forget)
+      // Track proposal creation transaction (verify status)
       this.trackedTransactions.set(proposeTxHash, {
         hash: proposeTxHash,
         from: this.config.addresses.proposer,
@@ -643,11 +666,19 @@ class TenderlyGovernanceSimulator {
         value: "0x0",
         gasLimit: "0x9896800",
         gasPrice: "0x0",
-        status: 'success', // Assume success (Tenderly processes instantly)
+        status: 'pending', // Will be updated after verification
         tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetConfig.id}/tx/${proposeTxHash}`,
         step: 'proposalCreation',
-        description: `Create IGP-${this.igpId} Governance Proposal`
+        description: `Create IGP-${this.igpId}`
       });
+
+      // Verify proposal creation transaction status
+      const proposalStatus = await this.verifyTransactionStatus(proposeTxHash, provider);
+      this.updateTransactionStatus(proposeTxHash, proposalStatus);
+
+      if (proposalStatus === 'failed') {
+        throw new Error('Proposal creation transaction failed');
+      }
 
       console.log(`Proposal transaction sent: ${proposeTxHash}`);
       console.log('[STAGE:COMPLETED] proposalTransaction');
@@ -690,7 +721,7 @@ class TenderlyGovernanceSimulator {
         status: 'success',
         tenderlyUrl: await this.getTenderlyTransactionUrl(proposeTxHash, vnetConfig.id),
         step: 'proposalCreation',
-        description: `Create IGP-${this.igpId} Governance Proposal`
+        description: `Create IGP-${this.igpId}`
       });
 
       let currentBlock = await provider.getBlockNumber();
@@ -738,7 +769,7 @@ class TenderlyGovernanceSimulator {
           status: 'success', // Assume success (Tenderly processes instantly)
           tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetConfig.id}/tx/${voteTxHash}`,
           step: 'voting',
-          description: `Cast Vote for IGP-${this.igpId} (Proposal ${proposalId})`
+          description: `Cast Vote for IGP-${this.igpId}`
         });
 
         console.log(`   [SUCCESS] Vote cast from ${voterAddress}`);
@@ -827,7 +858,7 @@ class TenderlyGovernanceSimulator {
         gasPrice: "0x0"
       }]);
 
-      // Track execution transaction (fire-and-forget)
+      // Track execution transaction (verify status)
       this.trackedTransactions.set(executeTxHash, {
         hash: executeTxHash,
         from: this.config.addresses.proposer,
@@ -836,13 +867,22 @@ class TenderlyGovernanceSimulator {
         value: "0x0",
         gasLimit: "0x2625A00",
         gasPrice: "0x0",
-        status: 'success', // Assume success (Tenderly processes instantly)
+        status: 'pending', // Will be updated after verification
         tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetConfig.id}/tx/${executeTxHash}`,
         step: 'execution',
         description: `Execute IGP-${this.igpId} Proposal ${proposalId}`
       });
 
-      console.log('[SUCCESS] Proposal executed!');
+      // Verify execution transaction status
+      const executionStatus = await this.verifyTransactionStatus(executeTxHash, provider);
+      this.updateTransactionStatus(executeTxHash, executionStatus);
+
+      if (executionStatus === 'success') {
+        console.log('[SUCCESS] Proposal executed!');
+      } else {
+        console.log('[FAILED] Proposal execution failed');
+        throw new Error('Proposal execution failed');
+      }
       console.log('[STAGE:COMPLETED] execution');
 
       // Optional: Final block advancement (not critical)
@@ -911,21 +951,14 @@ ${this.getProposalActionsDescription()}
 
 ${this.generateTransactionSummary()}
 
-### Simulation Results
-
-| Parameter | Value |
-|-----------|-------|
-| Proposal ID | \`${result.proposalId}\` |
-| Virtual Network ID | \`${vnetConfig.id}\` |
-| Execution Transaction Hash | \`${result.transactionHash}\` |
 
 ${proposalTxSection}
 
 ### Links
 
-- **[Tenderly Dashboard]**(${executionTenderlyUrl}) - Execution Transaction
-- **[Fluid UI (Staging)]**(${fluidUiLink}) - Virtual Network
-- **[Virtual Network Dashboard]**(${vnetConfig.link}) - Tenderly VNet
+- [Tenderly Dashboard](${executionTenderlyUrl})
+- [Fluid UI (Staging)](${fluidUiLink})
+- [Virtual Network Dashboard](${vnetConfig.link})
 
 `;
   }
@@ -1088,7 +1121,7 @@ ${vnetSection}
           );
           await Promise.race([
             this.updateGitHubComment(githubCommentId, errorComment),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Comment update timeout')), 5000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Comment update timeout')), GLOBAL_TIMEOUT_MS))
           ]);
           console.log(`[SUCCESS] GitHub comment updated on process termination`);
         } catch (error: any) {
@@ -1169,7 +1202,7 @@ ${vnetSection}
           // Use Promise.race to ensure comment update doesn't hang
           await Promise.race([
             this.updateGitHubComment(githubCommentId, errorComment),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Comment update timeout')), 10000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Comment update timeout')), GLOBAL_TIMEOUT_MS))
           ]);
 
           console.log(`[SUCCESS] GitHub comment updated with error details`);
