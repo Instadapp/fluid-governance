@@ -183,6 +183,9 @@ jobs:
           TENDERLY_ACCESS_KEY: ${{ secrets.TENDERLY_ACCESS_KEY }}
           TENDERLY_ACCOUNT_ID: ${{ secrets.TENDERLY_ACCOUNT_ID }}
           TENDERLY_PROJECT_SLUG: ${{ secrets.TENDERLY_PROJECT_SLUG }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.number }}
         run: |
           set +e  # Don't exit on error yet, we need to capture output and set status
 
@@ -218,12 +221,24 @@ jobs:
           # Extract proposal ID if created
           PROPOSAL_ID=$(echo "$OUTPUT" | grep "Proposal Created: ID" | sed 's/.*Proposal Created: ID //' | awk '{print $1}')
 
+          # Extract execution transaction hash
+          EXECUTION_TX=$(echo "$OUTPUT" | grep "Execution TX Hash:" | sed 's/.*Execution TX Hash: //')
+
+          # Extract Tenderly execution link
+          TENDERLY_EXECUTION_LINK=$(echo "$OUTPUT" | grep "Tenderly Execution:" | sed 's/.*Tenderly Execution: //')
+
+          # Extract Fluid UI link
+          FLUID_UI_LINK=$(echo "$OUTPUT" | grep "Fluid UI:" | sed 's/.*Fluid UI: //')
+
           # Set outputs including stage information
           echo "completed_stages=$COMPLETED_STAGES" >> $GITHUB_OUTPUT
           echo "vnet_id=$VNET_ID" >> $GITHUB_OUTPUT
           echo "vnet_link=$VNET_LINK" >> $GITHUB_OUTPUT
           echo "proposal_id=$PROPOSAL_ID" >> $GITHUB_OUTPUT
           echo "proposal_tx=$PROPOSAL_TX" >> $GITHUB_OUTPUT
+          echo "execution_tx=$EXECUTION_TX" >> $GITHUB_OUTPUT
+          echo "tenderly_execution_link=$TENDERLY_EXECUTION_LINK" >> $GITHUB_OUTPUT
+          echo "fluid_ui_link=$FLUID_UI_LINK" >> $GITHUB_OUTPUT
           echo "block_range=$BLOCK_RANGE" >> $GITHUB_OUTPUT
 
           # Check if simulation was successful
@@ -244,115 +259,7 @@ jobs:
             exit 1  # Fail the workflow step
           fi
 
-      - name: Comment simulation results on PR
-        if: steps.validate_igp.outputs.status == 'valid' && steps.simulation.outputs.success == 'true'
-        uses: actions/github-script@v7
-        env:
-          EXECUTE_CONTENT: ${{ steps.validate_igp.outputs.execute_content }}
-        with:
-          script: |
-            const prNumber = context.issue.number;
-            const igpNumber = '${{ needs.detect-igp.outputs.igp_number }}';
-            const igpId = '${{ needs.detect-igp.outputs.igp_id }}';
-            const proposalId = '${{ steps.simulation.outputs.proposal_id }}';
-            const vnetId = '${{ steps.simulation.outputs.vnet_id }}';
-            const txHash = '${{ steps.simulation.outputs.transaction_hash }}';
-            const tenderlyLink = '${{ steps.simulation.outputs.tenderly_execution_link }}';
-            const fluidLink = '${{ steps.simulation.outputs.fluid_ui_link }}';
-            const executeContent = process.env.EXECUTE_CONTENT;
-
-            let actionsSection = '';
-            if (executeContent && executeContent.trim()) {
-              actionsSection = `\n### Proposal Actions\n\`\`\`solidity\n${executeContent}\n\`\`\`\n`;
-            }
-
-            const body = `## Governance Simulation Completed - ${igpNumber.toUpperCase()}
-
-            **Payload Contract:** \`PayloadIGP${igpId}\`
-            ${actionsSection}
-            ### Simulation Results
-            | Parameter | Value |
-            |-----------|-------|
-            | **Proposal ID** | ${proposalId} |
-            | **Virtual Network ID** | \`${vnetId}\` |
-            | **Transaction Hash** | \`${txHash}\` |
-
-            ### Links
-            - [Tenderly Dashboard](${tenderlyLink})
-            - [Fluid UI (Staging)](${fluidLink})
-            ---
-            *Automated governance simulation via GitHub Actions*`;
-
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: body
-            });
-
-      - name: Comment if simulation failed
-        if: always() && steps.validate_igp.outputs.status == 'valid' && steps.simulation.conclusion == 'failure'
-        uses: actions/github-script@v7
-        env:
-          SIMULATION_OUTPUT: ${{ steps.simulation.outputs.error_message }}
-        with:
-          script: |
-            const prNumber = context.issue.number;
-            const igpNumber = '${{ needs.detect-igp.outputs.igp_number }}';
-            const igpId = '${{ needs.detect-igp.outputs.igp_id }}';
-            const proposalId = '${{ steps.simulation.outputs.proposal_id }}';
-            const vnetId = '${{ steps.simulation.outputs.vnet_id }}';
-            const vnetLink = '${{ steps.simulation.outputs.vnet_link }}';
-            const completedStages = '${{ steps.simulation.outputs.completed_stages }}';
-            const proposalTx = '${{ steps.simulation.outputs.proposal_tx }}';
-            const blockRange = '${{ steps.simulation.outputs.block_range }}';
-
-            const stageMap = {
-              'vnetCreation': 'Create Virtual TestNet',
-              'payloadDeployment': 'Deploy payload contract',
-              'setExecutable': 'Set payload as executable',
-              'delegation': 'Delegate voting power',
-              'proposalTransaction': 'Send proposal transaction',
-              'proposalCreation': 'Create proposal',
-              'votingStartAdvancement': 'Advance to voting start',
-              'voting': 'Cast votes',
-              'votingEndAdvancement': 'Advance to voting end',
-              'queueing': 'Queue proposal',
-              'timelockDelay': 'Wait timelock delay',
-              'execution': 'Execute proposal'
-            };
-
-            const completedList = completedStages.split(',').filter(s => s).map(s => `- ${stageMap[s.trim()] || s} ✓`).join('\n');
-
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: `## Simulation Failed - ${igpNumber.toUpperCase()}
-
-            **Payload Contract:** \`PayloadIGP${igpId}\`
-
-            ### Simulation Progress
-            ${proposalId ? `**Proposal ID:** ${proposalId}` : '**Proposal:** Not created'}
-            ${vnetLink ? `**Virtual TestNet:** [View on Tenderly](${vnetLink})` : (vnetId ? `**VNet ID:** ${vnetId}` : '**VNet:** Failed to create')}
-            ${proposalTx ? `**Proposal TX:** \`${proposalTx}\`` : ''}
-            ${blockRange ? `**Block Search:** ${blockRange}` : ''}
-
-            ${completedList ? `\n**Completed Stages:**\n${completedList}\n` : ''}
-
-            ### Error Details
-            \`\`\`
-            ${{ steps.simulation.outputs.error_message || 'See action logs for details' }}
-            \`\`\`
-
-            ### Next Steps
-            1. Review the [full action logs](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
-            2. Check the error details and completed stages above
-            3. Fix the issue and push changes to re-trigger simulation
-
-            ---
-            *Automated governance simulation via GitHub Actions*`
-            });
+      # Note: Comments are now handled by the simulation script itself via GitHub API
 
       - name: Comment if validation failed
         if: failure() && steps.validate_igp.outputs.status == 'invalid'

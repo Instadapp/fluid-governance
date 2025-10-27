@@ -19,3 +19,8 @@ governance:
 fluid:
   staging_url: "https://staging.fluid.io"
   production_url: "https://fluid.io"
+github:
+  # GitHub integration settings (optional, used for local dev)
+  # token: ""  # Set via GITHUB_TOKEN environment variable
+  # repo: ""   # Set via GITHUB_REPOSITORY environment variable
+  # pr_number: # Set via PR_NUMBER environment variable
