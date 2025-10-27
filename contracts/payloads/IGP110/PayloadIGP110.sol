@@ -279,6 +279,8 @@ contract PayloadIGP110 is PayloadIGPMain {
                 baseBorrowLimitInUSD: 5_000_000, // $5M
                 maxBorrowLimitInUSD: 50_000_000 // $50M
         });
+
+        setVaultLimits(VAULT_syrupUSDC__USDC);
     }
 
     /**
@@ -302,6 +304,7 @@ contract PayloadIGP110 is PayloadIGPMain {
     uint256 public constant sUSDe_USD_PRICE = 1.17 * 1e2;
     uint256 public constant sUSDs_USD_PRICE = 1.05 * 1e2;
     uint256 public constant syrupUSDT_USD_PRICE = 1.10 * 1e2;
+    uint256 public constant syrupUSDC_USD_PRICE = 1.13 * 1e2;
 
     uint256 public constant FLUID_USD_PRICE = 4.2 * 1e2;
 
@@ -373,6 +376,9 @@ contract PayloadIGP110 is PayloadIGPMain {
             decimals = 18;
         } else if (token == syrupUSDT_ADDRESS) {
             usdPrice = syrupUSDT_USD_PRICE;
+            decimals = 6;
+        } else if (token == syrupUSDC_ADDRESS) {
+            usdPrice = syrupUSDC_USD_PRICE;
             decimals = 6;
         } else if (token == sUSDs_ADDRESS) {
             usdPrice = sUSDs_USD_PRICE;
