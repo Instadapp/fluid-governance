@@ -42,11 +42,8 @@ contract PayloadIGP111 is PayloadIGPMain {
         // Action 1: Set launch limits for syrupUSDT DEX and its vaults
         action1();
 
-        // Action 2: Revenue collection for buyback
+        // Action 2: Collect Revenue from Liquidity Layer for Buybacks
         action2();
-
-        // Action 3: Collect revenue from Liquidity Layer
-        action3();
 
         // Action 4: Set dust limits for USDE-JRUSDE and SRUSDE-USDE DEXes
         action4();
@@ -168,31 +165,85 @@ contract PayloadIGP111 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 2: Update revenue collector address
+    /// @notice Action 2: Collect revenue from Liquidity Layer 
     function action2() internal isActionSkippable(2) {
-        LIQUIDITY.updateRevenueCollector(
-            0x9Afb8C1798B93a8E04a18553eE65bAFa41a012F1
-        );
-    }
-
-    /// @notice Action 3: Collect revenue from Liquidity Layer
-    function action3() internal isActionSkippable(3) {
-        address[] memory tokens = new address[](14);
-        tokens[0] = USDT_ADDRESS;
-        tokens[1] = wstETH_ADDRESS;
-        tokens[2] = ETH_ADDRESS;
-        tokens[3] = USDC_ADDRESS;
-        tokens[4] = sUSDe_ADDRESS;
-        tokens[5] = cbBTC_ADDRESS;
-        tokens[6] = WBTC_ADDRESS;
-        tokens[7] = GHO_ADDRESS;
-        tokens[8] = USDe_ADDRESS;
-        tokens[9] = wstUSR_ADDRESS;
-        tokens[10] = ezETH_ADDRESS;
-        tokens[11] = lBTC_ADDRESS;
-        tokens[12] = USDTb_ADDRESS;
-        tokens[13] = RLP_ADDRESS;
-        LIQUIDITY.collectRevenue(tokens);
+        {
+            address[] memory tokens = new address[](14);
+            tokens[0] = USDT_ADDRESS;
+            tokens[1] = wstETH_ADDRESS;
+            tokens[2] = ETH_ADDRESS;
+            tokens[3] = USDC_ADDRESS;
+            tokens[4] = sUSDe_ADDRESS;
+            tokens[5] = cbBTC_ADDRESS;
+            tokens[6] = WBTC_ADDRESS;
+            tokens[7] = GHO_ADDRESS;
+            tokens[8] = USDe_ADDRESS;
+            tokens[9] = wstUSR_ADDRESS;
+            tokens[10] = ezETH_ADDRESS;
+            tokens[11] = lBTC_ADDRESS;
+            tokens[12] = USDTb_ADDRESS;
+            tokens[13] = RLP_ADDRESS;
+            LIQUIDITY.collectRevenue(tokens);
+        }
+        {
+            address[] memory tokens = new address[](14);
+            uint256[] memory amounts = new uint256[](14);
+            tokens[0] = USDT_ADDRESS;
+            amounts[0] =
+                IERC20(USDT_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            tokens[1] = wstETH_ADDRESS;
+            amounts[1] =
+                IERC20(wstETH_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                0.1 ether;
+            tokens[2] = ETH_ADDRESS;
+            amounts[2] = address(FLUID_RESERVE).balance - 0.1 ether; // 0.1 ETH
+            tokens[3] = USDC_ADDRESS;
+            amounts[3] =
+                IERC20(USDC_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            tokens[4] = sUSDe_ADDRESS;
+            amounts[4] =
+                IERC20(sUSDe_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                0.1 ether;
+            tokens[5] = cbBTC_ADDRESS;
+            amounts[5] =
+                IERC20(cbBTC_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            tokens[6] = WBTC_ADDRESS;
+            amounts[6] =
+                IERC20(WBTC_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            tokens[7] = GHO_ADDRESS;
+            amounts[7] =
+                IERC20(GHO_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            tokens[8] = USDe_ADDRESS;
+            amounts[8] =
+                IERC20(USDe_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            tokens[9] = wstUSR_ADDRESS;
+            amounts[9] =
+                IERC20(wstUSR_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            tokens[10] = ezETH_ADDRESS;
+            amounts[10] =
+                IERC20(ezETH_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                0.1 ether;
+            tokens[11] = lBTC_ADDRESS;
+            amounts[11] =
+                IERC20(lBTC_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            tokens[12] = USDTb_ADDRESS;
+            amounts[12] =
+                IERC20(USDTb_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            tokens[13] = RLP_ADDRESS;
+            amounts[13] =
+                IERC20(RLP_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            FLUID_RESERVE.withdrawFunds(tokens, amounts, TEAM_MULTISIG);
+        }
     }
 
     /// @notice Action 4: Set dust limits for USDE-JRUSDE and SRUSDE-USDE DEXes
