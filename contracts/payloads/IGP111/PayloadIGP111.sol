@@ -49,6 +49,7 @@ contract PayloadIGP111 is PayloadIGPMain {
         action3();
 
         // Action 4: Collect Lite's Revenue for Buybacks
+        action4();
     }
 
     function verifyProposal() public view override {}
