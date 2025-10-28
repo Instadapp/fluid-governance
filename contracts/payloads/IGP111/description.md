@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal implements four key protocol upgrades: (1) launches the syrupUSDT DEX and associated vaults with launch limits and removes Team Multisig authorization post-launch, (2) collects accrued protocol revenue across multiple assets and withdraws it to Team Multisig for October buyback operations, (3) sets conservative dust limits for USDE-JRUSDE and SRUSDE-USDE DEXes, and (4) collects Lite revenue by transferring 50 stETH from iETHv2 to Team Multisig for buyback operations. These changes aim to expand protocol offerings with safe integration parameters, optimize revenue collection mechanisms from both Fluid and Lite platforms, and prepare for continued ecosystem growth.
+This proposal implements four key protocol upgrades: (1) launches the syrupUSDT DEX and associated vaults with launch limits and removes Team Multisig authorization post-launch, (2) collects accrued protocol revenue across multiple assets and withdraws it to Team Multisig for October buyback operations, (3) sets conservative dust limits for USDE-JRUSDE and SRUSDE-USDE DEXes, and (4) collects Lite revenue by transferring 82.8 stETH from iETHv2 to Team Multisig for buyback operations. These changes aim to expand protocol offerings with safe integration parameters, optimize revenue collection mechanisms from both Fluid and Lite platforms, and prepare for continued ecosystem growth.
 
 ## Code Changes
 
@@ -77,9 +77,9 @@ This proposal implements four key protocol upgrades: (1) launches the syrupUSDT 
 ### Action 4: Collect Lite Revenue and Transfer to Team Multisig
 
 - **Lite Vault Revenue Collection**:
-  - Transfer 82 stETH from iETHv2 Lite vault to Team Multisig
+  - Transfer 82.8 stETH from iETHv2 Lite vault to Team Multisig
   - Transfer executed through Treasury DSA via BASIC-A connector
-  - **Amount**: 82 stETH (82 * 1e18 wei)
+  - **Amount**: 82.8 stETH (82.8 * 1e18 wei)
   - **Source**: iETHv2 Lite vault
   - **Destination**: Team Multisig
   - Purpose: Collect accumulated Lite vault revenue for October buyback operations
