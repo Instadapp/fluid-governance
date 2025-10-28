@@ -77,9 +77,9 @@ This proposal implements four key protocol upgrades: (1) launches the syrupUSDT 
 ### Action 4: Collect Lite Revenue and Transfer to Team Multisig
 
 - **Lite Vault Revenue Collection**:
-  - Transfer 50 stETH from iETHv2 Lite vault to Team Multisig
+  - Transfer 82 stETH from iETHv2 Lite vault to Team Multisig
   - Transfer executed through Treasury DSA via BASIC-A connector
-  - **Amount**: 50 stETH (50 * 1e18 wei)
+  - **Amount**: 82 stETH (82 * 1e18 wei)
   - **Source**: iETHv2 Lite vault
   - **Destination**: Team Multisig
   - Purpose: Collect accumulated Lite vault revenue for October buyback operations
