@@ -297,7 +297,7 @@ contract PayloadIGP111 is PayloadIGPMain {
 
         // Spell 1: Transfer 50 stETH from iETHv2 to Team Multisig
         {
-            uint256 STETH_AMOUNT = 82 * 1e18; // 82 stETH
+            uint256 STETH_AMOUNT = 82.8 * 1e18; // 82.8 stETH
             targets[0] = "BASIC-A";
             encodedSpells[0] = abi.encodeWithSignature(
                 withdrawSignature,
