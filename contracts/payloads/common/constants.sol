@@ -113,6 +113,8 @@ contract PayloadIGPConstants {
         0x9D39A5DE30e57443BfF2A8307A4256c8797A3497;
     address internal constant syrupUSDC_ADDRESS =
         0x80ac24aA929eaF5013f6436cdA2a7ba190f5Cc0b;
+    address internal constant syrupUSDT_ADDRESS =
+        0x356B8d89c1e1239Cbbb9dE4815c39A1474d5BA7D;
     address internal constant sUSDs_ADDRESS =
         0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD;
     address internal constant USDe_ADDRESS =
@@ -135,8 +137,10 @@ contract PayloadIGPConstants {
         0xC139190F447e929f090Edeb554D95AbB8b18aC1C;
     address internal constant csUSDL_ADDRESS =
         0xbEeFc011e94f43b8B7b455eBaB290C7Ab4E216f1;
-    address internal constant syrupUSDT_ADDRESS =
-        0x356B8d89c1e1239Cbbb9dE4815c39A1474d5BA7D;
+    address internal constant JRUSDE_ADDRESS =
+        0xC58D044404d8B14e953C115E67823784dEA53d8F;
+    address internal constant SRUSDE_ADDRESS =
+        0x3d7d6fdf07EE548B939A80edbc9B2256d0cdc003;
 
     address internal constant WBTC_ADDRESS =
         0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
