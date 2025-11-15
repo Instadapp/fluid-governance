@@ -205,7 +205,7 @@ contract PayloadIGP112 is PayloadIGPMain {
         vaults[0] = VaultLiquidationPenalty({vaultId: 12, liquidationPenalty: 1 * 1e2});
         
         // wstETH/USDT: 3% -> 2.5%
-        vaults[1] = VaultLiquidationPenalty({vaultId: 15, liquidationPenalty: 2.5 * 1e2});
+        vaults[1] = VaultLiquidationPenalty({vaultId: 15, liquidationPenalty: 250}); // 2.5% = 250 in 1e2 format
         
         // weETH/USDT: 4% -> 3%
         vaults[2] = VaultLiquidationPenalty({vaultId: 20, liquidationPenalty: 3 * 1e2});
@@ -223,7 +223,7 @@ contract PayloadIGP112 is PayloadIGPMain {
         vaults[6] = VaultLiquidationPenalty({vaultId: 108, liquidationPenalty: 4 * 1e2});
         
         // USDe-USDtb/USDT (TYPE_2): 3% -> 2.5%
-        vaults[7] = VaultLiquidationPenalty({vaultId: 137, liquidationPenalty: 2.5 * 1e2});
+        vaults[7] = VaultLiquidationPenalty({vaultId: 137, liquidationPenalty: 250}); // 2.5% = 250 in 1e2 format
 
         // Update liquidation penalty for each vault
         for (uint256 i = 0; i < vaults.length; i++) {
