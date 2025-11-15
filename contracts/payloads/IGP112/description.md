@@ -42,7 +42,7 @@ This proposal implements five key operations: (1) cleans up leftover allowances 
   - Update Lite (iETHv2) treasury address from main treasury to Reserve Contract
   - **Source**: Main treasury (current Lite treasury address)
   - **Destination**: Reserve Contract (`0x264786EF916af64a1DB19F513F24a3681734ce92`)
-  - **Execution**: Via Lite DSA (`0x9600A48ed0f931d0c422D574e3275a90D8b22745`) using BASIC-A connector
+  - **Execution**: Direct call to `updateTreasury(address)` on Lite contract (`0xA0D3707c569ff8C87FA923d3823eC5D81c98Be78`)
   - **Function**: Calls `updateTreasury(address)` on Lite contract
   - **Purpose**: Route Lite revenue collection (from `collectRevenue()`) to Reserve Contract instead of the main treasury, centralizing revenue management across both Fluid and Lite platforms
 
@@ -94,8 +94,8 @@ This proposal addresses five cleanup, security enhancement, operational manageme
 4. **Lite Treasury Update**
    - Updates the Lite (iETHv2) treasury address from the main treasury to the Reserve Contract
    - Routes Lite revenue collection (from `collectRevenue()`) to Reserve Contract instead of the main treasury
-   - Executed through Lite DSA using BASIC-A connector by calling `updateTreasury(address)` function
-   - Requires adding Governance Timelock as authorized auth on Lite DSA before executing the update
+   - Executed by directly calling `updateTreasury(address)` function on Lite contract
+   - The Governance Timelock (as Lite admin) has permission to call this function directly
    - Centralizes revenue management by routing Lite revenue to the same Reserve Contract used for Fluid protocol revenue
    - Improves treasury management consistency and operational efficiency across both Fluid and Lite platforms
 
