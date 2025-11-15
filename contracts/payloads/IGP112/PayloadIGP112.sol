@@ -175,25 +175,9 @@ contract PayloadIGP112 is PayloadIGPMain {
 
     /// @notice Action 4: Update Lite treasury to Reserve contract
     function action4() internal isActionSkippable(4) {
-        // Lite DSA address
-        IDSAV2 IETH_V2_DSA = IDSAV2(0x9600A48ed0f931d0c422D574e3275a90D8b22745);
-
-        // Add Governance Timelock as an authorized auth on iETH v2 DSA to allow the timelock to cast spells on Lite DSA
-        IETHV2.addDSAAuth(address(this));
-
         // Update Lite treasury from main treasury to Reserve Contract
-        string[] memory targets = new string[](1);
-        bytes[] memory encodedSpells = new bytes[](1);
-
-        string memory updateTreasurySignature = "updateTreasury(address)";
-
-        targets[0] = "BASIC-A";
-        encodedSpells[0] = abi.encodeWithSignature(
-            updateTreasurySignature,
-            address(FLUID_RESERVE)
-        );
-
-        IETH_V2_DSA.cast(targets, encodedSpells, address(this));
+        // Call updateTreasury directly on Lite contract
+        IETHV2.updateTreasury(address(FLUID_RESERVE));
     }
 
     /// @notice Action 5: Update liquidation penalty on all USDT debt vaults
