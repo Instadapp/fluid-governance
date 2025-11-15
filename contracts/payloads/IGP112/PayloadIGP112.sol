@@ -134,7 +134,7 @@ contract PayloadIGP112 is PayloadIGPMain {
     /// @notice Helper function to pause old v1 vault completely
     function pauseVault(uint256 vaultId) internal {
         address vault_ = getVaultAddress(vaultId);
-        IFluidVaultT1.ConstantsView memory constants_ = IFluidVaultT1(vault_).constantsView();
+        IFluidVaultT1.ConstantViews memory constants_ = IFluidVaultT1(vault_).constantsView();
 
         // TYPE_1 vault - pause both supply and borrow
         // Pause supply limits
