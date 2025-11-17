@@ -66,10 +66,10 @@ This proposal implements six key operations: (1) cleans up leftover allowances f
   - **USDe-USDtb/USDT (vault 137, TYPE_2)**: 3% → 2.5% (0.5% reduction)
   - **Purpose**: Reduce liquidation costs for users borrowing USDT across different collateral types, aligning penalties with risk profiles and improving user experience while maintaining appropriate risk management
 
-### Action 6: Launch JRUSDE-SRUSDE DEX Limits
+### Action 6: Launch USDe-JRUSDE and SRUSDE-USDe DEX Limits
 
-- **DEX Pool 43**<br>
-  **JRUSDE<>SRUSDE**:
+- **DEX Pool 41**<br>
+  **USDe<>JRUSDE**:
   - **Supply Configuration**:
     - **Supply Mode**: 1
     - **Supply Expand Percent**: 50%
@@ -80,10 +80,27 @@ This proposal implements six key operations: (1) cleans up leftover allowances f
     - **Borrow Expand Percent**: 0%
     - **Borrow Expand Duration**: 0 hours
     - **Borrow Base/Max Limit in USD**: $0 / $0 (disabled)
-  - **Max Supply Shares**: 10,000,000 * 1e18 (mirrors the launch caps used in IGP-79)
-  - **Smart Lending Rebalancer**: Sets `fSL43` (JRUSDE-SRUSDE smart lending) rebalancer to the Reserve Contract, as done for csUSDL-USDC in IGP-102
-  - **DEX Auth**: Removes Team Multisig as auth post-launch to leave governance-only control
-  - **Purpose**: Applies the standard launch playbook—tight withdrawal caps, capped shares, Reserve-controlled rebalancing, and auth cleanup—before opening JRUSDE-SRUSDE liquidity to users
+  - **Max Supply Shares**: 10,000,000 * 1e18
+  - **Smart Lending Rebalancer**: Sets `fSL41` (USDe-JRUSDE) to the Reserve Contract
+  - **DEX Auth**: Removes Team Multisig authorization after configuration
+  - **Purpose**: Provides a tightly capped launch for USDe<>JRUSDE liquidity with governance-only control
+
+- **DEX Pool 42**<br>
+  **SRUSDE<>USDe**:
+  - **Supply Configuration**:
+    - **Supply Mode**: 1
+    - **Supply Expand Percent**: 50%
+    - **Supply Expand Duration**: 1 hour
+    - **Base Withdrawal Limit in USD**: $10,000,000
+  - **Borrow Configuration**:
+    - **Borrow Mode**: 1
+    - **Borrow Expand Percent**: 0%
+    - **Borrow Expand Duration**: 0 hours
+    - **Borrow Base/Max Limit in USD**: $0 / $0 (disabled)
+  - **Max Supply Shares**: 10,000,000 * 1e18
+  - **Smart Lending Rebalancer**: Sets `fSL42` (SRUSDE-USDe) to the Reserve Contract
+  - **DEX Auth**: Removes Team Multisig authorization after configuration
+  - **Purpose**: Applies the same guarded launch template to SRUSDE<>USDe, keeping exposure capped and managed centrally
 
 ## Description
 
@@ -134,13 +151,13 @@ This proposal addresses six cleanup, security enhancement, operational managemen
    - Reduces liquidation costs for users borrowing USDT across different collateral types
    - Aligns liquidation penalties with risk profiles and market conditions
 
-6. **JRUSDE-SRUSDE DEX Launch Controls**
-   - Sets conservative launch limits on the JRUSDE-SRUSDE DEX (DEX ID 43)
-   - Updates max supply shares to 10,000,000 to cap initial exposure
-   - Points the associated smart lending rebalancer to the Reserve Contract
-   - Removes Team Multisig authorization on the DEX after configuration
+6. **USDe-JRUSDE & SRUSDE-USDe DEX Launch Controls**
+   - Sets conservative launch limits on the USDe-JRUSDE (DEX ID 41) and SRUSDE-USDe (DEX ID 42) pools
+   - Updates max supply shares for both to 10,000,000 to cap initial exposure
+   - Points the associated smart lending rebalancers (fSL41 and fSL42) to the Reserve Contract
+   - Removes Team Multisig authorization on both DEXes after configuration
 
 ## Conclusion
 
-IGP-112 completes the Reserve contract allowance cleanup from IGP110 by revoking 17 leftover protocol-token allowance pairs, reduces limits on the oldest v1 vaults (IDs 1-10) to allow exits while preventing new activity, max restricts the deUSD-USDC DEX by setting max supply shares to 10, updates the Lite treasury from the main treasury to the Reserve Contract, reduces liquidation penalties on all USDT debt vaults with vault-specific reductions, and launches the JRUSDE-SRUSDE DEX with controlled limits, supply caps, and governance cleanup. These changes improve protocol security, centralize revenue management across Fluid and Lite platforms, cap new DEX exposure, and reduce liquidation costs for users borrowing USDT.
+IGP-112 completes the Reserve contract allowance cleanup from IGP110 by revoking 17 leftover protocol-token allowance pairs, reduces limits on the oldest v1 vaults (IDs 1-10) to allow exits while preventing new activity, max restricts the deUSD-USDC DEX by setting max supply shares to 10, updates the Lite treasury from the main treasury to the Reserve Contract, reduces liquidation penalties on all USDT debt vaults with vault-specific reductions, and launches the USDe-JRUSDE and SRUSDE-USDe DEXes with controlled limits, supply caps, and governance cleanup. These changes improve protocol security, centralize revenue management across Fluid and Lite platforms, cap new DEX exposure, and reduce liquidation costs for users borrowing USDT.
 

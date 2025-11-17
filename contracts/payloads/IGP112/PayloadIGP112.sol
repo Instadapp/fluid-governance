@@ -54,7 +54,7 @@ contract PayloadIGP112 is PayloadIGPMain {
         // Action 5: Update liquidation penalty on all USDT debt vaults
         action5();
 
-        // Action 6: Launch JRUSDE-SRUSDE DEX limits
+        // Action 6: Launch USDe-JRUSDE and SRUSDE-USDe DEX limits
         action6();
     }
 
@@ -220,34 +220,59 @@ contract PayloadIGP112 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 6: Launch JRUSDE-SRUSDE DEX limits and configure smart lending
+    /// @notice Action 6: Launch USDe-JRUSDE and SRUSDE-USDe DEX limits and configure smart lending
     function action6() internal isActionSkippable(6) {
-        // DEX ID 43: JRUSDE-SRUSDE
-        address JRUSDE_SRUSDE_DEX = getDexAddress(43);
-
-        // Set launch limits for JRUSDE-SRUSDE DEX
-        DexConfig memory dexConfig_ = DexConfig({
-            dex: JRUSDE_SRUSDE_DEX,
-            tokenA: JRUSDE_ADDRESS,
-            tokenB: SRUSDE_ADDRESS,
+        // DEX ID 41: USDe-JRUSDE
+        address USDE_JRUSDE_DEX = getDexAddress(41);
+        DexConfig memory dexConfigUSDe_ = DexConfig({
+            dex: USDE_JRUSDE_DEX,
+            tokenA: USDe_ADDRESS,
+            tokenB: JRUSDE_ADDRESS,
             smartCollateral: true,
             smartDebt: false,
             baseWithdrawalLimitInUSD: 10_000_000, // $10M launch limit
             baseBorrowLimitInUSD: 0,
             maxBorrowLimitInUSD: 0
         });
-        setDexLimits(dexConfig_);
+        setDexLimits(dexConfigUSDe_);
+
+        // DEX ID 42: SRUSDE-USDe
+        address SRUSDE_USDE_DEX = getDexAddress(42);
+        DexConfig memory dexConfigSRUs_ = DexConfig({
+            dex: SRUSDE_USDE_DEX,
+            tokenA: SRUSDE_ADDRESS,
+            tokenB: USDe_ADDRESS,
+            smartCollateral: true,
+            smartDebt: false,
+            baseWithdrawalLimitInUSD: 10_000_000, // $10M launch limit
+            baseBorrowLimitInUSD: 0,
+            maxBorrowLimitInUSD: 0
+        });
+        setDexLimits(dexConfigSRUs_);
 
         // Launch supply shares cap
         uint256 launchSupplyShares_ = 10_000_000 * 1e18; // $10M equivalent shares
-        IFluidDex(JRUSDE_SRUSDE_DEX).updateMaxSupplyShares(launchSupplyShares_);
+        IFluidDex(USDE_JRUSDE_DEX).updateMaxSupplyShares(launchSupplyShares_);
+        IFluidDex(SRUSDE_USDE_DEX).updateMaxSupplyShares(launchSupplyShares_);
 
-        // Configure smart lending rebalancer to Reserve contract
-        address fSL_JRUSDE_SRUSDE = getSmartLendingAddress(43);
-        ISmartLendingAdmin(fSL_JRUSDE_SRUSDE).setRebalancer(address(FLUID_RESERVE));
+        // Configure smart lending rebalancers to Reserve contract
+        address fSL_USDE_JRUSDE = getSmartLendingAddress(41);
+        if (fSL_USDE_JRUSDE != address(0)) {
+            ISmartLendingAdmin(fSL_USDE_JRUSDE).setRebalancer(
+                address(FLUID_RESERVE)
+            );
+        }
 
-        // Remove Team Multisig authorization on the DEX post launch
-        DEX_FACTORY.setDexAuth(JRUSDE_SRUSDE_DEX, TEAM_MULTISIG, false);
+        address fSL_SRUSDE_USDE = getSmartLendingAddress(42);
+        if (fSL_SRUSDE_USDE != address(0)) {
+            ISmartLendingAdmin(fSL_SRUSDE_USDE).setRebalancer(
+                address(FLUID_RESERVE)
+            );
+        }
+
+        // Remove Team Multisig authorization on the DEXes post launch
+        DEX_FACTORY.setDexAuth(USDE_JRUSDE_DEX, TEAM_MULTISIG, false);
+        DEX_FACTORY.setDexAuth(SRUSDE_USDE_DEX, TEAM_MULTISIG, false);
     }
     /**
      * |
