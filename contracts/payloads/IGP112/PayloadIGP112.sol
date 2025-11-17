@@ -244,7 +244,9 @@ contract PayloadIGP112 is PayloadIGPMain {
 
         // Configure smart lending rebalancer to Reserve contract
         address fSL_JRUSDE_SRUSDE = getSmartLendingAddress(43);
-        ISmartLendingAdmin(fSL_JRUSDE_SRUSDE).setRebalancer(address(FLUID_RESERVE));
+        if (fSL_JRUSDE_SRUSDE != address(0)) {
+            ISmartLendingAdmin(fSL_JRUSDE_SRUSDE).setRebalancer(address(FLUID_RESERVE));
+        }
 
         // Remove Team Multisig authorization on the DEX post launch
         DEX_FACTORY.setDexAuth(JRUSDE_SRUSDE_DEX, TEAM_MULTISIG, false);
