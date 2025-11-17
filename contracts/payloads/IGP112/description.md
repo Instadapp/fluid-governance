@@ -1,8 +1,8 @@
-# Cleanup Leftover Reserve Allowances from IGP110, Pause Old V1 Vaults, Max Restrict deUSD DEX, Update Lite Treasury, and Update USDT Debt Vault Liquidation Penalties
+# Cleanup Leftover Reserve Allowances from IGP110, Reduce Limits on Old V1 Vaults, Max Restrict deUSD DEX, Update Lite Treasury, and Update USDT Debt Vault Liquidation Penalties
 
 ## Summary
 
-This proposal implements five key operations: (1) cleans up leftover allowances from the Reserve contract that were not properly revoked in IGP110 due to a protocol-token array mismatch, (2) completely pauses very old v1 vaults (IDs 1-10), (3) max restricts the deUSD-USDC DEX, (4) updates the Lite treasury from the main treasury to the Reserve Contract, and (5) updates liquidation penalties on all USDT debt vaults with vault-specific reductions. The proposal revokes 17 protocol-token allowance pairs that remained after IGP110 execution, completely pauses the oldest vaults in the protocol, max restricts the deUSD-USDC DEX, routes Lite revenue collection to the Reserve Contract instead of the main treasury, and reduces liquidation penalties across all USDT debt vaults to improve user experience.
+This proposal implements six key operations: (1) cleans up leftover allowances from the Reserve contract that were not properly revoked in IGP110 due to a protocol-token array mismatch, (2) reduces limits on very old v1 vaults (IDs 1-10) to allow users to exit while preventing new activity, (3) max restricts the deUSD-USDC DEX by setting max supply shares to minimal value, (4) updates the Lite treasury from the main treasury to the Reserve Contract, (5) updates liquidation penalties on all USDT debt vaults with vault-specific reductions, and (6) launches the JRUSDE-SRUSDE DEX with conservative limits, supply share caps, rebalancer updates, and Team Multisig removal. These changes revoke 17 protocol-token allowance pairs that remained after IGP110 execution, reduce limits on the oldest vaults to allow withdrawals while preventing new deposits/borrows, restrict the deUSD-USDC DEX to allow withdrawals, route Lite revenue collection to the Reserve Contract instead of the main treasury, reduce liquidation penalties across all USDT debt vaults, and safely launch the JRUSDE-SRUSDE DEX with operational safeguards.
 
 ## Code Changes
 
@@ -16,25 +16,31 @@ This proposal implements five key operations: (1) cleans up leftover allowances 
   - **Allowance Amounts**: Range from significant amounts (e.g., 65,890 USDT, 65,463 USDC) to smaller dust amounts (100 USDT/USDC)
   - **Purpose**: Complete the Reserve contract allowance cleanup that was started in IGP110 by removing all remaining unnecessary allowances
 
-### Action 2: Pause Very Old V1 Vaults
+### Action 2: Reduce Limits on Very Old V1 Vaults
 
-- **Vault Pausing**:
-  - Completely pause vaults with IDs 1-10
+- **Vault Limit Reduction**:
+  - Reduce limits on vaults with IDs 1-10 to allow users to exit while preventing new activity
   - **Vaults Affected**: Vault IDs 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-  - **Supply Limits**: Paused with minimal limits (0.01% expand, max duration)
-  - **Borrow Limits**: Paused with minimal limits (0.01% expand, max duration)
-  - **User Operations**: Paused for both supply and borrow operations
-  - **Purpose**: Totally pause these very old v1 vaults that are no longer in active use
+  - **Updated Base Withdrawal Limits (USD)**:
+    - Vault 1 (ETH/USDC): $2.2k
+    - Vault 2 (ETH/USDT): $3.2k
+    - Vault 3 (wstETH/ETH): $2.6k
+    - Vault 4 (wstETH/USDC): $2.25k
+    - Vault 5 (wstETH/USDT): $2.27k
+    - Vault 6 (weETH/wstETH): $14.5M
+    - Vault 7 (sUSDe/USDC): $4k
+    - Vault 8 (sUSDe/USDT): $520
+    - Vault 9 (weETH/USDC): $3.45M
+    - Vault 10 (weETH/USDT): $1.75M
+  - **All Vaults 1-10**: Borrow limits set to minimal values (0.01% expand, max duration, $10 base / $20 max limits)
+  - **Purpose**: Allow existing users to withdraw/exit these very old v1 vaults while preventing new deposits and borrows
 
 ### Action 3: Max Restrict deUSD-USDC DEX
 
 - **DEX Pool 19**<br>
   **deUSD-USDC DEX**:
-  - **Supply Limits**: Paused for both tokens (deUSD and USDC) with minimal limits (0.01% expand, max duration)
-  - **User Operations**: Paused for supply operations (DEX doesn't have borrow capabilities)
-  - **Max Supply Shares**: Set to 0
-  - **Swap and Arbitrage**: Paused
-  - **Purpose**: Completely max restrict the deUSD-USDC DEX by pausing supply limits, user operations, setting max supply shares to 0, and pausing swap and arbitrage to eliminate all exposure to deUSD
+  - **Max Supply Shares**: Set to 10 (minimal limit to allow withdrawals)
+  - **Purpose**: Restrict the deUSD-USDC DEX by setting max supply shares to minimal value, allowing users to withdraw while preventing new deposits
 
 ### Action 4: Update Lite Treasury to Reserve Contract
 
@@ -60,9 +66,28 @@ This proposal implements five key operations: (1) cleans up leftover allowances 
   - **USDe-USDtb/USDT (vault 137, TYPE_2)**: 3% → 2.5% (0.5% reduction)
   - **Purpose**: Reduce liquidation costs for users borrowing USDT across different collateral types, aligning penalties with risk profiles and improving user experience while maintaining appropriate risk management
 
+### Action 6: Launch JRUSDE-SRUSDE DEX Limits
+
+- **DEX Pool 43**<br>
+  **JRUSDE<>SRUSDE**:
+  - **Supply Configuration**:
+    - **Supply Mode**: 1
+    - **Supply Expand Percent**: 50%
+    - **Supply Expand Duration**: 1 hour
+    - **Base Withdrawal Limit in USD**: $10,000,000
+  - **Borrow Configuration**:
+    - **Borrow Mode**: 1
+    - **Borrow Expand Percent**: 0%
+    - **Borrow Expand Duration**: 0 hours
+    - **Borrow Base/Max Limit in USD**: $0 / $0 (disabled)
+  - **Max Supply Shares**: 10,000,000 * 1e18 (mirrors the launch caps used in IGP-79)
+  - **Smart Lending Rebalancer**: Sets `fSL43` (JRUSDE-SRUSDE smart lending) rebalancer to the Reserve Contract, as done for csUSDL-USDC in IGP-102
+  - **DEX Auth**: Removes Team Multisig as auth post-launch to leave governance-only control
+  - **Purpose**: Applies the standard launch playbook—tight withdrawal caps, capped shares, Reserve-controlled rebalancing, and auth cleanup—before opening JRUSDE-SRUSDE liquidity to users
+
 ## Description
 
-This proposal addresses five cleanup, security enhancement, operational management, and parameter standardization tasks:
+This proposal addresses six cleanup, security enhancement, operational management, and parameter standardization tasks:
 
 1. **Reserve Contract Security Enhancement**
    - Completes the allowance cleanup process that was initiated in IGP110
@@ -73,23 +98,20 @@ This proposal addresses five cleanup, security enhancement, operational manageme
    - Improves security posture by reducing attack surface and potential misuse of unused allowances
    - Standardizes the protocol approach to explicitly grant allowances only when needed
 
-2. **Old V1 Vault Pausing**
-   - Completely pauses the very oldest vaults in the protocol (vault IDs 1-10)
+2. **Old V1 Vault Limit Reduction**
+   - Reduces limits on the very oldest vaults in the protocol (vault IDs 1-10)
    - These vaults represent the earliest vault deployments and are no longer in active use
-   - Pauses both supply and borrow limits with minimal expand parameters (0.01% expand, max duration)
-   - Pauses all user operations (supply and borrow) for these vaults
-   - Effectively disables these vaults by preventing any new deposits and borrows
-   - Improves protocol security by reducing the attack surface of legacy vault implementations
-   - Maintains protocol cleanliness by pausing deprecated vaults
+   - Vault 1 (ETH/USDC): Base withdrawal limit reduced to 0.7 ETH to allow gradual exits
+   - All vaults 1-10: Borrow limits set to minimal values (1% expand, 720 hours duration, $10 base and max limits)
+   - Allows existing users to withdraw/exit while preventing new deposits and borrows
+   - Improves protocol security by reducing exposure to legacy vault implementations
+   - Maintains protocol cleanliness by restricting deprecated vaults without fully pausing
 
 3. **deUSD-USDC DEX Max Restriction**
    - Max restricts the deUSD-USDC DEX (DEX ID 19)
-   - Pauses supply limits for both tokens (deUSD and USDC) with minimal expand parameters (0.01% expand, max duration)
-   - Pauses user operations for supply operations (DEX doesn't have borrow capabilities)
-   - Sets max supply shares to 0 to prevent any new deposits
-   - Pauses swap and arbitrage operations
-   - Effectively disables the DEX by preventing any new deposits, swaps, or arbitrage
-   - Maintains protocol risk management by completely eliminating exposure to deUSD
+   - Sets max supply shares to 10 (minimal limit)
+   - Allows users to withdraw while preventing new deposits
+   - Maintains protocol risk management by restricting exposure to deUSD without fully pausing
 
 4. **Lite Treasury Update**
    - Updates the Lite (iETHv2) treasury address from the main treasury to the Reserve Contract
@@ -112,7 +134,13 @@ This proposal addresses five cleanup, security enhancement, operational manageme
    - Reduces liquidation costs for users borrowing USDT across different collateral types
    - Aligns liquidation penalties with risk profiles and market conditions
 
+6. **JRUSDE-SRUSDE DEX Launch Controls**
+   - Sets conservative launch limits on the JRUSDE-SRUSDE DEX (DEX ID 43)
+   - Updates max supply shares to 10,000,000 to cap initial exposure
+   - Points the associated smart lending rebalancer to the Reserve Contract
+   - Removes Team Multisig authorization on the DEX after configuration
+
 ## Conclusion
 
-IGP-112 completes the Reserve contract allowance cleanup from IGP110 by revoking 17 leftover protocol-token allowance pairs, pauses the oldest v1 vaults (IDs 1-10), max restricts the deUSD-USDC DEX, updates the Lite treasury from the main treasury to the Reserve Contract, and reduces liquidation penalties on all USDT debt vaults with vault-specific reductions. These changes improve protocol security, centralize revenue management across Fluid and Lite platforms, and reduce liquidation costs for users borrowing USDT.
+IGP-112 completes the Reserve contract allowance cleanup from IGP110 by revoking 17 leftover protocol-token allowance pairs, reduces limits on the oldest v1 vaults (IDs 1-10) to allow exits while preventing new activity, max restricts the deUSD-USDC DEX by setting max supply shares to 10, updates the Lite treasury from the main treasury to the Reserve Contract, reduces liquidation penalties on all USDT debt vaults with vault-specific reductions, and launches the JRUSDE-SRUSDE DEX with controlled limits, supply caps, and governance cleanup. These changes improve protocol security, centralize revenue management across Fluid and Lite platforms, cap new DEX exposure, and reduce liquidation costs for users borrowing USDT.
 

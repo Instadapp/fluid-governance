@@ -53,6 +53,9 @@ contract PayloadIGP112 is PayloadIGPMain {
 
         // Action 5: Update liquidation penalty on all USDT debt vaults
         action5();
+
+        // Action 6: Launch JRUSDE-SRUSDE DEX limits
+        action6();
     }
 
     function verifyProposal() public view override {}
@@ -65,6 +68,11 @@ contract PayloadIGP112 is PayloadIGPMain {
     struct VaultLiquidationPenalty {
         uint256 vaultId;
         uint256 liquidationPenalty; // in 1e2 format (1% = 100)
+    }
+
+    struct VaultWithdrawalLimit {
+        uint256 vaultId;
+        uint256 baseWithdrawalLimitInUSD;
     }
 
     /**
@@ -117,65 +125,61 @@ contract PayloadIGP112 is PayloadIGPMain {
         IFluidReserveContract(RESERVE_CONTRACT_PROXY).revoke(protocols_, tokens_);
     }
 
-    /// @notice Action 2: Clean up very old v1 vaults (1-10)
+    /// @notice Action 2: Reduce limits on very old v1 vaults (1-10)
     function action2() internal isActionSkippable(2) {
-        pauseVault(1);
-        pauseVault(2);
-        pauseVault(3);
-        pauseVault(4);
-        pauseVault(5);
-        pauseVault(6);
-        pauseVault(7);
-        pauseVault(8);
-        pauseVault(9);
-        pauseVault(10);
-    }
+        VaultWithdrawalLimit[] memory supplyLimits_ = new VaultWithdrawalLimit[](10);
+        supplyLimits_[0] = VaultWithdrawalLimit({vaultId: 1, baseWithdrawalLimitInUSD: 2_200 * 1e2}); // ETH/USDC
+        supplyLimits_[1] = VaultWithdrawalLimit({vaultId: 2, baseWithdrawalLimitInUSD: 3_200 * 1e2}); // ETH/USDT
+        supplyLimits_[2] = VaultWithdrawalLimit({vaultId: 3, baseWithdrawalLimitInUSD: 2_600 * 1e2}); // wstETH/ETH
+        supplyLimits_[3] = VaultWithdrawalLimit({vaultId: 4, baseWithdrawalLimitInUSD: 2_250 * 1e2}); // wstETH/USDC
+        supplyLimits_[4] = VaultWithdrawalLimit({vaultId: 5, baseWithdrawalLimitInUSD: 2_270 * 1e2}); // wstETH/USDT
+        supplyLimits_[5] = VaultWithdrawalLimit({vaultId: 6, baseWithdrawalLimitInUSD: 14_500_000 * 1e2}); // weETH/wstETH
+        supplyLimits_[6] = VaultWithdrawalLimit({vaultId: 7, baseWithdrawalLimitInUSD: 4_000 * 1e2}); // sUSDe/USDC
+        supplyLimits_[7] = VaultWithdrawalLimit({vaultId: 8, baseWithdrawalLimitInUSD: 520 * 1e2}); // sUSDe/USDT
+        supplyLimits_[8] = VaultWithdrawalLimit({vaultId: 9, baseWithdrawalLimitInUSD: 3_450_000 * 1e2}); // weETH/USDC
+        supplyLimits_[9] = VaultWithdrawalLimit({vaultId: 10, baseWithdrawalLimitInUSD: 1_750_000 * 1e2}); // weETH/USDT
 
-    /// @notice Helper function to pause old v1 vault completely
-    function pauseVault(uint256 vaultId) internal {
-        address vault_ = getVaultAddress(vaultId);
-        IFluidVaultT1.ConstantViews memory constants_ = IFluidVaultT1(vault_).constantsView();
+        for (uint256 i = 0; i < supplyLimits_.length; i++) {
+            address vault_ = getVaultAddress(supplyLimits_[i].vaultId);
+            IFluidVaultT1.ConstantViews memory constants_ = IFluidVaultT1(vault_).constantsView();
 
-        // TYPE_1 vault - pause both supply and borrow
-        // Pause supply limits
-        setSupplyProtocolLimitsPaused(vault_, constants_.supplyToken);
+            SupplyProtocolConfig memory supplyConfig_ = SupplyProtocolConfig({
+                protocol: vault_,
+                supplyToken: constants_.supplyToken,
+                expandPercent: 25 * 1e2, // 25%
+                expandDuration: 12 hours, // 12 hours
+                baseWithdrawalLimitInUSD: supplyLimits_[i].baseWithdrawalLimitInUSD
+            });
+            setSupplyProtocolLimits(supplyConfig_);
+        }
 
-        // Pause borrow limits
-        setBorrowProtocolLimitsPaused(vault_, constants_.borrowToken);
+        // Apply "paused" borrow limits to all vaults 1-10 (without actually pausing)
+        for (uint256 vaultId = 1; vaultId <= 10; vaultId++) {
+            address vault_ = getVaultAddress(vaultId);
+            IFluidVaultT1.ConstantViews memory constants_ = IFluidVaultT1(vault_).constantsView();
 
-        // Pause user operations
-        address[] memory supplyTokens = new address[](1);
-        supplyTokens[0] = constants_.supplyToken;
-
-        address[] memory borrowTokens = new address[](1);
-        borrowTokens[0] = constants_.borrowToken;
-
-        LIQUIDITY.pauseUser(vault_, supplyTokens, borrowTokens);
+            BorrowProtocolConfig memory borrowConfig_ = BorrowProtocolConfig({
+                protocol: vault_,
+                borrowToken: constants_.borrowToken,
+                expandPercent: 1, // 0.01%
+                expandDuration: 16777215, // max time
+                baseBorrowLimitInUSD: 10, // min limit
+                maxBorrowLimitInUSD: 20 // min limit
+            });
+            setBorrowProtocolLimits(borrowConfig_);
+        }
     }
 
     /// @notice Action 3: Max restrict deUSD-USDC DEX
     function action3() internal isActionSkippable(3) {
         address deUSD_USDC_DEX = getDexAddress(19);
 
-        // Max restrict supply limits for both tokens
-        setSupplyProtocolLimitsPaused(deUSD_USDC_DEX, deUSD_ADDRESS);
-        setSupplyProtocolLimitsPaused(deUSD_USDC_DEX, USDC_ADDRESS);
-
-        // Pause user operations
-        address[] memory supplyTokens = new address[](2);
-        supplyTokens[0] = deUSD_ADDRESS;
-        supplyTokens[1] = USDC_ADDRESS;
-
-        LIQUIDITY.pauseUser(deUSD_USDC_DEX, supplyTokens, new address[](0));
-
-        // Set max supply shares to 0 and pause swap and arbitrage
-        IFluidDex(deUSD_USDC_DEX).updateMaxSupplyShares(0);
-        IFluidDex(deUSD_USDC_DEX).pauseSwapAndArbitrage();
+        // Set max supply shares to 10 (minimal limit to allow withdrawals)
+        IFluidDex(deUSD_USDC_DEX).updateMaxSupplyShares(10);
     }
 
     /// @notice Action 4: Update Lite treasury to Reserve contract
     function action4() internal isActionSkippable(4) {
-        // Update Lite treasury from main treasury to Reserve Contract
         // Call updateTreasury directly on Lite contract
         IETHV2.updateTreasury(address(FLUID_RESERVE));
     }
@@ -214,6 +218,36 @@ contract PayloadIGP112 is PayloadIGPMain {
             address vaultAddress = getVaultAddress(vaults[i].vaultId);
             IFluidVaultT1(vaultAddress).updateLiquidationPenalty(vaults[i].liquidationPenalty);
         }
+    }
+
+    /// @notice Action 6: Launch JRUSDE-SRUSDE DEX limits and configure smart lending
+    function action6() internal isActionSkippable(6) {
+        // DEX ID 43: JRUSDE-SRUSDE
+        address JRUSDE_SRUSDE_DEX = getDexAddress(43);
+
+        // Set launch limits for JRUSDE-SRUSDE DEX
+        DexConfig memory dexConfig_ = DexConfig({
+            dex: JRUSDE_SRUSDE_DEX,
+            tokenA: JRUSDE_ADDRESS,
+            tokenB: SRUSDE_ADDRESS,
+            smartCollateral: true,
+            smartDebt: false,
+            baseWithdrawalLimitInUSD: 10_000_000, // $10M launch limit
+            baseBorrowLimitInUSD: 0,
+            maxBorrowLimitInUSD: 0
+        });
+        setDexLimits(dexConfig_);
+
+        // Launch supply shares cap
+        uint256 launchSupplyShares_ = 10_000_000 * 1e18; // $10M equivalent shares
+        IFluidDex(JRUSDE_SRUSDE_DEX).updateMaxSupplyShares(launchSupplyShares_);
+
+        // Configure smart lending rebalancer to Reserve contract
+        address fSL_JRUSDE_SRUSDE = getSmartLendingAddress(43);
+        ISmartLendingAdmin(fSL_JRUSDE_SRUSDE).setRebalancer(address(FLUID_RESERVE));
+
+        // Remove Team Multisig authorization on the DEX post launch
+        DEX_FACTORY.setDexAuth(JRUSDE_SRUSDE_DEX, TEAM_MULTISIG, false);
     }
     /**
      * |
