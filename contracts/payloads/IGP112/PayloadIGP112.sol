@@ -128,16 +128,16 @@ contract PayloadIGP112 is PayloadIGPMain {
     /// @notice Action 2: Reduce limits on very old v1 vaults (1-10)
     function action2() internal isActionSkippable(2) {
         VaultWithdrawalLimit[] memory supplyLimits_ = new VaultWithdrawalLimit[](10);
-        supplyLimits_[0] = VaultWithdrawalLimit({vaultId: 1, baseWithdrawalLimitInUSD: 2_200 * 1e2}); // ETH/USDC
-        supplyLimits_[1] = VaultWithdrawalLimit({vaultId: 2, baseWithdrawalLimitInUSD: 3_200 * 1e2}); // ETH/USDT
-        supplyLimits_[2] = VaultWithdrawalLimit({vaultId: 3, baseWithdrawalLimitInUSD: 2_600 * 1e2}); // wstETH/ETH
-        supplyLimits_[3] = VaultWithdrawalLimit({vaultId: 4, baseWithdrawalLimitInUSD: 2_250 * 1e2}); // wstETH/USDC
-        supplyLimits_[4] = VaultWithdrawalLimit({vaultId: 5, baseWithdrawalLimitInUSD: 2_270 * 1e2}); // wstETH/USDT
-        supplyLimits_[5] = VaultWithdrawalLimit({vaultId: 6, baseWithdrawalLimitInUSD: 14_500_000 * 1e2}); // weETH/wstETH
-        supplyLimits_[6] = VaultWithdrawalLimit({vaultId: 7, baseWithdrawalLimitInUSD: 4_000 * 1e2}); // sUSDe/USDC
-        supplyLimits_[7] = VaultWithdrawalLimit({vaultId: 8, baseWithdrawalLimitInUSD: 520 * 1e2}); // sUSDe/USDT
-        supplyLimits_[8] = VaultWithdrawalLimit({vaultId: 9, baseWithdrawalLimitInUSD: 3_450_000 * 1e2}); // weETH/USDC
-        supplyLimits_[9] = VaultWithdrawalLimit({vaultId: 10, baseWithdrawalLimitInUSD: 1_750_000 * 1e2}); // weETH/USDT
+        supplyLimits_[0] = VaultWithdrawalLimit({vaultId: 1, baseWithdrawalLimitInUSD: 4_000 * 1e2}); // ETH/USDC
+        supplyLimits_[1] = VaultWithdrawalLimit({vaultId: 2, baseWithdrawalLimitInUSD: 6_000 * 1e2}); // ETH/USDT
+        supplyLimits_[2] = VaultWithdrawalLimit({vaultId: 3, baseWithdrawalLimitInUSD: 5_000 * 1e2}); // wstETH/ETH
+        supplyLimits_[3] = VaultWithdrawalLimit({vaultId: 4, baseWithdrawalLimitInUSD: 4_000 * 1e2}); // wstETH/USDC
+        supplyLimits_[4] = VaultWithdrawalLimit({vaultId: 5, baseWithdrawalLimitInUSD: 4_000 * 1e2}); // wstETH/USDT
+        supplyLimits_[5] = VaultWithdrawalLimit({vaultId: 6, baseWithdrawalLimitInUSD: 8_000_000 * 1e2}); // weETH/wstETH
+        supplyLimits_[6] = VaultWithdrawalLimit({vaultId: 7, baseWithdrawalLimitInUSD: 5_000 * 1e2}); // sUSDe/USDC
+        supplyLimits_[7] = VaultWithdrawalLimit({vaultId: 8, baseWithdrawalLimitInUSD: 1_000 * 1e2}); // sUSDe/USDT
+        supplyLimits_[8] = VaultWithdrawalLimit({vaultId: 9, baseWithdrawalLimitInUSD: 6_000 * 1e2}); // weETH/USDC
+        supplyLimits_[9] = VaultWithdrawalLimit({vaultId: 10, baseWithdrawalLimitInUSD: 2_500_000 * 1e2}); // weETH/USDT
 
         for (uint256 i = 0; i < supplyLimits_.length; i++) {
             address vault_ = getVaultAddress(supplyLimits_[i].vaultId);
@@ -153,20 +153,11 @@ contract PayloadIGP112 is PayloadIGPMain {
             setSupplyProtocolLimits(supplyConfig_);
         }
 
-        // Apply "paused" borrow limits to all vaults 1-10 (without actually pausing)
+        // Apply "paused" borrow limits to all vaults 1-10 using the helper
         for (uint256 vaultId = 1; vaultId <= 10; vaultId++) {
             address vault_ = getVaultAddress(vaultId);
             IFluidVaultT1.ConstantViews memory constants_ = IFluidVaultT1(vault_).constantsView();
-
-            BorrowProtocolConfig memory borrowConfig_ = BorrowProtocolConfig({
-                protocol: vault_,
-                borrowToken: constants_.borrowToken,
-                expandPercent: 1, // 0.01%
-                expandDuration: 16777215, // max time
-                baseBorrowLimitInUSD: 10, // min limit
-                maxBorrowLimitInUSD: 20 // min limit
-            });
-            setBorrowProtocolLimits(borrowConfig_);
+            setBorrowProtocolLimitsPaused(vault_, constants_.borrowToken);
         }
     }
 
@@ -230,7 +221,7 @@ contract PayloadIGP112 is PayloadIGPMain {
             tokenB: JRUSDE_ADDRESS,
             smartCollateral: true,
             smartDebt: false,
-            baseWithdrawalLimitInUSD: 10_000_000, // $10M launch limit
+            baseWithdrawalLimitInUSD: 5_500_000, // $5.5M per token
             baseBorrowLimitInUSD: 0,
             maxBorrowLimitInUSD: 0
         });
@@ -244,14 +235,14 @@ contract PayloadIGP112 is PayloadIGPMain {
             tokenB: USDe_ADDRESS,
             smartCollateral: true,
             smartDebt: false,
-            baseWithdrawalLimitInUSD: 10_000_000, // $10M launch limit
+            baseWithdrawalLimitInUSD: 5_500_000, // $5.5M per token
             baseBorrowLimitInUSD: 0,
             maxBorrowLimitInUSD: 0
         });
         setDexLimits(dexConfigSRUs_);
 
         // Launch supply shares cap
-        uint256 launchSupplyShares_ = 10_000_000 * 1e18; // $10M equivalent shares
+        uint256 launchSupplyShares_ = 6_000_000 * 1e18; // $12M equivalent shares
         IFluidDex(USDE_JRUSDE_DEX).updateMaxSupplyShares(launchSupplyShares_);
         IFluidDex(SRUSDE_USDE_DEX).updateMaxSupplyShares(launchSupplyShares_);
 
