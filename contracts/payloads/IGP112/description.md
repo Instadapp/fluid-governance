@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal implements six key operations: (1) cleans up leftover allowances from the Reserve contract that were not properly revoked in IGP110 due to a protocol-token array mismatch, (2) reduces limits on very old v1 vaults (IDs 1-10) to allow users to exit while preventing new activity, (3) max restricts the deUSD-USDC DEX by setting max supply shares to minimal value, (4) updates the Lite treasury from the main treasury to the Reserve Contract, (5) updates liquidation penalties on all USDT debt vaults with vault-specific reductions, and (6) launches the JRUSDE-SRUSDE DEX with conservative limits, supply share caps, rebalancer updates, and Team Multisig removal. These changes revoke 17 protocol-token allowance pairs that remained after IGP110 execution, reduce limits on the oldest vaults to allow withdrawals while preventing new deposits/borrows, restrict the deUSD-USDC DEX to allow withdrawals, route Lite revenue collection to the Reserve Contract instead of the main treasury, reduce liquidation penalties across all USDT debt vaults, and safely launch the JRUSDE-SRUSDE DEX with operational safeguards.
+This proposal implements six key operations: (1) cleans up leftover allowances from the Reserve contract that were not properly revoked in IGP110 due to a protocol-token array mismatch, (2) reduces limits on very old v1 vaults (IDs 1-10) to allow users to exit while preventing new activity, (3) max restricts the deUSD-USDC DEX by setting max supply shares to minimal value, (4) updates the Lite treasury from the main treasury to the Reserve Contract, (5) updates liquidation penalties on all USDT debt vaults with vault-specific reductions, and (6) launches the USDe-JRUSDE and SRUSDE-USDe DEXes with conservative limits, supply share caps, rebalancer updates, and Team Multisig removal. These changes revoke 17 protocol-token allowance pairs that remained after IGP110 execution, reduce limits on the oldest vaults to allow withdrawals while preventing new deposits/borrows, restrict the deUSD-USDC DEX to allow withdrawals, route Lite revenue collection to the Reserve Contract instead of the main treasury, reduce liquidation penalties across all USDT debt vaults, and safely launch the new JRUSDE routing pools with operational safeguards.
 
 ## Code Changes
 
@@ -22,17 +22,17 @@ This proposal implements six key operations: (1) cleans up leftover allowances f
   - Reduce limits on vaults with IDs 1-10 to allow users to exit while preventing new activity
   - **Vaults Affected**: Vault IDs 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
   - **Updated Base Withdrawal Limits (USD)**:
-    - Vault 1 (ETH/USDC): $2.2k
-    - Vault 2 (ETH/USDT): $3.2k
-    - Vault 3 (wstETH/ETH): $2.6k
-    - Vault 4 (wstETH/USDC): $2.25k
-    - Vault 5 (wstETH/USDT): $2.27k
-    - Vault 6 (weETH/wstETH): $14.5M
-    - Vault 7 (sUSDe/USDC): $4k
-    - Vault 8 (sUSDe/USDT): $520
-    - Vault 9 (weETH/USDC): $3.45M
-    - Vault 10 (weETH/USDT): $1.75M
-  - **All Vaults 1-10**: Borrow limits set to minimal values (0.01% expand, max duration, $10 base / $20 max limits)
+    - Vault 1 (ETH/USDC): $4.0k
+    - Vault 2 (ETH/USDT): $6.0k
+    - Vault 3 (wstETH/ETH): $5.0k
+    - Vault 4 (wstETH/USDC): $4.0k
+    - Vault 5 (wstETH/USDT): $4.0k
+    - Vault 6 (weETH/wstETH): $8.0M
+    - Vault 7 (sUSDe/USDC): $5.0k
+    - Vault 8 (sUSDe/USDT): $1.0k
+    - Vault 9 (weETH/USDC): $6.0k
+    - Vault 10 (weETH/USDT): $2.5M
+  - **Borrow Treatment**: All vaults leverage the standard `setBorrowProtocolLimitsPaused` helper (0.01% expand, max duration, $10/$20 ceilings) to keep borrow effectively disabled without pausing the vault
   - **Purpose**: Allow existing users to withdraw/exit these very old v1 vaults while preventing new deposits and borrows
 
 ### Action 3: Max Restrict deUSD-USDC DEX
@@ -74,14 +74,14 @@ This proposal implements six key operations: (1) cleans up leftover allowances f
     - **Supply Mode**: 1
     - **Supply Expand Percent**: 50%
     - **Supply Expand Duration**: 1 hour
-    - **Base Withdrawal Limit in USD**: $10,000,000
+    - **Base Withdrawal Limit in USD**: $5,500,000
   - **Borrow Configuration**:
     - **Borrow Mode**: 1
     - **Borrow Expand Percent**: 0%
     - **Borrow Expand Duration**: 0 hours
     - **Borrow Base/Max Limit in USD**: $0 / $0 (disabled)
-  - **Max Supply Shares**: 10,000,000 * 1e18
-  - **Smart Lending Rebalancer**: Sets `fSL41` (USDe-JRUSDE) to the Reserve Contract
+  - **Max Supply Shares**: 6,000,000 * 1e18
+  - **Smart Lending Rebalancer**: Points `fSL41` to the Reserve Contract (rebalancer-only update)
   - **DEX Auth**: Removes Team Multisig authorization after configuration
   - **Purpose**: Provides a tightly capped launch for USDe<>JRUSDE liquidity with governance-only control
 
@@ -91,14 +91,14 @@ This proposal implements six key operations: (1) cleans up leftover allowances f
     - **Supply Mode**: 1
     - **Supply Expand Percent**: 50%
     - **Supply Expand Duration**: 1 hour
-    - **Base Withdrawal Limit in USD**: $10,000,000
+    - **Base Withdrawal Limit in USD**: $5,500,000
   - **Borrow Configuration**:
     - **Borrow Mode**: 1
     - **Borrow Expand Percent**: 0%
     - **Borrow Expand Duration**: 0 hours
     - **Borrow Base/Max Limit in USD**: $0 / $0 (disabled)
-  - **Max Supply Shares**: 10,000,000 * 1e18
-  - **Smart Lending Rebalancer**: Sets `fSL42` (SRUSDE-USDe) to the Reserve Contract
+  - **Max Supply Shares**: 6,000,000 * 1e18
+  - **Smart Lending Rebalancer**: Points `fSL42` to the Reserve Contract (rebalancer-only update)
   - **DEX Auth**: Removes Team Multisig authorization after configuration
   - **Purpose**: Applies the same guarded launch template to SRUSDE<>USDe, keeping exposure capped and managed centrally
 
@@ -118,8 +118,8 @@ This proposal addresses six cleanup, security enhancement, operational managemen
 2. **Old V1 Vault Limit Reduction**
    - Reduces limits on the very oldest vaults in the protocol (vault IDs 1-10)
    - These vaults represent the earliest vault deployments and are no longer in active use
-   - Vault 1 (ETH/USDC): Base withdrawal limit reduced to 0.7 ETH to allow gradual exits
-   - All vaults 1-10: Borrow limits set to minimal values (1% expand, 720 hours duration, $10 base and max limits)
+   - Updates each vault’s base withdrawal limit (see Action 2 table) to track current TVL while still allowing exits
+   - All vaults 1-10: Borrow side uses the `setBorrowProtocolLimitsPaused` helper (0.01% expand, max duration, $10/$20 ceilings)
    - Allows existing users to withdraw/exit while preventing new deposits and borrows
    - Improves protocol security by reducing exposure to legacy vault implementations
    - Maintains protocol cleanliness by restricting deprecated vaults without fully pausing
@@ -153,8 +153,8 @@ This proposal addresses six cleanup, security enhancement, operational managemen
 
 6. **USDe-JRUSDE & SRUSDE-USDe DEX Launch Controls**
    - Sets conservative launch limits on the USDe-JRUSDE (DEX ID 41) and SRUSDE-USDe (DEX ID 42) pools
-   - Updates max supply shares for both to 10,000,000 to cap initial exposure
-   - Points the associated smart lending rebalancers (fSL41 and fSL42) to the Reserve Contract
+   - Caps token-level liquidity-layer limits at $5.5M per side and max supply shares at 6,000,000 * 1e18
+   - Updates the associated smart lending rebalancers (fSL41 and fSL42) to the Reserve Contract
    - Removes Team Multisig authorization on both DEXes after configuration
 
 ## Conclusion
