@@ -1,8 +1,8 @@
-# Cleanup Leftover Reserve Allowances from IGP110, Reduce Limits on Old V1 Vaults, Max Restrict deUSD DEX, Update Lite Treasury, and Update USDT Debt Vault Liquidation Penalties
+# Cleanup Leftover Reserve Allowances from IGP110, Reduce Limits on Old V1 Vaults, Max Restrict deUSD DEX, Update Lite Treasury, Update USDT Debt Vault Liquidation Penalties, and Upgrade Reserve Contract
 
 ## Summary
 
-This proposal implements six key operations: (1) cleans up leftover allowances from the Reserve contract that were not properly revoked in IGP110 due to a protocol-token array mismatch, (2) reduces limits on very old v1 vaults (IDs 1-10) to allow users to exit while preventing new activity, (3) max restricts the deUSD-USDC DEX by setting max supply shares to minimal value, (4) updates the Lite treasury from the main treasury to the Reserve Contract, (5) updates liquidation penalties on all USDT debt vaults with vault-specific reductions, and (6) launches the USDe-JRUSDE and SRUSDE-USDe DEXes with conservative limits, supply share caps, rebalancer updates, and Team Multisig removal. These changes revoke 17 protocol-token allowance pairs that remained after IGP110 execution, reduce limits on the oldest vaults to allow withdrawals while preventing new deposits/borrows, restrict the deUSD-USDC DEX to allow withdrawals, route Lite revenue collection to the Reserve Contract instead of the main treasury, reduce liquidation penalties across all USDT debt vaults, and safely launch the new JRUSDE routing pools with operational safeguards.
+This proposal implements seven key operations: (1) cleans up leftover allowances from the Reserve contract that were not properly revoked in IGP110 due to a protocol-token array mismatch, (2) reduces limits on very old v1 vaults (IDs 1-10) to allow users to exit while preventing new activity, (3) max restricts the deUSD-USDC DEX by setting max supply shares to minimal value, (4) updates the Lite treasury from the main treasury to the Reserve Contract, (5) updates liquidation penalties on all USDT debt vaults with vault-specific reductions, (6) launches the USDe-JRUSDE and SRUSDE-USDe DEXes with conservative limits, supply share caps, rebalancer updates, and Team Multisig removal, and (7) upgrades the Reserve Contract implementation to the latest version. These changes revoke 17 protocol-token allowance pairs that remained after IGP110 execution, reduce limits on the oldest vaults to allow withdrawals while preventing new deposits/borrows, restrict the deUSD-USDC DEX to allow withdrawals, route Lite revenue collection to the Reserve Contract instead of the main treasury, reduce liquidation penalties across all USDT debt vaults, safely launch the new JRUSDE routing pools with operational safeguards, and upgrade the Reserve Contract to the latest implementation.
 
 ## Code Changes
 
@@ -102,9 +102,18 @@ This proposal implements six key operations: (1) cleans up leftover allowances f
   - **DEX Auth**: Removes Team Multisig authorization after configuration
   - **Purpose**: Applies the same guarded launch template to SRUSDE<>USDe, keeping exposure capped and managed centrally
 
+### Action 7: Upgrade Reserve Contract Implementation
+
+- **Reserve Contract Upgrade**:
+  - Upgrades the Reserve Contract proxy implementation to the latest version
+  - **Current Implementation**: Existing Reserve Contract implementation
+  - **New Implementation**: `0xFb3102759F2d57F547b9C519db49Ce1fFDE15dB2`
+  - **Execution**: Calls `upgradeToAndCall` on the Reserve Contract proxy
+  - **Purpose**: Deploy the latest Reserve Contract implementation with updated functionality and improvements
+
 ## Description
 
-This proposal addresses six cleanup, security enhancement, operational management, and parameter standardization tasks:
+This proposal addresses seven cleanup, security enhancement, operational management, parameter standardization, and infrastructure upgrade tasks:
 
 1. **Reserve Contract Security Enhancement**
    - Completes the allowance cleanup process that was initiated in IGP110
@@ -157,7 +166,12 @@ This proposal addresses six cleanup, security enhancement, operational managemen
    - Updates the associated smart lending rebalancers (fSL41 and fSL42) to the Reserve Contract
    - Removes Team Multisig authorization on both DEXes after configuration
 
+7. **Reserve Contract Implementation Upgrade**
+   - Upgrades the Reserve Contract proxy to the latest implementation version
+   - Deploys new implementation at `0xFb3102759F2d57F547b9C519db49Ce1fFDE15dB2`
+   - Executed via `upgradeToAndCall` on the Reserve Contract proxy
+   - Ensures the Reserve Contract has the latest features, security improvements, and optimizations
+
 ## Conclusion
 
-IGP-112 completes the Reserve contract allowance cleanup from IGP110 by revoking 17 leftover protocol-token allowance pairs, reduces limits on the oldest v1 vaults (IDs 1-10) to allow exits while preventing new activity, max restricts the deUSD-USDC DEX by setting max supply shares to 10, updates the Lite treasury from the main treasury to the Reserve Contract, reduces liquidation penalties on all USDT debt vaults with vault-specific reductions, and launches the USDe-JRUSDE and SRUSDE-USDe DEXes with controlled limits, supply caps, and governance cleanup. These changes improve protocol security, centralize revenue management across Fluid and Lite platforms, cap new DEX exposure, and reduce liquidation costs for users borrowing USDT.
-
+IGP-112 completes the Reserve contract allowance cleanup from IGP110 by revoking 17 leftover protocol-token allowance pairs, reduces limits on the oldest v1 vaults (IDs 1-10) to allow exits while preventing new activity, max restricts the deUSD-USDC DEX by setting max supply shares to 10, updates the Lite treasury from the main treasury to the Reserve Contract, reduces liquidation penalties on all USDT debt vaults with vault-specific reductions, launches the USDe-JRUSDE and SRUSDE-USDe DEXes with controlled limits, supply caps, and governance cleanup, and upgrades the Reserve Contract implementation to the latest version. These changes improve protocol security, centralize revenue management across Fluid and Lite platforms, cap new DEX exposure, reduce liquidation costs for users borrowing USDT, and ensure the Reserve Contract operates with the latest features and improvements.

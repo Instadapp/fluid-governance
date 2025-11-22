@@ -56,6 +56,9 @@ contract PayloadIGP112 is PayloadIGPMain {
 
         // Action 6: Launch USDe-JRUSDE and SRUSDE-USDe DEX limits
         action6();
+
+        // Action 7: Upgrade Reserve Contract Implementation
+        action7();
     }
 
     function verifyProposal() public view override {}
@@ -264,6 +267,14 @@ contract PayloadIGP112 is PayloadIGPMain {
         // Remove Team Multisig authorization on the DEXes post launch
         DEX_FACTORY.setDexAuth(USDE_JRUSDE_DEX, TEAM_MULTISIG, false);
         DEX_FACTORY.setDexAuth(SRUSDE_USDE_DEX, TEAM_MULTISIG, false);
+    }
+
+    /// @notice Action 7: Upgrade Reserve Contract Implementation
+    function action7() internal isActionSkippable(7) {
+        IProxy(address(FLUID_RESERVE)).upgradeToAndCall(
+            address(0xFb3102759F2d57F547b9C519db49Ce1fFDE15dB2),
+            abi.encode()
+        );
     }
     /**
      * |
