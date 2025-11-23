@@ -291,20 +291,20 @@ contract PayloadIGP112 is PayloadIGPMain {
     uint256 public constant mETH_USD_PRICE = 3_040 * 1e2;
     uint256 public constant ezETH_USD_PRICE = 3_000 * 1e2;
 
-    uint256 public constant BTC_USD_PRICE = 103_000 * 1e2;
+    uint256 public constant BTC_USD_PRICE = 86_000 * 1e2;
 
     uint256 public constant STABLE_USD_PRICE = 1 * 1e2;
-    uint256 public constant sUSDe_USD_PRICE = 1.17 * 1e2;
-    uint256 public constant sUSDs_USD_PRICE = 1.05 * 1e2;
+    uint256 public constant sUSDe_USD_PRICE = 1.20 * 1e2;
+    uint256 public constant sUSDs_USD_PRICE = 1.08 * 1e2;
     uint256 public constant syrupUSDT_USD_PRICE = 1.10 * 1e2;
-    uint256 public constant syrupUSDC_USD_PRICE = 1.13 * 1e2;
+    uint256 public constant syrupUSDC_USD_PRICE = 1.14 * 1e2;
 
-    uint256 public constant FLUID_USD_PRICE = 4.2 * 1e2;
+    uint256 public constant FLUID_USD_PRICE = 3.32 * 1e2;
 
-    uint256 public constant RLP_USD_PRICE = 1.18 * 1e2;
-    uint256 public constant wstUSR_USD_PRICE = 1.07 * 1e2;
-    uint256 public constant XAUT_USD_PRICE = 3_240 * 1e2;
-    uint256 public constant PAXG_USD_PRICE = 3_240 * 1e2;
+    uint256 public constant RLP_USD_PRICE = 1.26 * 1e2;
+    uint256 public constant wstUSR_USD_PRICE = 1.12 * 1e2;
+    uint256 public constant XAUT_USD_PRICE = 4_040 * 1e2;
+    uint256 public constant PAXG_USD_PRICE = 4_050 * 1e2;
     uint256 public constant JRUSDE_USD_PRICE = 1.00 * 1e2;
     uint256 public constant SRUSDE_USD_PRICE = 1.00 * 1e2;
 
