@@ -139,8 +139,8 @@ contract PayloadIGP112 is PayloadIGPMain {
         supplyLimits_[5] = VaultWithdrawalLimit({vaultId: 6, baseWithdrawalLimitInUSD: 8_000_000}); // weETH/wstETH
         supplyLimits_[6] = VaultWithdrawalLimit({vaultId: 7, baseWithdrawalLimitInUSD: 5_000}); // sUSDe/USDC
         supplyLimits_[7] = VaultWithdrawalLimit({vaultId: 8, baseWithdrawalLimitInUSD: 1_000}); // sUSDe/USDT
-        supplyLimits_[8] = VaultWithdrawalLimit({vaultId: 9, baseWithdrawalLimitInUSD: 6_000}); // weETH/USDC
-        supplyLimits_[9] = VaultWithdrawalLimit({vaultId: 10, baseWithdrawalLimitInUSD: 2_500_000}); // weETH/USDT
+        supplyLimits_[8] = VaultWithdrawalLimit({vaultId: 9, baseWithdrawalLimitInUSD: 5_800_000}); // weETH/USDC
+        supplyLimits_[9] = VaultWithdrawalLimit({vaultId: 10, baseWithdrawalLimitInUSD: 2_800_000}); // weETH/USDT
 
         for (uint256 i = 0; i < supplyLimits_.length; i++) {
             address vault_ = getVaultAddress(supplyLimits_[i].vaultId);
@@ -283,13 +283,13 @@ contract PayloadIGP112 is PayloadIGPMain {
      */
 
     // Token Prices Constants (same as other IGP files)
-    uint256 public constant ETH_USD_PRICE = 2_500 * 1e2;
-    uint256 public constant wstETH_USD_PRICE = 3_050 * 1e2;
-    uint256 public constant weETH_USD_PRICE = 2_700 * 1e2;
-    uint256 public constant rsETH_USD_PRICE = 2_650 * 1e2;
-    uint256 public constant weETHs_USD_PRICE = 2_600 * 1e2;
-    uint256 public constant mETH_USD_PRICE = 2_690 * 1e2;
-    uint256 public constant ezETH_USD_PRICE = 2_650 * 1e2;
+    uint256 public constant ETH_USD_PRICE = 2_780 * 1e2;
+    uint256 public constant wstETH_USD_PRICE = 3_440 * 1e2;
+    uint256 public constant weETH_USD_PRICE = 3_050 * 1e2;
+    uint256 public constant rsETH_USD_PRICE = 2_980 * 1e2;
+    uint256 public constant weETHs_USD_PRICE = 2_920 * 1e2;
+    uint256 public constant mETH_USD_PRICE = 3_040 * 1e2;
+    uint256 public constant ezETH_USD_PRICE = 3_000 * 1e2;
 
     uint256 public constant BTC_USD_PRICE = 103_000 * 1e2;
 
