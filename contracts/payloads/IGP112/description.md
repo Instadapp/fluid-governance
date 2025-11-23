@@ -30,8 +30,8 @@ This proposal implements seven key operations: (1) cleans up leftover allowances
     - Vault 6 (weETH/wstETH): $8.0M
     - Vault 7 (sUSDe/USDC): $5.0k
     - Vault 8 (sUSDe/USDT): $1.0k
-    - Vault 9 (weETH/USDC): $6.0k
-    - Vault 10 (weETH/USDT): $2.5M
+    - Vault 9 (weETH/USDC): $5.8M
+    - Vault 10 (weETH/USDT): $2.8M
   - **Borrow Treatment**: All vaults leverage the standard `setBorrowProtocolLimitsPaused` helper (0.01% expand, max duration, $10/$20 ceilings) to keep borrow effectively disabled without pausing the vault
   - **Purpose**: Allow existing users to withdraw/exit these very old v1 vaults while preventing new deposits and borrows
 
