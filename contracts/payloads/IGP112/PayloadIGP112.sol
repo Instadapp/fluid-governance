@@ -428,26 +428,26 @@ contract PayloadIGP112 is PayloadIGPMain {
         }
         {// lite revenue
             string[] memory targets = new string[](1);
-        bytes[] memory encodedSpells = new bytes[](1);
+            bytes[] memory encodedSpells = new bytes[](1);
 
-        string
-            memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
+            string
+                memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
 
-        // Spell 1: Transfer 84.5 stETH from iETHv2 to Team Multisig
-        {
-            uint256 STETH_AMOUNT = 84.5 * 1e18; // 84.5 stETH
-            targets[0] = "BASIC-A";
-            encodedSpells[0] = abi.encodeWithSignature(
-                withdrawSignature,
-                stETH_ADDRESS,
-                STETH_AMOUNT,
-                address(TEAM_MULTISIG),
-                0,
-                0
-            );
-        }
+            // Spell 1: Transfer 84.5 stETH from iETHv2 to Team Multisig
+            {
+                uint256 STETH_AMOUNT = 845 * 1e17; // 84.5 stETH (84.5 * 1e18 = 845 * 1e17)
+                targets[0] = "BASIC-A";
+                encodedSpells[0] = abi.encodeWithSignature(
+                    withdrawSignature,
+                    stETH_ADDRESS,
+                    STETH_AMOUNT,
+                    address(TEAM_MULTISIG),
+                    0,
+                    0
+                );
+            }
 
-        IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
+            IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
         }
     }
     /**
