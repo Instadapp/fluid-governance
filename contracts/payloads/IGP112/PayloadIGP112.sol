@@ -59,6 +59,12 @@ contract PayloadIGP112 is PayloadIGPMain {
 
         // Action 7: Upgrade Reserve Contract Implementation
         action7();
+
+        // Action 8: Update syrupUSDC vault parameters
+        action8();
+
+        // Action 9: Collect revenue for buybacks
+        action9();
     }
 
     function verifyProposal() public view override {}
@@ -275,6 +281,71 @@ contract PayloadIGP112 is PayloadIGPMain {
             address(0xFb3102759F2d57F547b9C519db49Ce1fFDE15dB2),
             abi.encode()
         );
+    }
+
+    /// @notice Action 8: Update CF/LT on syrupUSDC vaults
+    function action8() internal isActionSkippable(8) {
+        uint256 collateralFactor = 90 * 1e2; // 90%
+        uint256 liquidationThreshold = 92 * 1e2; // 92%
+
+        for (uint256 i = 145; i <= 152; i++) {
+            address vault = getVaultAddress(i);
+            IFluidVaultT1(vault).updateCollateralFactor(collateralFactor);
+            IFluidVaultT1(vault).updateLiquidationThreshold(
+                liquidationThreshold
+            );
+        }
+    }
+
+    /// @notice Action 9: Collect revenue from liquidity layer and send to Team Multisig
+    function action9() internal isActionSkippable(9) {
+        {
+            address[] memory tokens = new address[](8);
+            tokens[0] = USDT_ADDRESS;
+            tokens[1] = wstETH_ADDRESS;
+            tokens[2] = ETH_ADDRESS;
+            tokens[3] = USDC_ADDRESS;
+            tokens[4] = sUSDe_ADDRESS;
+            tokens[5] = cbBTC_ADDRESS;
+            tokens[6] = WBTC_ADDRESS;
+            tokens[7] = GHO_ADDRESS;
+            LIQUIDITY.collectRevenue(tokens);
+        }
+        {
+            address[] memory tokens = new address[](8);
+            uint256[] memory amounts = new uint256[](8);
+            tokens[0] = USDT_ADDRESS;
+            amounts[0] =
+                IERC20(USDT_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            tokens[1] = wstETH_ADDRESS;
+            amounts[1] =
+                IERC20(wstETH_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                0.1 ether;
+            tokens[2] = ETH_ADDRESS;
+            amounts[2] = address(FLUID_RESERVE).balance - 0.1 ether;
+            tokens[3] = USDC_ADDRESS;
+            amounts[3] =
+                IERC20(USDC_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            tokens[4] = sUSDe_ADDRESS;
+            amounts[4] =
+                IERC20(sUSDe_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                0.1 ether;
+            tokens[5] = cbBTC_ADDRESS;
+            amounts[5] =
+                IERC20(cbBTC_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            tokens[6] = WBTC_ADDRESS;
+            amounts[6] =
+                IERC20(WBTC_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            tokens[7] = GHO_ADDRESS;
+            amounts[7] =
+                IERC20(GHO_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+                10;
+            FLUID_RESERVE.withdrawFunds(tokens, amounts, TEAM_MULTISIG);
+        }
     }
     /**
      * |

@@ -1,8 +1,8 @@
-# Cleanup Leftover Reserve Allowances from IGP110, Reduce Limits on Old V1 Vaults, Max Restrict deUSD DEX, Update Lite Treasury, Update USDT Debt Vault Liquidation Penalties, and Upgrade Reserve Contract
+# Cleanup Leftover Reserve Allowances from IGP110, Reduce Limits on Old V1 Vaults, Max Restrict deUSD DEX, Update Lite Treasury, Update USDT Debt Vault Liquidation Penalties, Upgrade Reserve Contract, Adjust syrupUSDC Vault Parameters, and Collect Revenue for Buybacks
 
 ## Summary
 
-This proposal implements seven key operations: (1) cleans up leftover allowances from the Reserve contract that were not properly revoked in IGP110 due to a protocol-token array mismatch, (2) reduces limits on very old v1 vaults (IDs 1-10) to allow users to exit while preventing new activity, (3) max restricts the deUSD-USDC DEX by setting max supply shares to minimal value, (4) updates the Lite treasury from the main treasury to the Reserve Contract, (5) updates liquidation penalties on all USDT debt vaults with vault-specific reductions, (6) launches the USDe-JRUSDE and SRUSDE-USDe DEXes with conservative limits, supply share caps, rebalancer updates, and Team Multisig removal, and (7) upgrades the Reserve Contract implementation to the latest version. These changes revoke 17 protocol-token allowance pairs that remained after IGP110 execution, reduce limits on the oldest vaults to allow withdrawals while preventing new deposits/borrows, restrict the deUSD-USDC DEX to allow withdrawals, route Lite revenue collection to the Reserve Contract instead of the main treasury, reduce liquidation penalties across all USDT debt vaults, safely launch the new JRUSDE routing pools with operational safeguards, and upgrade the Reserve Contract to the latest implementation.
+This proposal implements nine key operations: (1) cleans up leftover allowances from the Reserve contract that were not properly revoked in IGP110 due to a protocol-token array mismatch, (2) reduces limits on very old v1 vaults (IDs 1-10) to allow users to exit while preventing new activity, (3) max restricts the deUSD-USDC DEX by setting max supply shares to minimal value, (4) updates the Lite treasury from the main treasury to the Reserve Contract, (5) updates liquidation penalties on all USDT debt vaults with vault-specific reductions, (6) launches the USDe-JRUSDE and SRUSDE-USDe DEXes with conservative limits, supply share caps, rebalancer updates, and Team Multisig removal, (7) upgrades the Reserve Contract implementation to the latest version, (8) aligns all syrupUSDC vault collateral settings (vault IDs 145-152) to 90% CF / 92% LT, and (9) collects accumulated liquidity-layer revenue for the monthly buyback program. These changes revoke 17 protocol-token allowance pairs that remained after IGP110 execution, reduce limits on the oldest vaults to allow withdrawals while preventing new deposits/borrows, restrict the deUSD-USDC DEX to allow withdrawals, route Lite revenue collection to the Reserve Contract instead of the main treasury, reduce liquidation penalties across all USDT debt vaults, safely launch the new JRUSDE routing pools with operational safeguards, upgrade the Reserve Contract to the latest implementation, harmonize syrupUSDC vault risk parameters with the latest guidance, and move the newly collected revenue to the Team Multisig for buybacks.
 
 ## Code Changes
 
@@ -111,9 +111,24 @@ This proposal implements seven key operations: (1) cleans up leftover allowances
   - **Execution**: Calls `upgradeToAndCall` on the Reserve Contract proxy
   - **Purpose**: Deploy the latest Reserve Contract implementation with updated functionality and improvements
 
+### Action 8: Adjust syrupUSDC Vault Parameters
+
+- **Vault Parameter Update**:
+  - Updates collateral factor (CF) to 90% and liquidation threshold (LT) to 92% on every syrupUSDC vault in IDs 145-152
+  - **Vault IDs**: 145 (TYPE 2 syrupUSDC-USDC<>USDC), 146 (syrupUSDC/USDC), 147 (syrupUSDC/USDT), 148 (syrupUSDC/GHO), 149 (syrupUSDT-USDT<>USDT), 150 (syrupUSDT/USDC), 151 (syrupUSDT/USDT), 152 (syrupUSDT/GHO)
+  - **Purpose**: Align syrupUSDC collateral settings with current risk appetite while restoring consistent cross-asset parameters
+
+### Action 9: Collect Liquidity-Layer Revenue for Buybacks
+
+- **Revenue Collection**:
+  - Calls `collectRevenue()` on the Liquidity Layer for 8 tokens (`USDT, wstETH, ETH, USDC, sUSDe, cbBTC, WBTC, GHO`)
+  - Withdraws nearly all balances of those tokens (leaving minimal dust) from the Reserve contract to Team Multisig
+  - **Recipient**: Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`)
+  - **Purpose**: Aggregate protocol revenue needed for the next buyback cycle
+
 ## Description
 
-This proposal addresses seven cleanup, security enhancement, operational management, parameter standardization, and infrastructure upgrade tasks:
+This proposal addresses nine cleanup, security enhancement, operational management, parameter standardization, infrastructure upgrade, and treasury management tasks:
 
 1. **Reserve Contract Security Enhancement**
    - Completes the allowance cleanup process that was initiated in IGP110
@@ -172,6 +187,15 @@ This proposal addresses seven cleanup, security enhancement, operational managem
    - Executed via `upgradeToAndCall` on the Reserve Contract proxy
    - Ensures the Reserve Contract has the latest features, security improvements, and optimizations
 
+8. **syrupUSDC Vault Parameter Alignment**
+   - Sets the collateral factor to 90% and liquidation threshold to 92% for all syrupUSDC family vaults (IDs 145-152)
+   - Restores uniform collateralization parameters across both Type 1 and Type 2 syrupUSDC vaults
+
+9. **Buyback Revenue Collection**
+   - Collects revenue across 8 tokens from the Liquidity Layer
+   - Withdraws the resulting balances from the Reserve contract to the Team Multisig, leaving dust buffers
+   - Improves risk management consistency as syrupUSDC markets scale
+
 ## Conclusion
 
-IGP-112 completes the Reserve contract allowance cleanup from IGP110 by revoking 17 leftover protocol-token allowance pairs, reduces limits on the oldest v1 vaults (IDs 1-10) to allow exits while preventing new activity, max restricts the deUSD-USDC DEX by setting max supply shares to 10, updates the Lite treasury from the main treasury to the Reserve Contract, reduces liquidation penalties on all USDT debt vaults with vault-specific reductions, launches the USDe-JRUSDE and SRUSDE-USDe DEXes with controlled limits, supply caps, and governance cleanup, and upgrades the Reserve Contract implementation to the latest version. These changes improve protocol security, centralize revenue management across Fluid and Lite platforms, cap new DEX exposure, reduce liquidation costs for users borrowing USDT, and ensure the Reserve Contract operates with the latest features and improvements.
+IGP-112 completes the Reserve contract allowance cleanup from IGP110 by revoking 17 leftover protocol-token allowance pairs, reduces limits on the oldest v1 vaults (IDs 1-10) to allow exits while preventing new activity, max restricts the deUSD-USDC DEX by setting max supply shares to 10, updates the Lite treasury from the main treasury to the Reserve Contract, reduces liquidation penalties on all USDT debt vaults with vault-specific reductions, launches the USDe-JRUSDE and SRUSDE-USDe DEXes with controlled limits, supply caps, and governance cleanup, upgrades the Reserve Contract implementation to the latest version, aligns syrupUSDC family vault collateral settings at 90% CF / 92% LT, and collects liquidity-layer revenue for the buyback program. These changes improve protocol security, centralize revenue management across Fluid and Lite platforms, cap new DEX exposure, reduce liquidation costs for users borrowing USDT, keep syrupUSDC vaults aligned with current risk parameters, ensure the Reserve Contract operates with the latest features and improvements, and fund the upcoming buyback cycle.
