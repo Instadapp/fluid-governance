@@ -8,21 +8,34 @@ import {LiquiditySlotsLink} from "../libraries/liquiditySlotsLink.sol";
 import {IGovernorBravo} from "../common/interfaces/IGovernorBravo.sol";
 import {ITimelock} from "../common/interfaces/ITimelock.sol";
 
-import {IFluidLiquidityAdmin, AdminModuleStructs as FluidLiquidityAdminStructs} from "../common/interfaces/IFluidLiquidity.sol";
-import {IFluidReserveContract} from "../common/interfaces/IFluidReserveContract.sol";
+import {
+    IFluidLiquidityAdmin,
+    AdminModuleStructs as FluidLiquidityAdminStructs
+} from "../common/interfaces/IFluidLiquidity.sol";
+import {
+    IFluidReserveContract
+} from "../common/interfaces/IFluidReserveContract.sol";
 
 import {IFluidVaultFactory} from "../common/interfaces/IFluidVaultFactory.sol";
 import {IFluidDexFactory} from "../common/interfaces/IFluidDexFactory.sol";
 
-import {IFluidDex, IFluidAdminDex, IFluidDexResolver} from "../common/interfaces/IFluidDex.sol";
+import {
+    IFluidDex,
+    IFluidAdminDex,
+    IFluidDexResolver
+} from "../common/interfaces/IFluidDex.sol";
 
 import {IFluidVault, IFluidVaultT1} from "../common/interfaces/IFluidVault.sol";
 
 import {IFTokenAdmin, ILendingRewards} from "../common/interfaces/IFToken.sol";
 
 import {ISmartLendingAdmin} from "../common/interfaces/ISmartLending.sol";
-import {ISmartLendingFactory} from "../common/interfaces/ISmartLendingFactory.sol";
-import {IFluidLendingFactory} from "../common/interfaces/IFluidLendingFactory.sol";
+import {
+    ISmartLendingFactory
+} from "../common/interfaces/ISmartLendingFactory.sol";
+import {
+    IFluidLendingFactory
+} from "../common/interfaces/IFluidLendingFactory.sol";
 
 import {ICodeReader} from "../common/interfaces/ICodeReader.sol";
 
@@ -131,33 +144,70 @@ contract PayloadIGP112 is PayloadIGPMain {
         tokens_[16] = 0xdAC17F958D2ee523a2206206994597C13D831ec7; // USDT
 
         // Call revoke() on ReserveContractProxy to cleanup leftover allowances from IGP110
-        IFluidReserveContract(RESERVE_CONTRACT_PROXY).revoke(protocols_, tokens_);
+        IFluidReserveContract(RESERVE_CONTRACT_PROXY).revoke(
+            protocols_,
+            tokens_
+        );
     }
 
     /// @notice Action 2: Reduce limits on very old v1 vaults (1-10)
     function action2() internal isActionSkippable(2) {
-        VaultWithdrawalLimit[] memory supplyLimits_ = new VaultWithdrawalLimit[](10);
-        supplyLimits_[0] = VaultWithdrawalLimit({vaultId: 1, baseWithdrawalLimitInUSD: 4_000}); // ETH/USDC
-        supplyLimits_[1] = VaultWithdrawalLimit({vaultId: 2, baseWithdrawalLimitInUSD: 6_000}); // ETH/USDT
-        supplyLimits_[2] = VaultWithdrawalLimit({vaultId: 3, baseWithdrawalLimitInUSD: 5_000}); // wstETH/ETH
-        supplyLimits_[3] = VaultWithdrawalLimit({vaultId: 4, baseWithdrawalLimitInUSD: 4_000}); // wstETH/USDC
-        supplyLimits_[4] = VaultWithdrawalLimit({vaultId: 5, baseWithdrawalLimitInUSD: 4_000}); // wstETH/USDT
-        supplyLimits_[5] = VaultWithdrawalLimit({vaultId: 6, baseWithdrawalLimitInUSD: 8_000_000}); // weETH/wstETH
-        supplyLimits_[6] = VaultWithdrawalLimit({vaultId: 7, baseWithdrawalLimitInUSD: 5_000}); // sUSDe/USDC
-        supplyLimits_[7] = VaultWithdrawalLimit({vaultId: 8, baseWithdrawalLimitInUSD: 1_000}); // sUSDe/USDT
-        supplyLimits_[8] = VaultWithdrawalLimit({vaultId: 9, baseWithdrawalLimitInUSD: 5_800_000}); // weETH/USDC
-        supplyLimits_[9] = VaultWithdrawalLimit({vaultId: 10, baseWithdrawalLimitInUSD: 2_800_000}); // weETH/USDT
+        VaultWithdrawalLimit[]
+            memory supplyLimits_ = new VaultWithdrawalLimit[](10);
+        supplyLimits_[0] = VaultWithdrawalLimit({
+            vaultId: 1,
+            baseWithdrawalLimitInUSD: 4_000
+        }); // ETH/USDC
+        supplyLimits_[1] = VaultWithdrawalLimit({
+            vaultId: 2,
+            baseWithdrawalLimitInUSD: 6_000
+        }); // ETH/USDT
+        supplyLimits_[2] = VaultWithdrawalLimit({
+            vaultId: 3,
+            baseWithdrawalLimitInUSD: 5_000
+        }); // wstETH/ETH
+        supplyLimits_[3] = VaultWithdrawalLimit({
+            vaultId: 4,
+            baseWithdrawalLimitInUSD: 4_000
+        }); // wstETH/USDC
+        supplyLimits_[4] = VaultWithdrawalLimit({
+            vaultId: 5,
+            baseWithdrawalLimitInUSD: 4_000
+        }); // wstETH/USDT
+        supplyLimits_[5] = VaultWithdrawalLimit({
+            vaultId: 6,
+            baseWithdrawalLimitInUSD: 8_000_000
+        }); // weETH/wstETH
+        supplyLimits_[6] = VaultWithdrawalLimit({
+            vaultId: 7,
+            baseWithdrawalLimitInUSD: 5_000
+        }); // sUSDe/USDC
+        supplyLimits_[7] = VaultWithdrawalLimit({
+            vaultId: 8,
+            baseWithdrawalLimitInUSD: 1_000
+        }); // sUSDe/USDT
+        supplyLimits_[8] = VaultWithdrawalLimit({
+            vaultId: 9,
+            baseWithdrawalLimitInUSD: 5_800_000
+        }); // weETH/USDC
+        supplyLimits_[9] = VaultWithdrawalLimit({
+            vaultId: 10,
+            baseWithdrawalLimitInUSD: 2_800_000
+        }); // weETH/USDT
 
         for (uint256 i = 0; i < supplyLimits_.length; i++) {
             address vault_ = getVaultAddress(supplyLimits_[i].vaultId);
-            IFluidVaultT1.ConstantViews memory constants_ = IFluidVaultT1(vault_).constantsView();
+            IFluidVaultT1.ConstantViews memory constants_ = IFluidVaultT1(
+                vault_
+            ).constantsView();
 
             SupplyProtocolConfig memory supplyConfig_ = SupplyProtocolConfig({
                 protocol: vault_,
                 supplyToken: constants_.supplyToken,
                 expandPercent: 25 * 1e2, // 25%
                 expandDuration: 12 hours, // 12 hours
-                baseWithdrawalLimitInUSD: supplyLimits_[i].baseWithdrawalLimitInUSD
+                baseWithdrawalLimitInUSD: supplyLimits_[i]
+                    .baseWithdrawalLimitInUSD
             });
             setSupplyProtocolLimits(supplyConfig_);
         }
@@ -165,7 +215,9 @@ contract PayloadIGP112 is PayloadIGPMain {
         // Apply "paused" borrow limits to all vaults 1-10 using the helper
         for (uint256 vaultId = 1; vaultId <= 10; vaultId++) {
             address vault_ = getVaultAddress(vaultId);
-            IFluidVaultT1.ConstantViews memory constants_ = IFluidVaultT1(vault_).constantsView();
+            IFluidVaultT1.ConstantViews memory constants_ = IFluidVaultT1(
+                vault_
+            ).constantsView();
             setBorrowProtocolLimitsPaused(vault_, constants_.borrowToken);
         }
     }
@@ -187,36 +239,64 @@ contract PayloadIGP112 is PayloadIGPMain {
     /// @notice Action 5: Update liquidation penalty on all USDT debt vaults
     function action5() internal isActionSkippable(5) {
         // List of all USDT debt vaults with their new liquidation penalties
-        VaultLiquidationPenalty[] memory vaults = new VaultLiquidationPenalty[](8);
-        
+        VaultLiquidationPenalty[] memory vaults = new VaultLiquidationPenalty[](
+            8
+        );
+
         // ETH/USDT: 2% -> 1%
-        vaults[0] = VaultLiquidationPenalty({vaultId: 12, liquidationPenalty: 1 * 1e2});
-        
+        vaults[0] = VaultLiquidationPenalty({
+            vaultId: 12,
+            liquidationPenalty: 1 * 1e2
+        });
+
         // wstETH/USDT: 3% -> 2.5%
-        vaults[1] = VaultLiquidationPenalty({vaultId: 15, liquidationPenalty: 250}); // 2.5% = 250 in 1e2 format
-        
+        vaults[1] = VaultLiquidationPenalty({
+            vaultId: 15,
+            liquidationPenalty: 250
+        }); // 2.5% = 250 in 1e2 format
+
         // weETH/USDT: 4% -> 3%
-        vaults[2] = VaultLiquidationPenalty({vaultId: 20, liquidationPenalty: 3 * 1e2});
-        
+        vaults[2] = VaultLiquidationPenalty({
+            vaultId: 20,
+            liquidationPenalty: 3 * 1e2
+        });
+
         // WBTC/USDT: 4% -> 3%
-        vaults[3] = VaultLiquidationPenalty({vaultId: 22, liquidationPenalty: 3 * 1e2});
-        
+        vaults[3] = VaultLiquidationPenalty({
+            vaultId: 22,
+            liquidationPenalty: 3 * 1e2
+        });
+
         // cbBTC/USDT: 4% -> 3%
-        vaults[4] = VaultLiquidationPenalty({vaultId: 30, liquidationPenalty: 3 * 1e2});
-        
+        vaults[4] = VaultLiquidationPenalty({
+            vaultId: 30,
+            liquidationPenalty: 3 * 1e2
+        });
+
         // tBTC/USDT: 4% -> 3%
-        vaults[5] = VaultLiquidationPenalty({vaultId: 89, liquidationPenalty: 3 * 1e2});
-        
+        vaults[5] = VaultLiquidationPenalty({
+            vaultId: 89,
+            liquidationPenalty: 3 * 1e2
+        });
+
         // lBTC/USDT: 5% -> 4%
-        vaults[6] = VaultLiquidationPenalty({vaultId: 108, liquidationPenalty: 4 * 1e2});
-        
+        vaults[6] = VaultLiquidationPenalty({
+            vaultId: 108,
+            liquidationPenalty: 4 * 1e2
+        });
+
         // USDe-USDtb/USDT (TYPE_2): 3% -> 2.5%
-        vaults[7] = VaultLiquidationPenalty({vaultId: 137, liquidationPenalty: 250}); // 2.5% = 250 in 1e2 format
+        vaults[7] = VaultLiquidationPenalty({
+            vaultId: 137,
+            liquidationPenalty: 250
+        }); // 2.5% = 250 in 1e2 format
 
         // Update liquidation penalty for each vault
         for (uint256 i = 0; i < vaults.length; i++) {
             address vaultAddress = getVaultAddress(vaults[i].vaultId);
-            IFluidVaultT1(vaultAddress).updateLiquidationPenalty(vaults[i].liquidationPenalty);
+            IFluidVaultT1(vaultAddress).updateLiquidationPenalty(
+                vaults[i].liquidationPenalty
+            );
         }
     }
 
@@ -290,16 +370,16 @@ contract PayloadIGP112 is PayloadIGPMain {
 
         for (uint256 i = 145; i <= 152; i++) {
             address vault = getVaultAddress(i);
-            IFluidVaultT1(vault).updateCollateralFactor(collateralFactor);
             IFluidVaultT1(vault).updateLiquidationThreshold(
                 liquidationThreshold
             );
+            IFluidVaultT1(vault).updateCollateralFactor(collateralFactor);
         }
     }
 
-    /// @notice Action 9: Collect revenue from liquidity layer and send to Team Multisig
+    /// @notice Action 9: Collect revenue from liquidity layer and lite vault
     function action9() internal isActionSkippable(9) {
-        {
+        {// liquidity layer revenue
             address[] memory tokens = new address[](8);
             tokens[0] = USDT_ADDRESS;
             tokens[1] = wstETH_ADDRESS;
@@ -345,6 +425,29 @@ contract PayloadIGP112 is PayloadIGPMain {
                 IERC20(GHO_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
                 10;
             FLUID_RESERVE.withdrawFunds(tokens, amounts, TEAM_MULTISIG);
+        }
+        {// lite revenue
+            string[] memory targets = new string[](1);
+        bytes[] memory encodedSpells = new bytes[](1);
+
+        string
+            memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
+
+        // Spell 1: Transfer 84.5 stETH from iETHv2 to Team Multisig
+        {
+            uint256 STETH_AMOUNT = 84.5 * 1e18; // 84.5 stETH
+            targets[0] = "BASIC-A";
+            encodedSpells[0] = abi.encodeWithSignature(
+                withdrawSignature,
+                stETH_ADDRESS,
+                STETH_AMOUNT,
+                address(TEAM_MULTISIG),
+                0,
+                0
+            );
+        }
+
+        IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
         }
     }
     /**
@@ -500,4 +603,3 @@ contract PayloadIGP112 is PayloadIGPMain {
         }
     }
 }
-
