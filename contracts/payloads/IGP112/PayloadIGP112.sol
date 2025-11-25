@@ -235,25 +235,24 @@ contract PayloadIGP112 is PayloadIGPMain {
 
     /// @notice Action 4: Collect Lite vault revenue for buybacks
     function action4() internal isActionSkippable(4) {
+        uint256 STETH_AMOUNT = 85 * 1e18; // 85 stETH
+        ILite(IETHV2).collectRevenue(STETH_AMOUNT);
+
+        // Spell: Transfer 85 stETH from iETHv2 to Team Multisig
         string[] memory targets = new string[](1);
         bytes[] memory encodedSpells = new bytes[](1);
 
         string
             memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
-
-        // Spell 1: Transfer 84.5 stETH from iETHv2 to Team Multisig
-        {
-            uint256 STETH_AMOUNT = 84.5 * 1e18; // 84.5 stETH
-            targets[0] = "BASIC-A";
-            encodedSpells[0] = abi.encodeWithSignature(
-                withdrawSignature,
-                stETH_ADDRESS,
-                STETH_AMOUNT,
-                address(TEAM_MULTISIG),
-                0,
-                0
-            );
-        }
+        targets[0] = "BASIC-A";
+        encodedSpells[0] = abi.encodeWithSignature(
+            withdrawSignature,
+            stETH_ADDRESS,
+            STETH_AMOUNT,
+            address(TEAM_MULTISIG),
+            0,
+            0
+        );
 
         IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
     }
@@ -407,7 +406,8 @@ contract PayloadIGP112 is PayloadIGPMain {
 
     /// @notice Action 10: Collect liquidity layer revenue for buybacks
     function action10() internal isActionSkippable(10) {
-        {// liquidity layer revenue
+        {
+            // liquidity layer revenue
             address[] memory tokens = new address[](8);
             tokens[0] = USDT_ADDRESS;
             tokens[1] = wstETH_ADDRESS;
