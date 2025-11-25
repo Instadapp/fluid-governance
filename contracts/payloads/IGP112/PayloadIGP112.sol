@@ -13,7 +13,8 @@ import {
     AdminModuleStructs as FluidLiquidityAdminStructs
 } from "../common/interfaces/IFluidLiquidity.sol";
 import {
-    IFluidReserveContract
+    IFluidReserveContract,
+    IFluidReserveContractV2
 } from "../common/interfaces/IFluidReserveContract.sol";
 
 import {IFluidVaultFactory} from "../common/interfaces/IFluidVaultFactory.sol";
@@ -453,7 +454,7 @@ contract PayloadIGP112 is PayloadIGPMain {
             amounts[7] =
                 IERC20(GHO_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
                 10;
-            FLUID_RESERVE.withdrawFunds(
+            IFluidReserveContractV2(address(FLUID_RESERVE)).withdrawFunds(
                 tokens,
                 amounts,
                 TEAM_MULTISIG,
