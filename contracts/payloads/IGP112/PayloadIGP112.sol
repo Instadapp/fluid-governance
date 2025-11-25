@@ -61,23 +61,26 @@ contract PayloadIGP112 is PayloadIGPMain {
         // Action 3: Max restrict deUSD-USDC DEX
         action3();
 
-        // Action 4: Update Lite treasury to Reserve contract
+        // Action 4: Collect Lite vault revenue for buybacks
         action4();
 
-        // Action 5: Update liquidation penalty on all USDT debt vaults
+        // Action 5: Update Lite treasury to Reserve contract
         action5();
 
-        // Action 6: Launch USDe-JRUSDE and SRUSDE-USDe DEX limits
+        // Action 6: Update liquidation penalty on all USDT debt vaults
         action6();
 
-        // Action 7: Upgrade Reserve Contract Implementation
+        // Action 7: Launch USDe-JRUSDE and SRUSDE-USDe DEX limits
         action7();
 
-        // Action 8: Update syrupUSDC vault parameters
+        // Action 8: Upgrade Reserve Contract Implementation
         action8();
 
-        // Action 9: Collect revenue for buybacks
+        // Action 9: Update syrupUSDC vault parameters
         action9();
+
+        // Action 10: Collect liquidity layer revenue for buybacks
+        action10();
     }
 
     function verifyProposal() public view override {}
@@ -230,14 +233,39 @@ contract PayloadIGP112 is PayloadIGPMain {
         IFluidDex(deUSD_USDC_DEX).updateMaxSupplyShares(10);
     }
 
-    /// @notice Action 4: Update Lite treasury to Reserve contract
+    /// @notice Action 4: Collect Lite vault revenue for buybacks
     function action4() internal isActionSkippable(4) {
+        string[] memory targets = new string[](1);
+        bytes[] memory encodedSpells = new bytes[](1);
+
+        string
+            memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
+
+        // Spell 1: Transfer 84.5 stETH from iETHv2 to Team Multisig
+        {
+            uint256 STETH_AMOUNT = 84.5 * 1e18; // 84.5 stETH
+            targets[0] = "BASIC-A";
+            encodedSpells[0] = abi.encodeWithSignature(
+                withdrawSignature,
+                stETH_ADDRESS,
+                STETH_AMOUNT,
+                address(TEAM_MULTISIG),
+                0,
+                0
+            );
+        }
+
+        IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
+    }
+
+    /// @notice Action 5: Update Lite treasury to Reserve contract
+    function action5() internal isActionSkippable(5) {
         // Call updateTreasury directly on Lite contract
         IETHV2.updateTreasury(address(FLUID_RESERVE));
     }
 
-    /// @notice Action 5: Update liquidation penalty on all USDT debt vaults
-    function action5() internal isActionSkippable(5) {
+    /// @notice Action 6: Update liquidation penalty on all USDT debt vaults
+    function action6() internal isActionSkippable(6) {
         // List of all USDT debt vaults with their new liquidation penalties
         VaultLiquidationPenalty[] memory vaults = new VaultLiquidationPenalty[](
             8
@@ -300,8 +328,8 @@ contract PayloadIGP112 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 6: Launch USDe-JRUSDE and SRUSDE-USDe DEX limits and configure smart lending
-    function action6() internal isActionSkippable(6) {
+    /// @notice Action 7: Launch USDe-JRUSDE and SRUSDE-USDe DEX limits and configure smart lending
+    function action7() internal isActionSkippable(7) {
         // DEX ID 41: USDe-JRUSDE
         address USDE_JRUSDE_DEX = getDexAddress(41);
         DexConfig memory dexConfigUSDe_ = DexConfig({
@@ -355,16 +383,16 @@ contract PayloadIGP112 is PayloadIGPMain {
         DEX_FACTORY.setDexAuth(SRUSDE_USDE_DEX, TEAM_MULTISIG, false);
     }
 
-    /// @notice Action 7: Upgrade Reserve Contract Implementation
-    function action7() internal isActionSkippable(7) {
+    /// @notice Action 8: Upgrade Reserve Contract Implementation
+    function action8() internal isActionSkippable(8) {
         IProxy(address(FLUID_RESERVE)).upgradeToAndCall(
             address(0xFb3102759F2d57F547b9C519db49Ce1fFDE15dB2),
             abi.encode()
         );
     }
 
-    /// @notice Action 8: Update CF/LT on syrupUSDC vaults
-    function action8() internal isActionSkippable(8) {
+    /// @notice Action 9: Update CF/LT on syrupUSDC vaults
+    function action9() internal isActionSkippable(9) {
         uint256 collateralFactor = 90 * 1e2; // 90%
         uint256 liquidationThreshold = 92 * 1e2; // 92%
 
@@ -377,8 +405,8 @@ contract PayloadIGP112 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 9: Collect revenue from liquidity layer and lite vault
-    function action9() internal isActionSkippable(9) {
+    /// @notice Action 10: Collect liquidity layer revenue for buybacks
+    function action10() internal isActionSkippable(10) {
         {// liquidity layer revenue
             address[] memory tokens = new address[](8);
             tokens[0] = USDT_ADDRESS;
@@ -425,29 +453,6 @@ contract PayloadIGP112 is PayloadIGPMain {
                 IERC20(GHO_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
                 10;
             FLUID_RESERVE.withdrawFunds(tokens, amounts, TEAM_MULTISIG);
-        }
-        {// lite revenue
-            string[] memory targets = new string[](1);
-            bytes[] memory encodedSpells = new bytes[](1);
-
-            string
-                memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
-
-            // Spell 1: Transfer 84.5 stETH from iETHv2 to Team Multisig
-            {
-                uint256 STETH_AMOUNT = 845 * 1e17; // 84.5 stETH (84.5 * 1e18 = 845 * 1e17)
-                targets[0] = "BASIC-A";
-                encodedSpells[0] = abi.encodeWithSignature(
-                    withdrawSignature,
-                    stETH_ADDRESS,
-                    STETH_AMOUNT,
-                    address(TEAM_MULTISIG),
-                    0,
-                    0
-                );
-            }
-
-            IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
         }
     }
     /**
