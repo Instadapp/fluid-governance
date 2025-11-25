@@ -45,6 +45,7 @@ import {IProxy} from "../common/interfaces/IProxy.sol";
 import {PayloadIGPConstants} from "../common/constants.sol";
 import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
+import {ILite} from "../common/interfaces/ILite.sol";
 
 contract PayloadIGP112 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 112;
