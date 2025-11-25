@@ -13,8 +13,7 @@ interface IFluidReserveContract {
     function withdrawFunds(
         address[] memory tokens_,
         uint256[] memory amounts_,
-        address to_,
-        string memory reason_
+        address to_
     ) external;
 
     function getProtocolTokens(address protocol_) external;
@@ -32,5 +31,14 @@ interface IFluidReserveContract {
     function revoke(
         address[] memory protocols_,
         address[] memory tokens_
+    ) external;
+}
+
+interface IFluidReserveContractV2 {
+    function withdrawFunds(
+        address[] memory tokens_,
+        uint256[] memory amounts_,
+        address to_,
+        string memory reason_
     ) external;
 }
