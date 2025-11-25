@@ -238,7 +238,7 @@ contract PayloadIGP112 is PayloadIGPMain {
     /// @notice Action 4: Collect Lite vault revenue for buybacks
     function action4() internal isActionSkippable(4) {
         uint256 STETH_AMOUNT = 85 * 1e18; // 85 stETH
-        ILite(IETHV2).collectRevenue(STETH_AMOUNT);
+        IETHV2.collectRevenue(STETH_AMOUNT);
 
         // Spell: Transfer 85 stETH from iETHv2 to Team Multisig
         string[] memory targets = new string[](1);
