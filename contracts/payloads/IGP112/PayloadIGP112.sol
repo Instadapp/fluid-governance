@@ -453,7 +453,12 @@ contract PayloadIGP112 is PayloadIGPMain {
             amounts[7] =
                 IERC20(GHO_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
                 10;
-            FLUID_RESERVE.withdrawFunds(tokens, amounts, TEAM_MULTISIG);
+            FLUID_RESERVE.withdrawFunds(
+                tokens,
+                amounts,
+                TEAM_MULTISIG,
+                "revenue for buybacks"
+            );
         }
     }
     /**
