@@ -215,14 +215,6 @@ contract PayloadIGP112 is PayloadIGPMain {
                     .baseWithdrawalLimitInUSD
             });
             setSupplyProtocolLimits(supplyConfig_);
-        }
-
-        // Apply "paused" borrow limits to all vaults 1-10 using the helper
-        for (uint256 vaultId = 1; vaultId <= 10; vaultId++) {
-            address vault_ = getVaultAddress(vaultId);
-            IFluidVaultT1.ConstantViews memory constants_ = IFluidVaultT1(
-                vault_
-            ).constantsView();
             setBorrowProtocolLimitsPaused(vault_, constants_.borrowToken);
         }
     }
