@@ -104,6 +104,8 @@ contract PayloadIGPConstants {
         0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa;
     address internal constant ezETH_ADDRESS =
         0xbf5495Efe5DB9ce00f80364C8B423567e58d2110;
+    address internal constant OSETH_ADDRESS =
+        0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38;
 
     address internal constant USDC_ADDRESS =
         0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
