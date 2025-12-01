@@ -142,7 +142,7 @@ contract PayloadIGP113 is PayloadIGPMain {
                 tokenB: ETH_ADDRESS,
                 smartCollateral: true,
                 smartDebt: false,
-                baseWithdrawalLimitInUSD: 10_000, // $10k (dust limit for ETH derivative DEX)
+                baseWithdrawalLimitInUSD: 10_000, // $10k
                 baseBorrowLimitInUSD: 0,
                 maxBorrowLimitInUSD: 0
             });
@@ -239,7 +239,7 @@ contract PayloadIGP113 is PayloadIGPMain {
         // Vault ID 157: OSETH / USDC-USDT concentrated (TYPE_3) - Dust limits
         {
             address OSETH_USDC_USDT_CONC_VAULT = getVaultAddress(157);
-            address USDC_USDT_DEX = getDexAddress(2);
+            address USDC_USDT_DEX = getDexAddress(34);
 
             {
                 VaultConfig memory VAULT_OSETH_USDC_USDT_CONC = VaultConfig({
@@ -274,24 +274,21 @@ contract PayloadIGP113 is PayloadIGPMain {
             }
         }
 
-        // Vault ID 158: oseth-eth <> wsteth-eth (TYPE_2) - Dust limits
+        // Vault ID 158: oseth-eth <> wsteth-eth (TYPE_4) - Set borrow dust limits for WSTETH-ETH DEX (id 1)
         {
-            address OSETH_ETH__wstETH_VAULT = getVaultAddress(158);
-            VaultConfig memory VAULT_OSETH_ETH__wstETH = VaultConfig({
-                vault: OSETH_ETH__wstETH_VAULT,
-                vaultType: VAULT_TYPE.TYPE_2,
-                supplyToken: address(0), // TYPE_2 vault
-                borrowToken: wstETH_ADDRESS,
-                baseWithdrawalLimitInUSD: 0, // Set at DEX level
-                baseBorrowLimitInUSD: 7_000, // $7k
-                maxBorrowLimitInUSD: 9_000 // $9k
+            address OSETH_ETH__wstETH_ETH_VAULT = getVaultAddress(158);
+            address WSTETH_ETH_DEX = getDexAddress(1);
+
+            // For TYPE_4, borrow limits set via DexBorrowProtocolConfigInShares
+            DexBorrowProtocolConfigInShares memory config_ = DexBorrowProtocolConfigInShares({
+                dex: WSTETH_ETH_DEX,
+                protocol: OSETH_ETH__wstETH_ETH_VAULT,
+                expandPercent: 30 * 1e2, // 30%
+                expandDuration: 6 hours, // 6 hours
+                baseBorrowLimit: 3500 * 1e18, // 3500 shares or $7k
+                maxBorrowLimit: 4500 * 1e18  // 4500 shares or $9k
             });
-            setVaultLimits(VAULT_OSETH_ETH__wstETH);
-            VAULT_FACTORY.setVaultAuth(
-                OSETH_ETH__wstETH_VAULT,
-                TEAM_MULTISIG,
-                true
-            );
+            setDexBorrowProtocolLimitsInShares(config_);
         }
     }
 
@@ -317,8 +314,8 @@ contract PayloadIGP113 is PayloadIGPMain {
             supplyToken: address(0), // TYPE_2 vault
             borrowToken: WBTC_ADDRESS,
             baseWithdrawalLimitInUSD: 0, // Set at DEX level
-            baseBorrowLimitInUSD: 0, // TODO: Set new base borrow limit or keep existing
-            maxBorrowLimitInUSD: 0 // TODO: Set new increased max borrow cap
+            baseBorrowLimitInUSD: 5_000_000,
+            maxBorrowLimitInUSD: 5_000_000
         });
 
         setVaultLimits(VAULT_LBTC_cbBTC__WBTC);
