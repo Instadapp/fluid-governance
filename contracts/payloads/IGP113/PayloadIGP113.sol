@@ -296,8 +296,8 @@ contract PayloadIGP113 is PayloadIGPMain {
                     protocol: OSETH_ETH__wstETH_ETH_VAULT,
                     expandPercent: 30 * 1e2, // 30%
                     expandDuration: 6 hours, // 6 hours
-                    baseBorrowLimit: 3500 * 1e18, // 3500 shares or $7k
-                    maxBorrowLimit: 4500 * 1e18 // 4500 shares or $9k
+                    baseBorrowLimit: 1 * 1e18, // 1 share or $6k
+                    maxBorrowLimit: 1.5 * 1e18 // 1.5 shares or $9k
                 });
             setDexBorrowProtocolLimitsInShares(config_);
         }
