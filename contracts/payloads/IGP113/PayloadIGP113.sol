@@ -292,12 +292,76 @@ contract PayloadIGP113 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 4: Set dexV2 dust limits
-    /// @Vaibhav will provide dust supply and borrow configs for several tokens at LL to 2 contracts
+    /// @notice Action 4: Set dexV2 dust limits for DEX v2 and Money Market proxies
     function action4() internal isActionSkippable(4) {
-        // TODO: Add dexV2 dust limit configurations once provided by Vaibhav
-        // This will likely involve setting supply and borrow limits on Liquidity Layer
-        // for multiple tokens across 2 contracts
+        // DEX v2 and Money Market proxy addresses
+        address DEX_V2_PROXY = 0x4E42f9e626FAcDdd97EDFA537AA52C5024448625;
+        address MONEY_MARKET_PROXY = 0xe3B7e3f4da603FC40fD889caBdEe30a4cf15DD34;
+
+        // ---------------------------------------------------------------------
+        // Borrow (debt) limits: ETH, USDC, USDT -> $5k base, $10k max
+        // ---------------------------------------------------------------------
+        {
+            address[3] memory debtTokens = [
+                ETH_ADDRESS,
+                USDC_ADDRESS,
+                USDT_ADDRESS
+            ];
+
+            // Configure for both proxies
+            address[2] memory debtProtocols = [
+                DEX_V2_PROXY,
+                MONEY_MARKET_PROXY
+            ];
+
+            for (uint256 i = 0; i < debtProtocols.length; i++) {
+                for (uint256 j = 0; j < debtTokens.length; j++) {
+                    BorrowProtocolConfig memory borrowConfig = BorrowProtocolConfig({
+                        protocol: debtProtocols[i],
+                        borrowToken: debtTokens[j],
+                        expandPercent: 30 * 1e2, // 30%
+                        expandDuration: 6 hours, // 6 hours
+                        baseBorrowLimitInUSD: 5_000, // $5k
+                        maxBorrowLimitInUSD: 10_000 // $10k
+                    });
+
+                    setBorrowProtocolLimits(borrowConfig);
+                }
+            }
+        }
+
+        // ---------------------------------------------------------------------
+        // Supply (collateral) limits: ETH, USDC, USDT, cbBTC, WBTC -> $10k base
+        // ---------------------------------------------------------------------
+        {
+            address[5] memory collateralTokens = [
+                ETH_ADDRESS,
+                USDC_ADDRESS,
+                USDT_ADDRESS,
+                cbBTC_ADDRESS,
+                WBTC_ADDRESS
+            ];
+
+            // Configure for both proxies
+            address[2] memory collateralProtocols = [
+                DEX_V2_PROXY,
+                MONEY_MARKET_PROXY
+            ];
+
+            for (uint256 i = 0; i < collateralProtocols.length; i++) {
+                for (uint256 j = 0; j < collateralTokens.length; j++) {
+                    SupplyProtocolConfig memory supplyConfig = SupplyProtocolConfig({
+                        protocol: collateralProtocols[i],
+                        supplyToken: collateralTokens[j],
+                        expandPercent: 50 * 1e2, // 50%
+                        expandDuration: 6 hours, // 6 hours
+                        baseWithdrawalLimitInUSD: 10_000 // $10k
+                    });
+
+                    setSupplyProtocolLimits(supplyConfig);
+                }
+            }
+        }
     }
 
     /// @notice Action 5: Increase borrow caps on LBTC-CBBTC / WBTC
