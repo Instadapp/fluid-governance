@@ -85,6 +85,12 @@ contract PayloadIGPConstants {
     ILite public constant IETHV2 =
         ILite(0xA0D3707c569ff8C87FA923d3823eC5D81c98Be78);
 
+    // Dex V2 & Money Market Proxies (Liquidity Layer users)
+    address internal constant DEX_V2_PROXY =
+        0x4E42f9e626FAcDdd97EDFA537AA52C5024448625;
+    address internal constant MONEY_MARKET_PROXY =
+        0xe3B7e3f4da603FC40fD889caBdEe30a4cf15DD34;
+
     // Tokens
     address internal constant ETH_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;

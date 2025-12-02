@@ -87,7 +87,7 @@ contract PayloadIGP113 is PayloadIGPMain {
 
         // Old fee handler address
         address oldFeeHandler = 0x8eaE5474C3DFE2c5F07E7423019E443258A73100;
-        
+
         // New fee handler address
         address newFeeHandler = 0xD43d85f4F4eEDdA3ed3BbE2Ca7351eE32b8bB44a;
 
@@ -111,7 +111,10 @@ contract PayloadIGP113 is PayloadIGPMain {
 
             IProxy(address(LIQUIDITY)).removeImplementation(oldImplementation_);
 
-            IProxy(address(LIQUIDITY)).addImplementation(newImplementation_, sigs_);
+            IProxy(address(LIQUIDITY)).addImplementation(
+                newImplementation_,
+                sigs_
+            );
         }
 
         // Update AdminModule
@@ -124,7 +127,10 @@ contract PayloadIGP113 is PayloadIGPMain {
 
             IProxy(address(LIQUIDITY)).removeImplementation(oldImplementation_);
 
-            IProxy(address(LIQUIDITY)).addImplementation(newImplementation_, sigs_);
+            IProxy(address(LIQUIDITY)).addImplementation(
+                newImplementation_,
+                sigs_
+            );
         }
     }
 
@@ -280,24 +286,21 @@ contract PayloadIGP113 is PayloadIGPMain {
             address WSTETH_ETH_DEX = getDexAddress(1);
 
             // For TYPE_4, borrow limits set via DexBorrowProtocolConfigInShares
-            DexBorrowProtocolConfigInShares memory config_ = DexBorrowProtocolConfigInShares({
-                dex: WSTETH_ETH_DEX,
-                protocol: OSETH_ETH__wstETH_ETH_VAULT,
-                expandPercent: 30 * 1e2, // 30%
-                expandDuration: 6 hours, // 6 hours
-                baseBorrowLimit: 3500 * 1e18, // 3500 shares or $7k
-                maxBorrowLimit: 4500 * 1e18  // 4500 shares or $9k
-            });
+            DexBorrowProtocolConfigInShares
+                memory config_ = DexBorrowProtocolConfigInShares({
+                    dex: WSTETH_ETH_DEX,
+                    protocol: OSETH_ETH__wstETH_ETH_VAULT,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours, // 6 hours
+                    baseBorrowLimit: 3500 * 1e18, // 3500 shares or $7k
+                    maxBorrowLimit: 4500 * 1e18 // 4500 shares or $9k
+                });
             setDexBorrowProtocolLimitsInShares(config_);
         }
     }
 
     /// @notice Action 4: Set dexV2 dust limits for DEX v2 and Money Market proxies
     function action4() internal isActionSkippable(4) {
-        // DEX v2 and Money Market proxy addresses
-        address DEX_V2_PROXY = 0x4E42f9e626FAcDdd97EDFA537AA52C5024448625;
-        address MONEY_MARKET_PROXY = 0xe3B7e3f4da603FC40fD889caBdEe30a4cf15DD34;
-
         // ---------------------------------------------------------------------
         // Borrow (debt) limits: ETH, USDC, USDT -> $5k base, $10k max
         // ---------------------------------------------------------------------
@@ -316,14 +319,15 @@ contract PayloadIGP113 is PayloadIGPMain {
 
             for (uint256 i = 0; i < debtProtocols.length; i++) {
                 for (uint256 j = 0; j < debtTokens.length; j++) {
-                    BorrowProtocolConfig memory borrowConfig = BorrowProtocolConfig({
-                        protocol: debtProtocols[i],
-                        borrowToken: debtTokens[j],
-                        expandPercent: 30 * 1e2, // 30%
-                        expandDuration: 6 hours, // 6 hours
-                        baseBorrowLimitInUSD: 5_000, // $5k
-                        maxBorrowLimitInUSD: 10_000 // $10k
-                    });
+                    BorrowProtocolConfig
+                        memory borrowConfig = BorrowProtocolConfig({
+                            protocol: debtProtocols[i],
+                            borrowToken: debtTokens[j],
+                            expandPercent: 30 * 1e2, // 30%
+                            expandDuration: 6 hours, // 6 hours
+                            baseBorrowLimitInUSD: 5_000, // $5k
+                            maxBorrowLimitInUSD: 10_000 // $10k
+                        });
 
                     setBorrowProtocolLimits(borrowConfig);
                 }
@@ -350,13 +354,14 @@ contract PayloadIGP113 is PayloadIGPMain {
 
             for (uint256 i = 0; i < collateralProtocols.length; i++) {
                 for (uint256 j = 0; j < collateralTokens.length; j++) {
-                    SupplyProtocolConfig memory supplyConfig = SupplyProtocolConfig({
-                        protocol: collateralProtocols[i],
-                        supplyToken: collateralTokens[j],
-                        expandPercent: 50 * 1e2, // 50%
-                        expandDuration: 6 hours, // 6 hours
-                        baseWithdrawalLimitInUSD: 10_000 // $10k
-                    });
+                    SupplyProtocolConfig
+                        memory supplyConfig = SupplyProtocolConfig({
+                            protocol: collateralProtocols[i],
+                            supplyToken: collateralTokens[j],
+                            expandPercent: 50 * 1e2, // 50%
+                            expandDuration: 6 hours, // 6 hours
+                            baseWithdrawalLimitInUSD: 10_000 // $10k
+                        });
 
                     setSupplyProtocolLimits(supplyConfig);
                 }
@@ -542,4 +547,3 @@ contract PayloadIGP113 is PayloadIGPMain {
         }
     }
 }
-
