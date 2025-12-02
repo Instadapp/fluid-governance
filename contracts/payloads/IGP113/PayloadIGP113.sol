@@ -41,7 +41,7 @@ import {
 import {ICodeReader} from "../common/interfaces/ICodeReader.sol";
 import {IDSAV2} from "../common/interfaces/IDSA.sol";
 import {IERC20} from "../common/interfaces/IERC20.sol";
-import {IProxy} from "../common/interfaces/IProxy.sol";
+import {IInfiniteProxy} from "../common/interfaces/IInfiniteProxy.sol";
 import {PayloadIGPConstants} from "../common/constants.sol";
 import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
@@ -106,12 +106,14 @@ contract PayloadIGP113 is PayloadIGPMain {
             address oldImplementation_ = 0x6967e68F7f9b3921181f27E66Aa9c3ac7e13dBc0;
             address newImplementation_ = 0xF1167F851509CA5Ef56f8521fB1EE07e4e5C92C8;
 
-            bytes4[] memory sigs_ = IProxy(address(LIQUIDITY))
+            bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
                 .getImplementationSigs(oldImplementation_);
 
-            IProxy(address(LIQUIDITY)).removeImplementation(oldImplementation_);
+            IInfiniteProxy(address(LIQUIDITY)).removeImplementation(
+                oldImplementation_
+            );
 
-            IProxy(address(LIQUIDITY)).addImplementation(
+            IInfiniteProxy(address(LIQUIDITY)).addImplementation(
                 newImplementation_,
                 sigs_
             );
@@ -122,12 +124,14 @@ contract PayloadIGP113 is PayloadIGPMain {
             address oldImplementation_ = 0xC3800E7527145837e525cfA6AD96B6B5DaE01586;
             address newImplementation_ = 0x53EFFA0e612d88f39Ab32eb5274F2fae478d261C;
 
-            bytes4[] memory sigs_ = IProxy(address(LIQUIDITY))
+            bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
                 .getImplementationSigs(oldImplementation_);
 
-            IProxy(address(LIQUIDITY)).removeImplementation(oldImplementation_);
+            IInfiniteProxy(address(LIQUIDITY)).removeImplementation(
+                oldImplementation_
+            );
 
-            IProxy(address(LIQUIDITY)).addImplementation(
+            IInfiniteProxy(address(LIQUIDITY)).addImplementation(
                 newImplementation_,
                 sigs_
             );
