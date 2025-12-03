@@ -99,7 +99,7 @@ contract PayloadIGP113 is PayloadIGPMain {
     }
 
     /// @notice Action 2: Upgrade LL AdminModule and UserModule on Liquidity infiniteProxy
-    /// Adding decay limits and other upgrades, same as already rolled out on Polygon
+    /// Adding decay limits and other upgrades, same as already rolled out on Polygon, Base, Arbitrum
     function action2() internal isActionSkippable(2) {
         // Update UserModule
         {
