@@ -379,8 +379,6 @@ contract PayloadIGP113 is PayloadIGPMain {
         address LBTC_cbBTC__WBTC_VAULT = getVaultAddress(97);
 
         // Increase borrow limits
-        // TODO: Confirm the exact new limits to set
-        // Current: baseBorrowLimitInUSD: 500_000, maxBorrowLimitInUSD: 1_000_000
         VaultConfig memory VAULT_LBTC_cbBTC__WBTC = VaultConfig({
             vault: LBTC_cbBTC__WBTC_VAULT,
             vaultType: VAULT_TYPE.TYPE_2,
