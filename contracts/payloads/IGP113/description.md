@@ -18,12 +18,12 @@ This proposal implements five key protocol upgrades: (1) updates the WEETH fee h
 - **UserModule Upgrade**:
   - **Old Implementation**: `0x6967e68F7f9b3921181f27E66Aa9c3ac7e13dBc0`
   - **New Implementation**: `0xF1167F851509CA5Ef56f8521fB1EE07e4e5C92C8`
-  - **Purpose**: Upgrade UserModule with decay limits and other improvements, same as already rolled out on Polygon
+  - **Purpose**: Upgrade UserModule with decay limits and other improvements, same as already rolled out on Base, Arbitrum, Polygon
 
 - **AdminModule Upgrade**:
   - **Old Implementation**: `0xC3800E7527145837e525cfA6AD96B6B5DaE01586`
   - **New Implementation**: `0x53EFFA0e612d88f39Ab32eb5274F2fae478d261C`
-  - **Purpose**: Upgrade AdminModule with decay limits and other improvements, same as already rolled out on Polygon
+  - **Purpose**: Upgrade AdminModule with decay limits and other improvements, same as already rolled out on Base, Arbitrum, Polygon
   - **Note**: Signatures are preserved from old implementation via on-chain code reading
 
 ### Action 3: Set Dust Limits for OSETH Protocols
@@ -144,4 +144,3 @@ This proposal implements five major changes to enhance protocol operations, upgr
 ## Conclusion
 
 IGP-113 delivers comprehensive protocol upgrades: it maintains operational efficiency through fee handler updates, enhances core infrastructure with Liquidity Layer module upgrades bringing Mainnet in line with Polygon, safely integrates new OSETH offerings with conservative dust limits across DEX and vault configurations, establishes foundational limits for new DEX v2 and Money Market proxy contracts, and optimizes existing vault capacity for LBTC-cbBTC/WBTC. The proposal balances expansion goals with risk management, ensuring safe integration of new markets and infrastructure while maintaining operational efficiency and treasury management best practices. These changes support sustainable growth, improved protocol functionality, and enhanced capital efficiency across the Fluid ecosystem.
-
