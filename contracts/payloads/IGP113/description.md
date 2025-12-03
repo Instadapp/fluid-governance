@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal implements five key protocol upgrades: (1) updates the WEETH fee handler on DexFactory by removing the old handler and adding the new one, (2) upgrades Liquidity Layer AdminModule and UserModule to add decay limits and other improvements already rolled out on Polygon, (3) sets conservative dust limits for OSETH protocols including the OSETH-ETH DEX and six associated vaults, (4) configures dust supply and borrow limits for DEX v2 and Money Market proxies at the Liquidity Layer, and (5) increases borrow caps for the LBTC-cbBTC/WBTC vault to support increased usage. These changes aim to maintain operational efficiency through fee handler updates, enhance protocol functionality with upgraded modules, safely integrate new OSETH offerings with appropriate limits, establish foundational limits for new proxy contracts, and optimize existing vault capacity.
+This proposal implements five key protocol upgrades: (1) updates the WEETH fee handler on DexFactory by removing the old handler and adding the new one, (2) upgrades Liquidity Layer AdminModule and UserModule to add decay limits and other improvements already rolled out on Base, Arbitrum, Polygon, (3) sets conservative dust limits for OSETH protocols including the OSETH-ETH DEX and six associated vaults, (4) configures dust supply and borrow limits for DEX v2 and Money Market proxies at the Liquidity Layer, and (5) increases borrow caps for the LBTC-cbBTC/WBTC vault to support increased usage. These changes aim to maintain operational efficiency through fee handler updates, enhance protocol functionality with upgraded modules, safely integrate new OSETH offerings with appropriate limits, establish foundational limits for new proxy contracts, and optimize existing vault capacity.
 
 ## Code Changes
 
@@ -118,9 +118,9 @@ This proposal implements five major changes to enhance protocol operations, upgr
 
 2. **Liquidity Layer Module Upgrades**
    - Upgrades both AdminModule and UserModule on the Liquidity infiniteProxy
-   - Adds decay limits and other improvements that have already been successfully rolled out on Polygon
+   - Adds decay limits and other improvements that have already been successfully rolled out on other EVM chains
    - Preserves all existing function signatures via on-chain code reading to ensure compatibility
-   - Brings Mainnet Liquidity Layer in line with Polygon deployment, ensuring feature parity and improved functionality
+   - Brings Mainnet Liquidity Layer in line with other EVM chains deployment, ensuring feature parity and improved functionality
 
 3. **OSETH Protocol Integration with Conservative Limits**
    - Introduces OSETH-ETH DEX (Pool 43) and six associated vaults (153-158) with conservative dust limits
@@ -143,4 +143,4 @@ This proposal implements five major changes to enhance protocol operations, upgr
 
 ## Conclusion
 
-IGP-113 delivers comprehensive protocol upgrades: it maintains operational efficiency through fee handler updates, enhances core infrastructure with Liquidity Layer module upgrades bringing Mainnet in line with Polygon, safely integrates new OSETH offerings with conservative dust limits across DEX and vault configurations, establishes foundational limits for new DEX v2 and Money Market proxy contracts, and optimizes existing vault capacity for LBTC-cbBTC/WBTC. The proposal balances expansion goals with risk management, ensuring safe integration of new markets and infrastructure while maintaining operational efficiency and treasury management best practices. These changes support sustainable growth, improved protocol functionality, and enhanced capital efficiency across the Fluid ecosystem.
+IGP-113 delivers comprehensive protocol upgrades: it maintains operational efficiency through fee handler updates, enhances core infrastructure with Liquidity Layer module upgrades bringing Mainnet in line with other EVM chains, safely integrates new OSETH offerings with conservative dust limits across DEX and vault configurations, establishes foundational limits for new DEX v2 and Money Market proxy contracts, and optimizes existing vault capacity for LBTC-cbBTC/WBTC. The proposal balances expansion goals with risk management, ensuring safe integration of new markets and infrastructure while maintaining operational efficiency and treasury management best practices. These changes support sustainable growth, improved protocol functionality, and enhanced capital efficiency across the Fluid ecosystem.
