@@ -128,8 +128,8 @@ contract PayloadIGP114 is PayloadIGPMain {
                             borrowToken: debtTokens[j],
                             expandPercent: 30 * 1e2, // 30%
                             expandDuration: 6 hours, // 6 hours
-                            baseBorrowLimitInUSD: 5_000_000, // $5M
-                            maxBorrowLimitInUSD: 10_000_000 // $10M
+                            baseBorrowLimitInUSD: 1_000_000, // $1M
+                            maxBorrowLimitInUSD: 2_000_000 // $2M
                         });
 
                     setBorrowProtocolLimits(borrowConfig);
@@ -138,7 +138,7 @@ contract PayloadIGP114 is PayloadIGPMain {
         }
 
         // ---------------------------------------------------------------------
-        // Supply (collateral) limits: ETH, USDC, USDT, cbBTC, WBTC -> $10M base
+        // Supply (collateral) limits: ETH, USDC, USDT, cbBTC, WBTC -> $2M base
         // ---------------------------------------------------------------------
         {
             address[5] memory collateralTokens = [
@@ -163,7 +163,7 @@ contract PayloadIGP114 is PayloadIGPMain {
                             supplyToken: collateralTokens[j],
                             expandPercent: 50 * 1e2, // 50%
                             expandDuration: 6 hours, // 6 hours
-                            baseWithdrawalLimitInUSD: 10_000_000 // $10M
+                            baseWithdrawalLimitInUSD: 2_000_000 // $2M
                         });
 
                     setSupplyProtocolLimits(supplyConfig);
