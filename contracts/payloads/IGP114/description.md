@@ -6,17 +6,18 @@ This proposal implements three coordinated protocol updates: (1) upgrades the Li
 
 ## Code Changes
 
-### Action 1:  Upgrade LL UserModule on Liquidity infiniteProxy
- - **UserModule Upgrade**:
+### Action 1: Upgrade LL UserModule on Liquidity infiniteProxy
+- **UserModule Upgrade**:
   - **Old Implementation**: `0xF1167F851509CA5Ef56f8521fB1EE07e4e5C92C8`
-  - **New Implementation**: ``
+  - **New Implementation**: Configurable by `Team Multisig` using `setUserModuleAddress()` function, defaults to `0x6967e68F7f9b3921181f27E66Aa9c3ac7e13dBc0` if not set
   - **Purpose**: Update UserModule with minor check adjustments and future-proof WEETH borrow side support
+  - **Note**: Preserves all existing function signatures via on-chain code reading to ensure compatibility
 
 ### Action 2: Set Launch Limits for OSETH Protocols
 
 - **DEX Pool 43**<br>
   **OSETH-ETH DEX**:
-  - **Base Withdrawal Limit**: $8,000,000
+  - **Base Withdrawal Limit**: $14,000,000 (for ~30M max supply shares)
   - **Smart Collateral**: Enabled
   - **Smart Debt**: Disabled
   - **Authorization**: Remove Team Multisig auth
@@ -86,7 +87,10 @@ This proposal implements three coordinated protocol updates: (1) upgrades the Li
 This proposal implements three major changes to enhance protocol operations, optimize treasury management, and support protocol growth:
 
 1. **Liquidity Layer Module Upgrades**
-   - Update UserModule with minor check adjustments and future-proof WEETH borrow side support
+   - Upgrades UserModule on the Liquidity infiniteProxy
+   - New implementation address can be set via `setUserModuleAddress()` function (callable by Team Multisig)
+   - Defaults to `0x6967e68F7f9b3921181f27E66Aa9c3ac7e13dBc0` if no custom address is set
+   - Preserves all existing function signatures via on-chain code reading to ensure compatibility
 
 2. **OSETH Protocol Launch Limits**
    - Sets launch limits for OSETH-ETH DEX (Pool 43) and associated vaults (153-158)
