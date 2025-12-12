@@ -1,5 +1,5 @@
+// SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.21;
-pragma experimental ABIEncoderV2;
 
 import {BigMathMinified} from "../libraries/bigMathMinified.sol";
 import {LiquidityCalcs} from "../libraries/liquidityCalcs.sol";
@@ -61,9 +61,6 @@ contract PayloadIGP114 is PayloadIGPMain {
 
         // Action 3: Set launch limits for OSETH related protocols
         action3();
-
-        // Action 4: (to be implemented)
-        action4();
     }
 
     function verifyProposal() public view override {}
@@ -83,11 +80,12 @@ contract PayloadIGP114 is PayloadIGPMain {
         string[] memory targets = new string[](1);
         bytes[] memory encodedSpells = new bytes[](1);
 
-        string memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
+        string
+            memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
 
         // Spell 1: Withdraw 2.5M GHO from fGHO (redeems fGHO to GHO) and send to Team Multisig
         {
-            uint256 GHO_AMOUNT = 2_500_000 * 1e18; // 2.5M GHO
+            uint256 GHO_AMOUNT = 2.5 * ONE_MILLION * 1e18; // 2.5M GHO
             targets[0] = "BASIC-D-V2";
             encodedSpells[0] = abi.encodeWithSignature(
                 withdrawSignature,
@@ -105,7 +103,7 @@ contract PayloadIGP114 is PayloadIGPMain {
     /// @notice Action 2: Set launch limits for DEX v2 and Money Market proxies
     function action2() internal isActionSkippable(2) {
         // ---------------------------------------------------------------------
-        // Borrow (debt) limits: ETH, USDC, USDT -> $5M base, $10M max
+        // Borrow (debt) limits: ETH, USDC, USDT -> $1M base, $2M max
         // ---------------------------------------------------------------------
         {
             address[3] memory debtTokens = [
@@ -128,8 +126,8 @@ contract PayloadIGP114 is PayloadIGPMain {
                             borrowToken: debtTokens[j],
                             expandPercent: 30 * 1e2, // 30%
                             expandDuration: 6 hours, // 6 hours
-                            baseBorrowLimitInUSD: 1_000_000, // $1M
-                            maxBorrowLimitInUSD: 2_000_000 // $2M
+                            baseBorrowLimitInUSD: 1 * ONE_MILLION, // $1M
+                            maxBorrowLimitInUSD: 2 * ONE_MILLION // $2M
                         });
 
                     setBorrowProtocolLimits(borrowConfig);
@@ -163,7 +161,7 @@ contract PayloadIGP114 is PayloadIGPMain {
                             supplyToken: collateralTokens[j],
                             expandPercent: 50 * 1e2, // 50%
                             expandDuration: 6 hours, // 6 hours
-                            baseWithdrawalLimitInUSD: 2_000_000 // $2M
+                            baseWithdrawalLimitInUSD: 2 * ONE_MILLION // $2M
                         });
 
                     setSupplyProtocolLimits(supplyConfig);
@@ -183,11 +181,14 @@ contract PayloadIGP114 is PayloadIGPMain {
                 tokenB: ETH_ADDRESS,
                 smartCollateral: true,
                 smartDebt: false,
-                baseWithdrawalLimitInUSD: 8_000_000, // $8M base withdraw
+                // TODO adjust limit based on final max supply shares target
+                baseWithdrawalLimitInUSD: 8 * ONE_MILLION, // $8M base withdraw
                 baseBorrowLimitInUSD: 0,
                 maxBorrowLimitInUSD: 0
             });
             setDexLimits(DEX_OSETH_ETH);
+
+            DEX_FACTORY.setDexAuth(OSETH_ETH_DEX, TEAM_MULTISIG, false);
         }
 
         // Vault ID 153: OSETH / USDC (TYPE_1) - Launch limits
@@ -198,11 +199,13 @@ contract PayloadIGP114 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: OSETH_ADDRESS,
                 borrowToken: USDC_ADDRESS,
-                baseWithdrawalLimitInUSD: 8_000_000, // $8M
-                baseBorrowLimitInUSD: 5_000_000, // $5M
-                maxBorrowLimitInUSD: 10_000_000 // $10M
+                baseWithdrawalLimitInUSD: 8 * ONE_MILLION, // $8M
+                baseBorrowLimitInUSD: 5 * ONE_MILLION, // $5M
+                maxBorrowLimitInUSD: 10 * ONE_MILLION // $10M
             });
             setVaultLimits(VAULT_OSETH_USDC);
+
+            VAULT_FACTORY.setVaultAuth(OSETH_USDC_VAULT, TEAM_MULTISIG, false);
         }
 
         // Vault ID 154: OSETH / USDT (TYPE_1) - Launch limits
@@ -213,11 +216,13 @@ contract PayloadIGP114 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: OSETH_ADDRESS,
                 borrowToken: USDT_ADDRESS,
-                baseWithdrawalLimitInUSD: 8_000_000, // $8M
-                baseBorrowLimitInUSD: 5_000_000, // $5M
-                maxBorrowLimitInUSD: 10_000_000 // $10M
+                baseWithdrawalLimitInUSD: 8 * ONE_MILLION, // $8M
+                baseBorrowLimitInUSD: 5 * ONE_MILLION, // $5M
+                maxBorrowLimitInUSD: 10 * ONE_MILLION // $10M
             });
             setVaultLimits(VAULT_OSETH_USDT);
+
+            VAULT_FACTORY.setVaultAuth(VAULT_OSETH_USDT, TEAM_MULTISIG, false);
         }
 
         // Vault ID 155: OSETH / GHO (TYPE_1) - Launch limits
@@ -228,11 +233,13 @@ contract PayloadIGP114 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: OSETH_ADDRESS,
                 borrowToken: GHO_ADDRESS,
-                baseWithdrawalLimitInUSD: 8_000_000, // $8M
-                baseBorrowLimitInUSD: 5_000_000, // $5M
-                maxBorrowLimitInUSD: 10_000_000 // $10M
+                baseWithdrawalLimitInUSD: 8 * ONE_MILLION, // $8M
+                baseBorrowLimitInUSD: 5 * ONE_MILLION, // $5M
+                maxBorrowLimitInUSD: 10 * ONE_MILLION // $10M
             });
             setVaultLimits(VAULT_OSETH_GHO);
+
+            VAULT_FACTORY.setVaultAuth(VAULT_OSETH_GHO, TEAM_MULTISIG, false);
         }
 
         // Vault ID 156: OSETH / USDC-USDT (TYPE_3) - Launch limits
@@ -246,11 +253,17 @@ contract PayloadIGP114 is PayloadIGPMain {
                     vaultType: VAULT_TYPE.TYPE_3,
                     supplyToken: OSETH_ADDRESS,
                     borrowToken: address(0), // Set at DEX level
-                    baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                    baseWithdrawalLimitInUSD: 8 * ONE_MILLION, // $8M
                     baseBorrowLimitInUSD: 0,
                     maxBorrowLimitInUSD: 0
                 });
                 setVaultLimits(VAULT_OSETH_USDC_USDT);
+
+                VAULT_FACTORY.setVaultAuth(
+                    VAULT_OSETH_USDC_USDT,
+                    TEAM_MULTISIG,
+                    false
+                );
             }
 
             {
@@ -261,8 +274,8 @@ contract PayloadIGP114 is PayloadIGPMain {
                         protocol: OSETH_USDC_USDT_VAULT,
                         expandPercent: 30 * 1e2, // 30%
                         expandDuration: 6 hours, // 6 hours
-                        baseBorrowLimit: 2_500_000 * 1e18, // ~2.5M shares (~$5M)
-                        maxBorrowLimit: 5_000_000 * 1e18 // ~5M shares (~$10M)
+                        baseBorrowLimit: 2.5 * ONE_MILLION * 1e18, // ~2.5M shares (~$5M)
+                        maxBorrowLimit: 5 * ONE_MILLION * 1e18 // ~5M shares (~$10M)
                     });
                 setDexBorrowProtocolLimitsInShares(config_);
             }
@@ -279,11 +292,17 @@ contract PayloadIGP114 is PayloadIGPMain {
                     vaultType: VAULT_TYPE.TYPE_3,
                     supplyToken: OSETH_ADDRESS,
                     borrowToken: address(0), // Set at DEX level
-                    baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                    baseWithdrawalLimitInUSD: 8 * ONE_MILLION, // $8M
                     baseBorrowLimitInUSD: 0,
                     maxBorrowLimitInUSD: 0
                 });
                 setVaultLimits(VAULT_OSETH_USDC_USDT_CONC);
+
+                VAULT_FACTORY.setVaultAuth(
+                    VAULT_OSETH_USDC_USDT_CONC,
+                    TEAM_MULTISIG,
+                    false
+                );
             }
 
             {
@@ -294,12 +313,14 @@ contract PayloadIGP114 is PayloadIGPMain {
                         protocol: OSETH_USDC_USDT_CONC_VAULT,
                         expandPercent: 30 * 1e2, // 30%
                         expandDuration: 6 hours, // 6 hours
-                        baseBorrowLimit: 2_500_000 * 1e18, // ~2.5M shares (~$5M)
-                        maxBorrowLimit: 5_000_000 * 1e18 // ~5M shares (~$10M)
+                        baseBorrowLimit: 2.5 * ONE_MILLION * 1e18, // ~2.5M shares (~$5M)
+                        maxBorrowLimit: 5 * ONE_MILLION * 1e18 // ~5M shares (~$10M)
                     });
                 setDexBorrowProtocolLimitsInShares(config_);
             }
         }
+
+        // TODO below limits have yet to be finalized
 
         // Vault ID 158: oseth-eth <> wsteth-eth (TYPE_4) - Set borrow launch limits for WSTETH-ETH DEX (id 1)
         {
@@ -314,11 +335,43 @@ contract PayloadIGP114 is PayloadIGPMain {
                     expandPercent: 30 * 1e2, // 30%
                     expandDuration: 6 hours, // 6 hours
                     baseBorrowLimit: 1_333 * 1e18, // ~1,333 shares (~$8M)
-                    maxBorrowLimit: 4_167 * 1e18 // ~4,167 shares (~$25M)
+                    maxBorrowLimit: 4_500 * 1e18 // ~4,500 shares (slightly above ~$25M, effective cap by max dex shares)
+                });
+            setDexBorrowProtocolLimitsInShares(config_);
+
+            VAULT_FACTORY.setVaultAuth(
+                OSETH_ETH__wstETH_ETH_VAULT,
+                TEAM_MULTISIG,
+                false
+            );
+        }
+
+        // Vault ID 158: wsteth-eth <> wsteth-eth (TYPE_4) - Set borrow max to current max dex shares
+        {
+            address WSTETH_ETH__wstETH_ETH_VAULT = getVaultAddress(44);
+            address WSTETH_ETH_DEX = getDexAddress(1);
+
+            // For TYPE_4, borrow limits set via DexBorrowProtocolConfigInShares
+            DexBorrowProtocolConfigInShares
+                memory config_ = DexBorrowProtocolConfigInShares({
+                    dex: WSTETH_ETH_DEX,
+                    protocol: WSTETH_ETH__wstETH_ETH_VAULT,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours, // 6 hours
+                    baseBorrowLimit: 3_000 * 1e18, // no change to current config, ~$20M
+                    maxBorrowLimit: 8_100 * 1e18 // ~$54M, reduced from ~12k shares
                 });
             setDexBorrowProtocolLimitsInShares(config_);
         }
+
+        // expand WSTETH-ETH dex max borrow shares cap
+        {
+            address WSTETH_ETH_DEX = getDexAddress(1);
+
+            IFluidDex(WSTETH_ETH_DEX).updateMaxBorrowShares(9_000 * 1e18);
+        }
     }
+
     /**
      * |
      * |     Payload Actions End Here      |
@@ -476,4 +529,3 @@ contract PayloadIGP114 is PayloadIGPMain {
         }
     }
 }
-

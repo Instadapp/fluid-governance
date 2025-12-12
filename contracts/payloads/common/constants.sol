@@ -13,7 +13,9 @@ import {IFluidReserveContract} from "./interfaces/IFluidReserveContract.sol";
 
 import {IFluidVaultFactory} from "./interfaces/IFluidVaultFactory.sol";
 import {IFluidDexFactory} from "./interfaces/IFluidDexFactory.sol";
-import {IFluidSmartLendingFactory} from "./interfaces/IFluidSmartLendingFactory.sol";
+import {
+    IFluidSmartLendingFactory
+} from "./interfaces/IFluidSmartLendingFactory.sol";
 import {IFluidLendingFactory} from "./interfaces/IFluidLendingFactory.sol";
 
 import {IFluidDex} from "./interfaces/IFluidDex.sol";
@@ -29,7 +31,7 @@ import {IDSAV2} from "./interfaces/IDSA.sol";
 
 import {ILite} from "./interfaces/ILite.sol";
 
-import { IDSAConnectorsV2 } from "./interfaces/IDSA.sol";
+import {IDSAConnectorsV2} from "./interfaces/IDSA.sol";
 
 contract PayloadIGPConstants {
     address public immutable ADDRESS_THIS;
@@ -202,6 +204,8 @@ contract PayloadIGPConstants {
     uint256 internal constant X18 = 0x3ffff;
     uint256 internal constant X24 = 0xffffff;
     uint256 internal constant X64 = 0xffffffffffffffff;
+
+    uint256 internal constant ONE_MILLION = 1_000_000;
 
     uint256 internal constant DEFAULT_EXPONENT_SIZE = 8;
     uint256 internal constant DEFAULT_EXPONENT_MASK = 0xff;
