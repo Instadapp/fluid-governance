@@ -53,7 +53,7 @@ contract PayloadIGP114 is PayloadIGPMain {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Withdraw 2.5M GHO rewards from fGHO to Team Multisig
+        // Action 1: LL upgrades (UserModule updates)
         action1();
 
         // Action 2: Set launch limits for dexV2 and moneyMarket proxies
@@ -62,7 +62,7 @@ contract PayloadIGP114 is PayloadIGPMain {
         // Action 3: Set launch limits for OSETH related protocols
         action3();
 
-        // Action 4: LL upgrades (UserModule updates)
+        // Action 4: Withdraw 2.5M GHO rewards from fGHO to Team Multisig
         action4();
     }
 
@@ -78,29 +78,25 @@ contract PayloadIGP114 is PayloadIGPMain {
      * |__________________________________
      */
 
-    /// @notice Action 1: Withdraw 2.5M GHO rewards from fGHO to Team Multisig
+    /// @notice Action 1: Upgrade LL UserModule on Liquidity infiniteProxy
     function action1() internal isActionSkippable(1) {
-        string[] memory targets = new string[](1);
-        bytes[] memory encodedSpells = new bytes[](1);
-
-        string
-            memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
-
-        // Spell 1: Withdraw 2.5M GHO from fGHO (redeems fGHO to GHO) and send to Team Multisig
+        // Update UserModule with minor check adjustments and future-proof WEETH borrow side support
         {
-            uint256 GHO_AMOUNT = 2_500_000 * 1e18; // 2.5M GHO
-            targets[0] = "BASIC-D-V2";
-            encodedSpells[0] = abi.encodeWithSignature(
-                withdrawSignature,
-                F_GHO_ADDRESS,
-                GHO_AMOUNT,
-                TEAM_MULTISIG,
-                0,
-                0
+            address oldImplementation_ = 0xF1167F851509CA5Ef56f8521fB1EE07e4e5C92C8;
+            address newImplementation_ = address(0); // todo
+
+            bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
+                .getImplementationSigs(oldImplementation_);
+
+            IInfiniteProxy(address(LIQUIDITY)).removeImplementation(
+                oldImplementation_
+            );
+
+            IInfiniteProxy(address(LIQUIDITY)).addImplementation(
+                newImplementation_,
+                sigs_
             );
         }
-
-        IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
     }
 
     /// @notice Action 2: Set launch limits for DEX v2 and Money Market proxies
@@ -401,25 +397,29 @@ contract PayloadIGP114 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 4: Upgrade LL UserModule on Liquidity infiniteProxy
+    /// @notice Action 4: Withdraw 2.5M GHO rewards from fGHO to Team Multisig
     function action4() internal isActionSkippable(4) {
-        // Update UserModule with minor check adjustments and future-proof WEETH borrow side support
+        string[] memory targets = new string[](1);
+        bytes[] memory encodedSpells = new bytes[](1);
+
+        string
+            memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
+
+        // Spell 1: Withdraw 2.5M GHO from fGHO (redeems fGHO to GHO) and send to Team Multisig
         {
-            address oldImplementation_ = 0xF1167F851509CA5Ef56f8521fB1EE07e4e5C92C8;
-            address newImplementation_ = address(0); // todo
-
-            bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
-                .getImplementationSigs(oldImplementation_);
-
-            IInfiniteProxy(address(LIQUIDITY)).removeImplementation(
-                oldImplementation_
-            );
-
-            IInfiniteProxy(address(LIQUIDITY)).addImplementation(
-                newImplementation_,
-                sigs_
+            uint256 GHO_AMOUNT = 2_500_000 * 1e18; // 2.5M GHO
+            targets[0] = "BASIC-D-V2";
+            encodedSpells[0] = abi.encodeWithSignature(
+                withdrawSignature,
+                F_GHO_ADDRESS,
+                GHO_AMOUNT,
+                TEAM_MULTISIG,
+                0,
+                0
             );
         }
+
+        IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
     }
 
     /**
