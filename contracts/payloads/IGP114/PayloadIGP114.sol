@@ -85,7 +85,7 @@ contract PayloadIGP114 is PayloadIGPMain {
 
         // Spell 1: Withdraw 2.5M GHO from fGHO (redeems fGHO to GHO) and send to Team Multisig
         {
-            uint256 GHO_AMOUNT = 2.5 * ONE_MILLION * 1e18; // 2.5M GHO
+            uint256 GHO_AMOUNT = 2_500_000 * 1e18; // 2.5M GHO
             targets[0] = "BASIC-D-V2";
             encodedSpells[0] = abi.encodeWithSignature(
                 withdrawSignature,
@@ -274,7 +274,7 @@ contract PayloadIGP114 is PayloadIGPMain {
                         protocol: OSETH_USDC_USDT_VAULT,
                         expandPercent: 30 * 1e2, // 30%
                         expandDuration: 6 hours, // 6 hours
-                        baseBorrowLimit: 2.5 * ONE_MILLION * 1e18, // ~2.5M shares (~$5M)
+                        baseBorrowLimit: 2_500_000 * 1e18, // ~2.5M shares (~$5M)
                         maxBorrowLimit: 5 * ONE_MILLION * 1e18 // ~5M shares (~$10M)
                     });
                 setDexBorrowProtocolLimitsInShares(config_);
@@ -313,7 +313,7 @@ contract PayloadIGP114 is PayloadIGPMain {
                         protocol: OSETH_USDC_USDT_CONC_VAULT,
                         expandPercent: 30 * 1e2, // 30%
                         expandDuration: 6 hours, // 6 hours
-                        baseBorrowLimit: 2.5 * ONE_MILLION * 1e18, // ~2.5M shares (~$5M)
+                        baseBorrowLimit: 2_500_000 * 1e18, // ~2.5M shares (~$5M)
                         maxBorrowLimit: 5 * ONE_MILLION * 1e18 // ~5M shares (~$10M)
                     });
                 setDexBorrowProtocolLimitsInShares(config_);
