@@ -89,7 +89,7 @@ contract PayloadIGP114 is PayloadIGPMain {
             address oldImplementation_ = 0xF1167F851509CA5Ef56f8521fB1EE07e4e5C92C8;
             address newImplementation_ = PayloadIGP114(ADDRESS_THIS).userModuleAddress();
             if (newImplementation_ == address(0)) {
-                revert("userModuleAddress-not-set");
+                newImplementation_ = 0x6967e68F7f9b3921181f27E66Aa9c3ac7e13dBc0;
             }
 
             bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
