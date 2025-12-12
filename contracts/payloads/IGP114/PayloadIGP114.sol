@@ -61,6 +61,9 @@ contract PayloadIGP114 is PayloadIGPMain {
 
         // Action 3: Set launch limits for OSETH related protocols
         action3();
+
+        // Action 4: LL upgrades (UserModule updates)
+        action4();
     }
 
     function verifyProposal() public view override {}
@@ -395,6 +398,27 @@ contract PayloadIGP114 is PayloadIGPMain {
             });
 
             LIQUIDITY.updateUserBorrowConfigs(configs_);
+        }
+    }
+
+    /// @notice Action 4: Upgrade LL UserModule on Liquidity infiniteProxy
+    function action4() internal isActionSkippable(4) {
+        // Update UserModule
+        {
+            address oldImplementation_ = 0xF1167F851509CA5Ef56f8521fB1EE07e4e5C92C8;
+            address newImplementation_ = address(0); // todo
+
+            bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
+                .getImplementationSigs(oldImplementation_);
+
+            IInfiniteProxy(address(LIQUIDITY)).removeImplementation(
+                oldImplementation_
+            );
+
+            IInfiniteProxy(address(LIQUIDITY)).addImplementation(
+                newImplementation_,
+                sigs_
+            );
         }
     }
 
