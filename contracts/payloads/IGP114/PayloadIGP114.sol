@@ -50,6 +50,13 @@ import {ILite} from "../common/interfaces/ILite.sol";
 contract PayloadIGP114 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 114;
 
+    address public userModuleAddress = address(0);
+
+    function setUserModuleAddress(address userModuleAddress_) external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        userModuleAddress = userModuleAddress_;
+    }
+
     function execute() public virtual override {
         super.execute();
 
@@ -80,7 +87,7 @@ contract PayloadIGP114 is PayloadIGPMain {
         // Update UserModule with minor check adjustments and future-proof WEETH borrow side support
         {
             address oldImplementation_ = 0xF1167F851509CA5Ef56f8521fB1EE07e4e5C92C8;
-            address newImplementation_ = address(0); // todo
+            address newImplementation_ = PayloadIGP114(ADDRESS_THIS).userModuleAddress();
 
             bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
                 .getImplementationSigs(oldImplementation_);
