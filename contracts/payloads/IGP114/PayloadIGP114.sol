@@ -346,7 +346,7 @@ contract PayloadIGP114 is PayloadIGPMain {
             );
         }
 
-        // Vault ID 158: wsteth-eth <> wsteth-eth (TYPE_4) - Set borrow max to current max dex shares
+        // Vault ID 44: wsteth-eth <> wsteth-eth (TYPE_4) - Set borrow max to current max dex shares
         {
             address WSTETH_ETH__wstETH_ETH_VAULT = getVaultAddress(44);
             address WSTETH_ETH_DEX = getDexAddress(1);

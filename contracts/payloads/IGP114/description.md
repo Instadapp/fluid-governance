@@ -20,15 +20,15 @@ This proposal implements three key protocol upgrades: (1) withdraws 2.5M GHO rew
 
 - **Borrow (Debt) Limits**:
   - **Tokens**: ETH, USDC, USDT
-  - **Base Borrow Limit**: $50,000 per token (launch limit, 10x dust limit)
-  - **Max Borrow Limit**: $100,000 per token (launch limit, 10x dust limit)
+  - **Base Borrow Limit**: $1,000,000 per token (launch limit)
+  - **Max Borrow Limit**: $2,000,000 per token (launch limit)
   - **Expand Percent**: 30%
   - **Expand Duration**: 6 hours
   - **Applied to**: Both DEX v2 and Money Market proxies
 
 - **Supply (Collateral) Limits**:
   - **Tokens**: ETH, USDC, USDT, cbBTC, WBTC
-  - **Base Withdrawal Limit**: $100,000 per token (launch limit, 10x dust limit)
+  - **Base Withdrawal Limit**: $2,000,000 per token (launch limit)
   - **Expand Percent**: 50%
   - **Expand Duration**: 6 hours
   - **Applied to**: Both DEX v2 and Money Market proxies
@@ -40,42 +40,58 @@ This proposal implements three key protocol upgrades: (1) withdraws 2.5M GHO rew
   - **Base Withdrawal Limit**: $8,000,000
   - **Smart Collateral**: Enabled
   - **Smart Debt**: Disabled
+  - **Authorization**: Remove Team Multisig auth
 
 - **Vault ID 153**<br>
   **OSETH/USDC (TYPE 1)**:
   - **Base Withdrawal Limit**: $8,000,000
   - **Base Borrow Limit**: $5,000,000
   - **Max Borrow Limit**: $10,000,000
+  - **Authorization**: Remove Team Multisig auth
 
 - **Vault ID 154**<br>
   **OSETH/USDT (TYPE 1)**:
   - **Base Withdrawal Limit**: $8,000,000
   - **Base Borrow Limit**: $5,000,000
   - **Max Borrow Limit**: $10,000,000
+  - **Authorization**: Remove Team Multisig auth
 
 - **Vault ID 155**<br>
   **OSETH/GHO (TYPE 1)**:
   - **Base Withdrawal Limit**: $8,000,000
   - **Base Borrow Limit**: $5,000,000
   - **Max Borrow Limit**: $10,000,000
+  - **Authorization**: Remove Team Multisig auth
 
 - **Vault ID 156**<br>
   **OSETH/USDC-USDT (TYPE 3)**:
   - **Base Withdrawal Limit**: $8,000,000
   - **Base Borrow Limit**: Set at DEX level (USDC-USDT DEX, ID 2)
   - **DEX Borrow Limit**: ~2.5M shares ($5M) base, ~5M shares ($10M) max
+  - **Authorization**: Remove Team Multisig auth
 
 - **Vault ID 157**<br>
   **OSETH/USDC-USDT Concentrated (TYPE 3)**:
   - **Base Withdrawal Limit**: $8,000,000
   - **Base Borrow Limit**: Set at DEX level (USDC-USDT Concentrated DEX, ID 34)
   - **DEX Borrow Limit**: ~2.5M shares ($5M) base, ~5M shares ($10M) max
+  - **Authorization**: Remove Team Multisig auth
 
 - **Vault ID 158**<br>
   **oseth-eth <> wsteth-eth (TYPE 4)**:
   - **Base Borrow Limit**: Set at DEX level (wstETH-ETH DEX, ID 1)
-  - **DEX Borrow Limit**: ~1,333 shares (~$8M) base, ~4,167 shares (~$25M) max
+  - **DEX Borrow Limit**: ~1,333 shares (~$8M) base, ~4,500 shares (slightly above ~$25M, capped by max dex shares)
+  - **Authorization**: Remove Team Multisig auth
   - **Purpose**: Configure borrow launch limits for OSETH-ETH position borrowing against wstETH-ETH DEX
+
+- **Vault ID 44**<br>
+  **wsteth-eth <> wsteth-eth (TYPE 4)**:
+  - **Base Borrow Limit**: Set at DEX level (wstETH-ETH DEX, ID 1)
+  - **DEX Borrow Limit**: ~3,000 shares (~$20M) base (no change), ~8,100 shares (~$54M) max (reduced from ~12k shares)
+
+- **wstETH-ETH DEX (ID 1) Max Borrow Shares Cap**:
+  - **Update**: Increase max borrow shares cap to 9,000 shares
+  - **Purpose**: Support increased borrowing capacity for protocols using wstETH-ETH DEX
 
 ## Description
 
@@ -89,20 +105,22 @@ This proposal implements three major changes to enhance protocol operations, opt
 
 2. **DEX v2 and Money Market Proxy Launch Limits**
    - Sets operational launch limits for DEX v2 and Money Market proxy contracts
-   - Establishes higher thresholds (10x dust limits) to support initial operational scaling
-   - Sets borrow limits ($50k base, $100k max) for ETH, USDC, and USDT on both proxies
-   - Sets supply limits ($100k base) for ETH, USDC, USDT, cbBTC, and WBTC on both proxies
+   - Establishes higher thresholds to support initial operational scaling
+   - Sets borrow limits ($1M base, $2M max) for ETH, USDC, and USDT on both proxies
+   - Sets supply limits ($2M base) for ETH, USDC, USDT, cbBTC, and WBTC on both proxies
    - Enables safe operational growth for new proxy contracts beyond initial dust limit constraints
    - Provides appropriate risk management while supporting increased usage
 
 3. **OSETH Protocol Launch Limits**
-   - Sets launch limits for OSETH-ETH DEX (Pool 43) and six associated vaults (153-158)
-   - Scales limits from conservative dust limits (set in IGP113) to operational launch limits (10x)
+   - Sets launch limits for OSETH-ETH DEX (Pool 43) and associated vaults (153-158)
+   - Scales limits from conservative dust limits (set in IGP113) to operational launch limits
+   - Removes Team Multisig authorization from OSETH-ETH DEX and all OSETH vaults (153-158) to enable broader access
    - Supports increased usage and adoption of OSETH protocols
+   - Updates wstETH-ETH <> wstETH-ETH vault (ID 44) borrow limits and reduces max borrow from ~12k to ~8.1k shares
+   - Increases wstETH-ETH DEX max borrow shares cap to 9,000 shares to support increased borrowing capacity
    - Maintains risk management parameters while enabling protocol growth
    - Includes support for both standard and concentrated liquidity pools, as well as cross-DEX borrowing
 
 ## Conclusion
 
 IGP-114 delivers comprehensive protocol upgrades: it optimizes treasury management through fGHO rewards withdrawal, enables operational scaling for DEX v2 and Money Market proxies with appropriate launch limits, and supports OSETH protocol growth with increased launch limits. The proposal balances expansion goals with risk management, ensuring safe operational scaling from initial dust limits to launch limits while maintaining operational efficiency and treasury management best practices. These changes support sustainable growth, improved protocol functionality, and enhanced capital efficiency across the Fluid ecosystem.
-
