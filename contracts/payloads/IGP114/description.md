@@ -2,38 +2,17 @@
 
 ## Summary
 
-This proposal implements three key protocol upgrades: (1) withdraws 2.5M GHO rewards from fGHO position in treasury to Team Multisig, (2) sets launch limits for DEX v2 and Money Market proxies at higher operational thresholds than the initial dust limits, and (3) sets launch limits for OSETH-related protocols including the OSETH-ETH DEX and associated vaults. These changes aim to optimize treasury management by withdrawing accrued rewards to Team Multisig, enable operational scaling for DEX v2 and Money Market proxies with appropriate launch limits, and support OSETH protocol growth with increased launch limits that scale beyond initial dust limits.
+This proposal implements three coordinated protocol updates: (1) upgrades the Liquidity Layer UserModule on the Liquidity Infinite Proxy to align and future-proof weETH borrowing behavior, (2) sets operational launch limits for OSETH-related protocols including the OSETH-ETH DEX and associated vaults, and (3) withdraws 2.5M GHO rewards from the treasury’s fGHO position to the Team Multisig. Together, these changes improve Liquidity Layer consistency, scale OSETH protocol usage beyond initial dust limits, and optimize treasury management by transferring accrued rewards for operational use.
 
 ## Code Changes
 
-### Action 1: Withdraw 2.5M GHO Rewards from fGHO to Team Multisig
+### Action 1:  Upgrade LL UserModule on Liquidity infiniteProxy
+ - **UserModule Upgrade**:
+  - **Old Implementation**: `0xF1167F851509CA5Ef56f8521fB1EE07e4e5C92C8`
+  - **New Implementation**: ``
+  - **Purpose**: Update UserModule with minor check adjustments and future-proof WEETH borrow side support
 
-- **fGHO Contract**: `0x6A29A46E21C730DcA1d8b23d637c101cec605C5B`
-- **Withdrawal Amount**: 2.5M GHO
-- **Recipient**: Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`)
-- **Method**: Redeem fGHO shares via BASIC-D-V2 connector to withdraw underlying GHO tokens
-- **Purpose**: Withdraw accrued rewards from treasury's fGHO position and transfer to Team Multisig
-
-### Action 2: Set Launch Limits for DEX v2 and Money Market Proxies
-
-- **Protocols**: DEX v2 Proxy (`0x4E42f9e626FAcDdd97EDFA537AA52C5024448625`) and Money Market Proxy (`0xe3B7e3f4da603FC40fD889caBdEe30a4cf15DD34`)
-
-- **Borrow (Debt) Limits**:
-  - **Tokens**: ETH, USDC, USDT
-  - **Base Borrow Limit**: $1,000,000 per token (launch limit)
-  - **Max Borrow Limit**: $2,000,000 per token (launch limit)
-  - **Expand Percent**: 30%
-  - **Expand Duration**: 6 hours
-  - **Applied to**: Both DEX v2 and Money Market proxies
-
-- **Supply (Collateral) Limits**:
-  - **Tokens**: ETH, USDC, USDT, cbBTC, WBTC
-  - **Base Withdrawal Limit**: $2,000,000 per token (launch limit)
-  - **Expand Percent**: 50%
-  - **Expand Duration**: 6 hours
-  - **Applied to**: Both DEX v2 and Money Market proxies
-
-### Action 3: Set Launch Limits for OSETH Protocols
+### Action 2: Set Launch Limits for OSETH Protocols
 
 - **DEX Pool 43**<br>
   **OSETH-ETH DEX**:
@@ -93,25 +72,23 @@ This proposal implements three key protocol upgrades: (1) withdraws 2.5M GHO rew
   - **Update**: Increase max borrow shares cap to 9,000 shares
   - **Purpose**: Support increased borrowing capacity for protocols using wstETH-ETH DEX
 
+### Action 3: Withdraw 2.5M GHO Rewards from fGHO to Team Multisig
+
+- **fGHO Contract**: `0x6A29A46E21C730DcA1d8b23d637c101cec605C5B`
+- **Withdrawal Amount**: 2.5M GHO
+- **Recipient**: Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`)
+- **Method**: Redeem fGHO shares via BASIC-D-V2 connector to withdraw underlying GHO tokens
+- **Purpose**: Withdraw accrued rewards from treasury's fGHO position and transfer to Team Multisig
+
+
 ## Description
 
 This proposal implements three major changes to enhance protocol operations, optimize treasury management, and support protocol growth:
 
-1. **fGHO Rewards Withdrawal**
-   - Withdraws 2.5M GHO rewards from treasury's fGHO position
-   - Redeems fGHO shares to receive underlying GHO tokens
-   - Transfers GHO to Team Multisig for operational use
-   - Supports treasury optimization by withdrawing accrued rewards from fGHO positions
+1. **Liquidity Layer Module Upgrades**
+   - Update UserModule with minor check adjustments and future-proof WEETH borrow side support
 
-2. **DEX v2 and Money Market Proxy Launch Limits**
-   - Sets operational launch limits for DEX v2 and Money Market proxy contracts
-   - Establishes higher thresholds to support initial operational scaling
-   - Sets borrow limits ($1M base, $2M max) for ETH, USDC, and USDT on both proxies
-   - Sets supply limits ($2M base) for ETH, USDC, USDT, cbBTC, and WBTC on both proxies
-   - Enables safe operational growth for new proxy contracts beyond initial dust limit constraints
-   - Provides appropriate risk management while supporting increased usage
-
-3. **OSETH Protocol Launch Limits**
+2. **OSETH Protocol Launch Limits**
    - Sets launch limits for OSETH-ETH DEX (Pool 43) and associated vaults (153-158)
    - Scales limits from conservative dust limits (set in IGP113) to operational launch limits
    - Removes Team Multisig authorization from OSETH-ETH DEX and all OSETH vaults (153-158) to enable broader access
@@ -120,7 +97,13 @@ This proposal implements three major changes to enhance protocol operations, opt
    - Increases wstETH-ETH DEX max borrow shares cap to 9,000 shares to support increased borrowing capacity
    - Maintains risk management parameters while enabling protocol growth
    - Includes support for both standard and concentrated liquidity pools, as well as cross-DEX borrowing
+  
+3. **fGHO Rewards Withdrawal**
+   - Withdraws 2.5M GHO rewards from treasury's fGHO position
+   - Redeems fGHO shares to receive underlying GHO tokens
+   - Transfers GHO to Team Multisig for operational use
+   - Supports treasury optimization by withdrawing accrued rewards from fGHO positions
 
 ## Conclusion
 
-IGP-114 delivers comprehensive protocol upgrades: it optimizes treasury management through fGHO rewards withdrawal, enables operational scaling for DEX v2 and Money Market proxies with appropriate launch limits, and supports OSETH protocol growth with increased launch limits. The proposal balances expansion goals with risk management, ensuring safe operational scaling from initial dust limits to launch limits while maintaining operational efficiency and treasury management best practices. These changes support sustainable growth, improved protocol functionality, and enhanced capital efficiency across the Fluid ecosystem.
+IGP-114 delivers comprehensive protocol upgrades: it optimizes treasury management through fGHO rewards withdrawal, updates across the Liquidity Layer, and supports OSETH protocol growth with increased launch limits. The proposal balances expansion goals with risk management, ensuring safe operational scaling from initial dust limits to launch limits while maintaining operational efficiency and treasury management best practices. These changes support sustainable growth, improved protocol functionality, and enhanced capital efficiency across the Fluid ecosystem.
