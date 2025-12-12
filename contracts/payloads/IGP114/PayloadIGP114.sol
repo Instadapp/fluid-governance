@@ -361,11 +361,40 @@ contract PayloadIGP114 is PayloadIGPMain {
             setDexBorrowProtocolLimitsInShares(config_);
         }
 
-        // expand WSTETH-ETH dex max borrow shares cap
+        // expand WSTETH-ETH dex max borrow shares cap and increase LL limits accordingly
         {
             address WSTETH_ETH_DEX = getDexAddress(1);
 
             IFluidDex(WSTETH_ETH_DEX).updateMaxBorrowShares(12_600 * 1e18); // from current 8.1k + 4.5k
+
+            // increase the borrow limits for the dex at LL, setting in raw amounts to make sure
+            // there is no risk of them getting set too low because of price logic
+
+            FluidLiquidityAdminStructs.UserBorrowConfig[]
+                memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](
+                    2
+                );
+
+            configs_[0] = FluidLiquidityAdminStructs.UserBorrowConfig({
+                user: WSTETH_ETH_DEX,
+                token: wstETH_ADDRESS,
+                mode: 1,
+                expandPercent: 50 * 1e2,
+                expandDuration: 1 hours,
+                baseDebtCeiling: 12_500 * 1e18,
+                maxDebtCeiling: 22_500 * 1e18
+            });
+            configs_[1] = FluidLiquidityAdminStructs.UserBorrowConfig({
+                user: WSTETH_ETH_DEX,
+                token: ETH_ADDRESS,
+                mode: 1,
+                expandPercent: 50 * 1e2,
+                expandDuration: 1 hours,
+                baseDebtCeiling: 15_000 * 1e18,
+                maxDebtCeiling: 27_000 * 1e18
+            });
+
+            LIQUIDITY.updateUserBorrowConfigs(configs_);
         }
     }
 
