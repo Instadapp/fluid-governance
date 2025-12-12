@@ -181,8 +181,7 @@ contract PayloadIGP114 is PayloadIGPMain {
                 tokenB: ETH_ADDRESS,
                 smartCollateral: true,
                 smartDebt: false,
-                // TODO adjust limit based on final max supply shares target
-                baseWithdrawalLimitInUSD: 8 * ONE_MILLION, // $8M base withdraw
+                baseWithdrawalLimitInUSD: 14 * ONE_MILLION, // $14M base withdraw, for ~30M max supply shares
                 baseBorrowLimitInUSD: 0,
                 maxBorrowLimitInUSD: 0
             });
@@ -320,8 +319,6 @@ contract PayloadIGP114 is PayloadIGPMain {
             }
         }
 
-        // TODO below limits have yet to be finalized
-
         // Vault ID 158: oseth-eth <> wsteth-eth (TYPE_4) - Set borrow launch limits for WSTETH-ETH DEX (id 1)
         {
             address OSETH_ETH__wstETH_ETH_VAULT = getVaultAddress(158);
@@ -335,7 +332,7 @@ contract PayloadIGP114 is PayloadIGPMain {
                     expandPercent: 30 * 1e2, // 30%
                     expandDuration: 6 hours, // 6 hours
                     baseBorrowLimit: 1_333 * 1e18, // ~1,333 shares (~$8M)
-                    maxBorrowLimit: 4_500 * 1e18 // ~4,500 shares (slightly above ~$25M, effective cap by max dex shares)
+                    maxBorrowLimit: 4_700 * 1e18 // ~4,500 shares (slightly above ~$25M, fully cover effective cap by max dex shares)
                 });
             setDexBorrowProtocolLimitsInShares(config_);
 
@@ -368,7 +365,7 @@ contract PayloadIGP114 is PayloadIGPMain {
         {
             address WSTETH_ETH_DEX = getDexAddress(1);
 
-            IFluidDex(WSTETH_ETH_DEX).updateMaxBorrowShares(9_000 * 1e18);
+            IFluidDex(WSTETH_ETH_DEX).updateMaxBorrowShares(12_600 * 1e18); // from current 8.1k + 4.5k
         }
     }
 
