@@ -56,14 +56,11 @@ contract PayloadIGP114 is PayloadIGPMain {
         // Action 1: LL upgrades (UserModule updates)
         action1();
 
-        // Action 2: Set launch limits for dexV2 and moneyMarket proxies
+        // Action 2: Set launch limits for OSETH related protocols
         action2();
 
-        // Action 3: Set launch limits for OSETH related protocols
+        // Action 3: Withdraw 2.5M GHO rewards from fGHO to Team Multisig
         action3();
-
-        // Action 4: Withdraw 2.5M GHO rewards from fGHO to Team Multisig
-        action4();
     }
 
     function verifyProposal() public view override {}
@@ -99,78 +96,8 @@ contract PayloadIGP114 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 2: Set launch limits for DEX v2 and Money Market proxies
+    /// @notice Action 2: Set launch limits for OSETH related protocols
     function action2() internal isActionSkippable(2) {
-        // ---------------------------------------------------------------------
-        // Borrow (debt) limits: ETH, USDC, USDT -> $1M base, $2M max
-        // ---------------------------------------------------------------------
-        {
-            address[3] memory debtTokens = [
-                ETH_ADDRESS,
-                USDC_ADDRESS,
-                USDT_ADDRESS
-            ];
-
-            // Configure for both proxies
-            address[2] memory debtProtocols = [
-                DEX_V2_PROXY,
-                MONEY_MARKET_PROXY
-            ];
-
-            for (uint256 i = 0; i < debtProtocols.length; i++) {
-                for (uint256 j = 0; j < debtTokens.length; j++) {
-                    BorrowProtocolConfig
-                        memory borrowConfig = BorrowProtocolConfig({
-                            protocol: debtProtocols[i],
-                            borrowToken: debtTokens[j],
-                            expandPercent: 30 * 1e2, // 30%
-                            expandDuration: 6 hours, // 6 hours
-                            baseBorrowLimitInUSD: 1 * ONE_MILLION, // $1M
-                            maxBorrowLimitInUSD: 2 * ONE_MILLION // $2M
-                        });
-
-                    setBorrowProtocolLimits(borrowConfig);
-                }
-            }
-        }
-
-        // ---------------------------------------------------------------------
-        // Supply (collateral) limits: ETH, USDC, USDT, cbBTC, WBTC -> $2M base
-        // ---------------------------------------------------------------------
-        {
-            address[5] memory collateralTokens = [
-                ETH_ADDRESS,
-                USDC_ADDRESS,
-                USDT_ADDRESS,
-                cbBTC_ADDRESS,
-                WBTC_ADDRESS
-            ];
-
-            // Configure for both proxies
-            address[2] memory collateralProtocols = [
-                DEX_V2_PROXY,
-                MONEY_MARKET_PROXY
-            ];
-
-            for (uint256 i = 0; i < collateralProtocols.length; i++) {
-                for (uint256 j = 0; j < collateralTokens.length; j++) {
-                    SupplyProtocolConfig
-                        memory supplyConfig = SupplyProtocolConfig({
-                            protocol: collateralProtocols[i],
-                            supplyToken: collateralTokens[j],
-                            expandPercent: 50 * 1e2, // 50%
-                            expandDuration: 6 hours, // 6 hours
-                            baseWithdrawalLimitInUSD: 2 * ONE_MILLION // $2M
-                        });
-
-                    setSupplyProtocolLimits(supplyConfig);
-                }
-            }
-        }
-    }
-
-    /// @notice Action 3: Set launch limits for OSETH related protocols
-    function action3() internal isActionSkippable(3) {
         // OSETH-ETH DEX (id 43) - Launch limits
         address OSETH_ETH_DEX = getDexAddress(43);
         {
@@ -397,8 +324,8 @@ contract PayloadIGP114 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 4: Withdraw 2.5M GHO rewards from fGHO to Team Multisig
-    function action4() internal isActionSkippable(4) {
+    /// @notice Action 3: Withdraw 2.5M GHO rewards from fGHO to Team Multisig
+    function action3() internal isActionSkippable(3) {
         string[] memory targets = new string[](1);
         bytes[] memory encodedSpells = new bytes[](1);
 
