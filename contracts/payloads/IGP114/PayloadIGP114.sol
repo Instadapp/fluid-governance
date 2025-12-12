@@ -222,7 +222,7 @@ contract PayloadIGP114 is PayloadIGPMain {
             });
             setVaultLimits(VAULT_OSETH_USDT);
 
-            VAULT_FACTORY.setVaultAuth(VAULT_OSETH_USDT, TEAM_MULTISIG, false);
+            VAULT_FACTORY.setVaultAuth(OSETH_USDT_VAULT, TEAM_MULTISIG, false);
         }
 
         // Vault ID 155: OSETH / GHO (TYPE_1) - Launch limits
@@ -239,7 +239,7 @@ contract PayloadIGP114 is PayloadIGPMain {
             });
             setVaultLimits(VAULT_OSETH_GHO);
 
-            VAULT_FACTORY.setVaultAuth(VAULT_OSETH_GHO, TEAM_MULTISIG, false);
+            VAULT_FACTORY.setVaultAuth(OSETH_GHO_VAULT, TEAM_MULTISIG, false);
         }
 
         // Vault ID 156: OSETH / USDC-USDT (TYPE_3) - Launch limits
@@ -260,7 +260,7 @@ contract PayloadIGP114 is PayloadIGPMain {
                 setVaultLimits(VAULT_OSETH_USDC_USDT);
 
                 VAULT_FACTORY.setVaultAuth(
-                    VAULT_OSETH_USDC_USDT,
+                    OSETH_USDC_USDT_VAULT,
                     TEAM_MULTISIG,
                     false
                 );
@@ -299,7 +299,7 @@ contract PayloadIGP114 is PayloadIGPMain {
                 setVaultLimits(VAULT_OSETH_USDC_USDT_CONC);
 
                 VAULT_FACTORY.setVaultAuth(
-                    VAULT_OSETH_USDC_USDT_CONC,
+                    OSETH_USDC_USDT_CONC_VAULT,
                     TEAM_MULTISIG,
                     false
                 );
