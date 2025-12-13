@@ -10,6 +10,7 @@ This proposal implements three coordinated protocol updates: (1) upgrades the Li
 - **UserModule Upgrade**:
   - **Old Implementation**: `0xF1167F851509CA5Ef56f8521fB1EE07e4e5C92C8`
   - **New Implementation**: Configurable by `Team Multisig` using `setUserModuleAddress()` function, defaults to `0x8bd91778fcF8bcF4e578710C9F5AD9bC852DC103` if not set
+  - **New Implementation**: Configurable by `Team Multisig` using `setUserModuleAddress()` function, defaults to `0x8bd91778fcF8bcF4e578710C9F5AD9bC852DC103` if not set
   - **Purpose**: Update UserModule with minor check adjustments and future-proof WEETH borrow side support
 
 ### Action 2: Set Launch Limits for OSETH Protocols
