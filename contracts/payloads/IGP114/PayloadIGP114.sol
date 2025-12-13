@@ -89,7 +89,7 @@ contract PayloadIGP114 is PayloadIGPMain {
             address oldImplementation_ = 0xF1167F851509CA5Ef56f8521fB1EE07e4e5C92C8;
             address newImplementation_ = PayloadIGP114(ADDRESS_THIS).userModuleAddress();
             if (newImplementation_ == address(0)) {
-                newImplementation_ = 0x6967e68F7f9b3921181f27E66Aa9c3ac7e13dBc0;
+                newImplementation_ = 0x8bd91778fcF8bcF4e578710C9F5AD9bC852DC103;
             }
 
             bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
@@ -268,7 +268,7 @@ contract PayloadIGP114 is PayloadIGPMain {
                     expandPercent: 30 * 1e2, // 30%
                     expandDuration: 6 hours, // 6 hours
                     baseBorrowLimit: 1_333 * 1e18, // ~1,333 shares (~$8M)
-                    maxBorrowLimit: 4_700 * 1e18 // ~4,500 shares (slightly above ~$25M, fully cover effective cap by max dex shares)
+                    maxBorrowLimit: 4_700 * 1e18 // ~4,700 shares (~$30M, capped by max dex shares on wstETH-ETH)
                 });
             setDexBorrowProtocolLimitsInShares(config_);
 
