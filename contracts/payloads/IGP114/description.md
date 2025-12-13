@@ -1,4 +1,4 @@
-# Withdraw fGHO Rewards, Set Launch Limits for DEX v2 and Money Market Proxies, and Set Launch Limits for OSETH Protocols
+# Upgrade Liquidity Layer UserModule, Set Launch Limits for OSETH Protocols, and Withdraw Rewards
 
 ## Summary
 
