@@ -265,11 +265,11 @@ contract PayloadIGP115 is PayloadIGPMain {
         // ---------------------------------------------------------------------
         address ETH_OSETH_DEX = getDexAddress(43);
 
-        // 2.a) Max supply shares: 5k (~$33M)
+        // 2.a) Max supply shares: 5k (~$28M)
         IFluidDex(ETH_OSETH_DEX).updateMaxSupplyShares(5_000 * 1e18);
 
         // 2.b) Token LL supply limits via Dex smart collateral:
-        // Base withdrawal: $14M each (OSETH and ETH)
+        // Base withdrawal: $13M each (OSETH and ETH)
         {
             DexConfig memory DEX_OSETH_ETH = DexConfig({
                 dex: ETH_OSETH_DEX,
@@ -277,7 +277,7 @@ contract PayloadIGP115 is PayloadIGPMain {
                 tokenB: ETH_ADDRESS,
                 smartCollateral: true,
                 smartDebt: false,
-                baseWithdrawalLimitInUSD: 14 * ONE_MILLION,
+                baseWithdrawalLimitInUSD: 13 * ONE_MILLION,
                 baseBorrowLimitInUSD: 0,
                 maxBorrowLimitInUSD: 0
             });
@@ -294,7 +294,7 @@ contract PayloadIGP115 is PayloadIGPMain {
                 user: OSETH_ETH__wstETH_VAULT,
                 expandPercent: 35 * 1e2, // 35%
                 expandDuration: 6 hours, // 6 hours
-                baseWithdrawalLimit: 1_200 * 1e18 // 1200 shares = ~8M USD
+                baseWithdrawalLimit: 1_400 * 1e18 // 1200 shares = ~8M USD
             });
 
             IFluidDex(ETH_OSETH_DEX).updateUserSupplyConfigs(configs_);
@@ -319,20 +319,42 @@ contract PayloadIGP115 is PayloadIGPMain {
     function action3() internal isActionSkippable(3) {
         // VAULT ID 158: OSETH-ETH <> wstETH-ETH (TYPE_4)
         address OSETH_ETH__wstETH_ETH_VAULT = getVaultAddress(158);
-        address WSTETH_ETH_DEX = getDexAddress(1);
 
-        // max restrict limits
-        setBorrowProtocolLimitsPausedDex(
-            WSTETH_ETH_DEX,
-            OSETH_ETH__wstETH_ETH_VAULT
-        );
+        // pause supply side
+        {
+            address ETH_OSETH_DEX = getDexAddress(43);
 
-        // Pause vault operations at DEX level
-        IFluidDex(WSTETH_ETH_DEX).pauseUser(
-            OSETH_ETH__wstETH_ETH_VAULT,
-            false, // can't pause supply, never given allowance
-            true // pause borrow side
-        );
+            // max restrict limits
+            setSupplyProtocolLimitsPausedDex(
+                ETH_OSETH_DEX,
+                OSETH_ETH__wstETH_ETH_VAULT
+            );
+
+            // Pause vault operations at DEX level
+            IFluidDex(ETH_OSETH_DEX).pauseUser(
+                OSETH_ETH__wstETH_ETH_VAULT,
+                true, // pause supply side
+                false // can't pause supply, never given allowance
+            );
+        }
+
+        // pause borrow side
+        {
+            address WSTETH_ETH_DEX = getDexAddress(1);
+
+            // max restrict limits
+            setBorrowProtocolLimitsPausedDex(
+                WSTETH_ETH_DEX,
+                OSETH_ETH__wstETH_ETH_VAULT
+            );
+
+            // Pause vault operations at DEX level
+            IFluidDex(WSTETH_ETH_DEX).pauseUser(
+                OSETH_ETH__wstETH_ETH_VAULT,
+                false, // can't pause supply, never given allowance
+                true // pause borrow side
+            );
+        }
     }
 
     /**
@@ -342,14 +364,14 @@ contract PayloadIGP115 is PayloadIGPMain {
      */
 
     // Token Prices Constants (same as other IGP files)
-    uint256 public constant ETH_USD_PRICE = 2_780 * 1e2;
-    uint256 public constant wstETH_USD_PRICE = 3_440 * 1e2;
+    uint256 public constant ETH_USD_PRICE = 2_900 * 1e2;
+    uint256 public constant wstETH_USD_PRICE = 3_575 * 1e2;
     uint256 public constant weETH_USD_PRICE = 3_050 * 1e2;
     uint256 public constant rsETH_USD_PRICE = 2_980 * 1e2;
     uint256 public constant weETHs_USD_PRICE = 2_920 * 1e2;
     uint256 public constant mETH_USD_PRICE = 3_040 * 1e2;
     uint256 public constant ezETH_USD_PRICE = 3_000 * 1e2;
-    uint256 public constant OSETH_USD_PRICE = 2_980 * 1e2;
+    uint256 public constant OSETH_USD_PRICE = 3_060 * 1e2;
 
     uint256 public constant BTC_USD_PRICE = 86_000 * 1e2;
 
