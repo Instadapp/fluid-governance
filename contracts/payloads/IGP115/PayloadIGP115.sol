@@ -87,12 +87,6 @@ contract PayloadIGP115 is PayloadIGPMain {
         IFluidVault(OSETH_ETH__wstETH_ETH_VAULT).updateOracle(205);
 
         // 1.c) Update core risk params
-        // CF: 93% ; LT: 95% ; LML: 97% ; LP: 2%
-        // Use neutral rate magnifiers and zero fees/gap as baseline:
-        // supplyRateMagnifier: 100% (1e4)
-        // borrowRateMagnifier: 100% (1e4)
-        // withdrawGap: 0%
-        // borrowFee: 0%
         IFluidVaultT1(OSETH_ETH__wstETH_ETH_VAULT).updateCoreSettings(
             10_000, // supplyRateMagnifier_ (100%)
             10_000, // borrowRateMagnifier_ (100%)
@@ -147,82 +141,6 @@ contract PayloadIGP115 is PayloadIGPMain {
             });
 
             IFluidDex(ETH_OSETH_DEX).updateUserSupplyConfigs(configs_);
-        }
-
-        // ---------------------------------------------------------------------
-        // 3) Borrow limits and LL borrow caps on wstETH-ETH DEX (id 1)
-        //    for ETH-OSETH <> wsteth-eth T4 vault
-        // ---------------------------------------------------------------------
-        address WSTETH_ETH_DEX = getDexAddress(1);
-
-        // 3.a) T4 vault borrow limits in shares (base ~$8M, max ~$30M, capped by dex shares)
-        {
-            DexBorrowProtocolConfigInShares
-                memory config_ = DexBorrowProtocolConfigInShares({
-                    dex: WSTETH_ETH_DEX,
-                    protocol: OSETH_ETH__wstETH_ETH_VAULT,
-                    expandPercent: 30 * 1e2, // 30%
-                    expandDuration: 6 hours, // 6 hours
-                    baseBorrowLimit: 1_333 * 1e18, // ~1,333 shares (~$8M)
-                    maxBorrowLimit: 4_700 * 1e18 // ~4,700 shares (~$30M)
-                });
-            setDexBorrowProtocolLimitsInShares(config_);
-        }
-
-        // 3.b) Increase wstETH-ETH DEX max borrow shares cap to 12,500 shares
-        IFluidDex(WSTETH_ETH_DEX).updateMaxBorrowShares(12_500 * 1e18);
-
-        // 3.c) Token LL borrow limits for wstETH-ETH DEX tokens:
-        // Max borrow limits update to: $85M each (wstETH and ETH).
-        {
-            FluidLiquidityAdminStructs.UserBorrowConfig[]
-                memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](
-                    2
-                );
-
-            // wstETH
-            configs_[0] = FluidLiquidityAdminStructs.UserBorrowConfig({
-                user: WSTETH_ETH_DEX,
-                token: wstETH_ADDRESS,
-                mode: 1,
-                expandPercent: 50 * 1e2,
-                expandDuration: 1 hours,
-                baseDebtCeiling: getRawAmount(
-                    wstETH_ADDRESS,
-                    0,
-                    85 * ONE_MILLION,
-                    false
-                ),
-                maxDebtCeiling: getRawAmount(
-                    wstETH_ADDRESS,
-                    0,
-                    85 * ONE_MILLION,
-                    false
-                )
-            });
-
-            // ETH
-            configs_[1] = FluidLiquidityAdminStructs.UserBorrowConfig({
-                user: WSTETH_ETH_DEX,
-                token: ETH_ADDRESS,
-                mode: 1,
-                expandPercent: 50 * 1e2,
-                expandDuration: 1 hours,
-                baseDebtCeiling: getRawAmount(
-                    ETH_ADDRESS,
-                    0,
-                    85 * ONE_MILLION,
-                    false
-                ),
-                maxDebtCeiling: getRawAmount(
-                    ETH_ADDRESS,
-                    0,
-                    85 * ONE_MILLION,
-                    false
-                )
-            });
-
-            LIQUIDITY.updateUserBorrowConfigs(configs_);
         }
     }
 
