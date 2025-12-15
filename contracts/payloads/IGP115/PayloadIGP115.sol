@@ -48,7 +48,7 @@ import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 import {ILite} from "../common/interfaces/ILite.sol";
 
-/// @notice IGP115: Add TEAM_MULTISIG as vault auth for OSETH T4 vault (Vault ID 158)
+/// @notice IGP115: Configure OSETH T4 vault (Vault ID 158) and ETH-OSETH / wstETH-ETH limits
 contract PayloadIGP115 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 115;
 
@@ -71,17 +71,159 @@ contract PayloadIGP115 is PayloadIGPMain {
      * |__________________________________
      */
 
-    /// @notice Action 1: Add TEAM_MULTISIG as vault auth for OSETH T4 vault (Vault ID 158)
+    /// @notice Action 1: Configure OSETH T4 vault (Vault ID 158) and related DEX settings
     function action1() internal isActionSkippable(1) {
-        // OSETH T4 vault (oseth-eth <> wsteth-eth) – vault id 158
+        // ---------------------------------------------------------------------
+        // 1) Configure OSETH T4 vault (oseth-eth <> wsteth-eth, vault id 158)
+        // ---------------------------------------------------------------------
         address OSETH_ETH__wstETH_ETH_VAULT = getVaultAddress(158);
 
-        // Add Team Multisig as an authorized vault config updater
-        VAULT_FACTORY.setVaultAuth(
-            OSETH_ETH__wstETH_ETH_VAULT,
-            TEAM_MULTISIG,
-            true
+        // 1.a) Set rebalancer to Reserve contract proxy
+        IFluidVaultT1(OSETH_ETH__wstETH_ETH_VAULT).updateRebalancer(
+            address(FLUID_RESERVE)
         );
+
+        // 1.b) Set oracle (nonce 205)
+        IFluidVault(OSETH_ETH__wstETH_ETH_VAULT).updateOracle(205);
+
+        // 1.c) Update core risk params
+        // CF: 93% ; LT: 95% ; LML: 97% ; LP: 2%
+        // Use neutral rate magnifiers and zero fees/gap as baseline:
+        // supplyRateMagnifier: 100% (1e4)
+        // borrowRateMagnifier: 100% (1e4)
+        // withdrawGap: 0%
+        // borrowFee: 0%
+        IFluidVaultT1(OSETH_ETH__wstETH_ETH_VAULT).updateCoreSettings(
+            10_000, // supplyRateMagnifier_ (100%)
+            10_000, // borrowRateMagnifier_ (100%)
+            9_300, // collateralFactor_ (93%)
+            9_500, // liquidationThreshold_ (95%)
+            9_700, // liquidationMaxLimit_ (97%)
+            0, // withdrawGap_ (0%)
+            200, // liquidationPenalty_ (2%)
+            0 // borrowFee_ (0%)
+        );
+
+        // ---------------------------------------------------------------------
+        // 2) ETH-OSETH DEX (id 43) – supply caps and LL supply limits
+        // ---------------------------------------------------------------------
+        address ETH_OSETH_DEX = getDexAddress(43);
+
+        // 2.a) Max supply shares: 5k (~$33M)
+        IFluidDex(ETH_OSETH_DEX).updateMaxSupplyShares(5_000 * 1e18);
+
+        // 2.b) Token LL supply limits via Dex smart collateral:
+        // Base withdrawal: $14M each (OSETH and ETH)
+        {
+            DexConfig memory DEX_OSETH_ETH = DexConfig({
+                dex: ETH_OSETH_DEX,
+                tokenA: OSETH_ADDRESS,
+                tokenB: ETH_ADDRESS,
+                smartCollateral: true,
+                smartDebt: false,
+                baseWithdrawalLimitInUSD: 14 * ONE_MILLION,
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
+            });
+            setDexLimits(DEX_OSETH_ETH);
+        }
+
+        // 2.c) Set DEX-level supply config for T4 vault on supply side
+        {
+            IFluidAdminDex.UserSupplyConfig[]
+                memory configs_ = new IFluidAdminDex.UserSupplyConfig[](1);
+
+            // Base withdraw: $8M for OSETH T4 vault on ETH-OSETH DEX
+            configs_[0] = IFluidAdminDex.UserSupplyConfig({
+                user: OSETH_ETH__wstETH_ETH_VAULT,
+                expandPercent: 50 * 1e2, // 50%
+                expandDuration: 1 hours, // 1 hour
+                baseWithdrawalLimit: getRawAmount(
+                    OSETH_ADDRESS,
+                    0,
+                    8 * ONE_MILLION,
+                    true
+                )
+            });
+
+            IFluidDex(ETH_OSETH_DEX).updateUserSupplyConfigs(configs_);
+        }
+
+        // ---------------------------------------------------------------------
+        // 3) Borrow limits and LL borrow caps on wstETH-ETH DEX (id 1)
+        //    for ETH-OSETH <> wsteth-eth T4 vault
+        // ---------------------------------------------------------------------
+        address WSTETH_ETH_DEX = getDexAddress(1);
+
+        // 3.a) T4 vault borrow limits in shares (base ~$8M, max ~$30M, capped by dex shares)
+        {
+            DexBorrowProtocolConfigInShares
+                memory config_ = DexBorrowProtocolConfigInShares({
+                    dex: WSTETH_ETH_DEX,
+                    protocol: OSETH_ETH__wstETH_ETH_VAULT,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours, // 6 hours
+                    baseBorrowLimit: 1_333 * 1e18, // ~1,333 shares (~$8M)
+                    maxBorrowLimit: 4_700 * 1e18 // ~4,700 shares (~$30M)
+                });
+            setDexBorrowProtocolLimitsInShares(config_);
+        }
+
+        // 3.b) Increase wstETH-ETH DEX max borrow shares cap to 12,500 shares
+        IFluidDex(WSTETH_ETH_DEX).updateMaxBorrowShares(12_500 * 1e18);
+
+        // 3.c) Token LL borrow limits for wstETH-ETH DEX tokens:
+        // Max borrow limits update to: $85M each (wstETH and ETH).
+        {
+            FluidLiquidityAdminStructs.UserBorrowConfig[]
+                memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](
+                    2
+                );
+
+            // wstETH
+            configs_[0] = FluidLiquidityAdminStructs.UserBorrowConfig({
+                user: WSTETH_ETH_DEX,
+                token: wstETH_ADDRESS,
+                mode: 1,
+                expandPercent: 50 * 1e2,
+                expandDuration: 1 hours,
+                baseDebtCeiling: getRawAmount(
+                    wstETH_ADDRESS,
+                    0,
+                    85 * ONE_MILLION,
+                    false
+                ),
+                maxDebtCeiling: getRawAmount(
+                    wstETH_ADDRESS,
+                    0,
+                    85 * ONE_MILLION,
+                    false
+                )
+            });
+
+            // ETH
+            configs_[1] = FluidLiquidityAdminStructs.UserBorrowConfig({
+                user: WSTETH_ETH_DEX,
+                token: ETH_ADDRESS,
+                mode: 1,
+                expandPercent: 50 * 1e2,
+                expandDuration: 1 hours,
+                baseDebtCeiling: getRawAmount(
+                    ETH_ADDRESS,
+                    0,
+                    85 * ONE_MILLION,
+                    false
+                ),
+                maxDebtCeiling: getRawAmount(
+                    ETH_ADDRESS,
+                    0,
+                    85 * ONE_MILLION,
+                    false
+                )
+            });
+
+            LIQUIDITY.updateUserBorrowConfigs(configs_);
+        }
     }
 
     /**
