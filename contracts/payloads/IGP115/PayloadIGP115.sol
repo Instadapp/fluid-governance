@@ -27,7 +27,11 @@ import {
     IFluidDexResolver
 } from "../common/interfaces/IFluidDex.sol";
 
-import {IFluidVault, IFluidVaultT1} from "../common/interfaces/IFluidVault.sol";
+import {
+    IFluidVault,
+    IFluidVaultT1,
+    IFluidVaultT2
+} from "../common/interfaces/IFluidVault.sol";
 
 import {IFTokenAdmin, ILendingRewards} from "../common/interfaces/IFToken.sol";
 
@@ -48,15 +52,21 @@ import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 import {ILite} from "../common/interfaces/ILite.sol";
 
-/// @notice IGP115: Configure OSETH T4 vault (Vault ID 158) and ETH-OSETH / wstETH-ETH limits
+/// @notice IGP115: Configure OSETH T2 vault, OSETH vaults launch limits
 contract PayloadIGP115 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 115;
 
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Add TEAM_MULTISIG as vault auth for OSETH T4 vault (vault id 158)
+        // Action 1: Set launch limits for OSETH related protocols. Same as in IGP114 without The T4 OSETH vault related logic
         action1();
+
+        // Action 2: Configure OSETH T2 vault (Vault ID 159) and related DEX settings + launch limits
+        action2();
+
+        // Action 3: Deprecate T4 vault (OSETH-ETH <> wstETH-ETH, VAULT ID 158)
+        action3();
     }
 
     function verifyProposal() public view override {}
@@ -71,32 +81,184 @@ contract PayloadIGP115 is PayloadIGPMain {
      * |__________________________________
      */
 
-    /// @notice Action 1: Configure OSETH T4 vault (Vault ID 158) and related DEX settings
+    /// @notice Action 1: Set launch limits for OSETH related protocols. Same as in IGP114 without The T4 OSETH vault related logic
     function action1() internal isActionSkippable(1) {
+        // OSETH-ETH DEX (id 43) - Launch limits
+        address OSETH_ETH_DEX = getDexAddress(43);
+        {
+            DexConfig memory DEX_OSETH_ETH = DexConfig({
+                dex: OSETH_ETH_DEX,
+                tokenA: OSETH_ADDRESS,
+                tokenB: ETH_ADDRESS,
+                smartCollateral: true,
+                smartDebt: false,
+                baseWithdrawalLimitInUSD: 14 * ONE_MILLION, // $14M base withdraw, for ~30M max supply shares
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
+            });
+            setDexLimits(DEX_OSETH_ETH);
+
+            DEX_FACTORY.setDexAuth(OSETH_ETH_DEX, TEAM_MULTISIG, false);
+        }
+
+        // Vault ID 153: OSETH / USDC (TYPE_1) - Launch limits
+        {
+            address OSETH_USDC_VAULT = getVaultAddress(153);
+            VaultConfig memory VAULT_OSETH_USDC = VaultConfig({
+                vault: OSETH_USDC_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: OSETH_ADDRESS,
+                borrowToken: USDC_ADDRESS,
+                baseWithdrawalLimitInUSD: 8 * ONE_MILLION, // $8M
+                baseBorrowLimitInUSD: 5 * ONE_MILLION, // $5M
+                maxBorrowLimitInUSD: 10 * ONE_MILLION // $10M
+            });
+            setVaultLimits(VAULT_OSETH_USDC);
+
+            VAULT_FACTORY.setVaultAuth(OSETH_USDC_VAULT, TEAM_MULTISIG, false);
+        }
+
+        // Vault ID 154: OSETH / USDT (TYPE_1) - Launch limits
+        {
+            address OSETH_USDT_VAULT = getVaultAddress(154);
+            VaultConfig memory VAULT_OSETH_USDT = VaultConfig({
+                vault: OSETH_USDT_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: OSETH_ADDRESS,
+                borrowToken: USDT_ADDRESS,
+                baseWithdrawalLimitInUSD: 8 * ONE_MILLION, // $8M
+                baseBorrowLimitInUSD: 5 * ONE_MILLION, // $5M
+                maxBorrowLimitInUSD: 10 * ONE_MILLION // $10M
+            });
+            setVaultLimits(VAULT_OSETH_USDT);
+
+            VAULT_FACTORY.setVaultAuth(OSETH_USDT_VAULT, TEAM_MULTISIG, false);
+        }
+
+        // Vault ID 155: OSETH / GHO (TYPE_1) - Launch limits
+        {
+            address OSETH_GHO_VAULT = getVaultAddress(155);
+            VaultConfig memory VAULT_OSETH_GHO = VaultConfig({
+                vault: OSETH_GHO_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: OSETH_ADDRESS,
+                borrowToken: GHO_ADDRESS,
+                baseWithdrawalLimitInUSD: 8 * ONE_MILLION, // $8M
+                baseBorrowLimitInUSD: 5 * ONE_MILLION, // $5M
+                maxBorrowLimitInUSD: 10 * ONE_MILLION // $10M
+            });
+            setVaultLimits(VAULT_OSETH_GHO);
+
+            VAULT_FACTORY.setVaultAuth(OSETH_GHO_VAULT, TEAM_MULTISIG, false);
+        }
+
+        // Vault ID 156: OSETH / USDC-USDT (TYPE_3) - Launch limits
+        {
+            address OSETH_USDC_USDT_VAULT = getVaultAddress(156);
+            address USDC_USDT_DEX = getDexAddress(2);
+
+            {
+                VaultConfig memory VAULT_OSETH_USDC_USDT = VaultConfig({
+                    vault: OSETH_USDC_USDT_VAULT,
+                    vaultType: VAULT_TYPE.TYPE_3,
+                    supplyToken: OSETH_ADDRESS,
+                    borrowToken: address(0), // Set at DEX level
+                    baseWithdrawalLimitInUSD: 8 * ONE_MILLION, // $8M
+                    baseBorrowLimitInUSD: 0,
+                    maxBorrowLimitInUSD: 0
+                });
+                setVaultLimits(VAULT_OSETH_USDC_USDT);
+
+                VAULT_FACTORY.setVaultAuth(
+                    OSETH_USDC_USDT_VAULT,
+                    TEAM_MULTISIG,
+                    false
+                );
+            }
+
+            {
+                // Set borrow limits at DEX level for TYPE_3 vault (launch limits)
+                DexBorrowProtocolConfigInShares
+                    memory config_ = DexBorrowProtocolConfigInShares({
+                        dex: USDC_USDT_DEX,
+                        protocol: OSETH_USDC_USDT_VAULT,
+                        expandPercent: 30 * 1e2, // 30%
+                        expandDuration: 6 hours, // 6 hours
+                        baseBorrowLimit: 2_500_000 * 1e18, // ~2.5M shares (~$5M)
+                        maxBorrowLimit: 5 * ONE_MILLION * 1e18 // ~5M shares (~$10M)
+                    });
+                setDexBorrowProtocolLimitsInShares(config_);
+            }
+        }
+
+        // Vault ID 157: OSETH / USDC-USDT concentrated (TYPE_3) - Launch limits
+        {
+            address OSETH_USDC_USDT_CONC_VAULT = getVaultAddress(157);
+            address USDC_USDT_DEX = getDexAddress(34);
+
+            {
+                VaultConfig memory VAULT_OSETH_USDC_USDT_CONC = VaultConfig({
+                    vault: OSETH_USDC_USDT_CONC_VAULT,
+                    vaultType: VAULT_TYPE.TYPE_3,
+                    supplyToken: OSETH_ADDRESS,
+                    borrowToken: address(0), // Set at DEX level
+                    baseWithdrawalLimitInUSD: 8 * ONE_MILLION, // $8M
+                    baseBorrowLimitInUSD: 0,
+                    maxBorrowLimitInUSD: 0
+                });
+                setVaultLimits(VAULT_OSETH_USDC_USDT_CONC);
+
+                VAULT_FACTORY.setVaultAuth(
+                    OSETH_USDC_USDT_CONC_VAULT,
+                    TEAM_MULTISIG,
+                    false
+                );
+            }
+
+            {
+                // Set borrow limits at DEX level for TYPE_3 vault (launch limits)
+                DexBorrowProtocolConfigInShares
+                    memory config_ = DexBorrowProtocolConfigInShares({
+                        dex: USDC_USDT_DEX,
+                        protocol: OSETH_USDC_USDT_CONC_VAULT,
+                        expandPercent: 30 * 1e2, // 30%
+                        expandDuration: 6 hours, // 6 hours
+                        baseBorrowLimit: 2_500_000 * 1e18, // ~2.5M shares (~$5M)
+                        maxBorrowLimit: 5 * ONE_MILLION * 1e18 // ~5M shares (~$10M)
+                    });
+                setDexBorrowProtocolLimitsInShares(config_);
+            }
+        }
+    }
+
+    /// @notice Action 2: Configure OSETH T2 vault (Vault ID 159) and related DEX settings
+    function action2() internal isActionSkippable(2) {
         // ---------------------------------------------------------------------
-        // 1) Configure OSETH T4 vault (oseth-eth <> wsteth-eth, vault id 158)
+        // 1) Configure OSETH T2 vault (oseth-eth <> wsteth, vault id 159)
         // ---------------------------------------------------------------------
-        address OSETH_ETH__wstETH_ETH_VAULT = getVaultAddress(158);
+        address OSETH_ETH__wstETH_VAULT = getVaultAddress(159);
 
-        // 1.a) Set rebalancer to Reserve contract proxy
-        IFluidVaultT1(OSETH_ETH__wstETH_ETH_VAULT).updateRebalancer(
-            address(FLUID_RESERVE)
-        );
+        {
+            // 1.a) Set rebalancer to Reserve contract proxy
+            IFluidVaultT1(OSETH_ETH__wstETH_VAULT).updateRebalancer(
+                address(FLUID_RESERVE)
+            );
 
-        // 1.b) Set oracle (nonce 205)
-        IFluidVault(OSETH_ETH__wstETH_ETH_VAULT).updateOracle(205);
+            // 1.b) Set oracle (nonce 207)
+            IFluidVault(OSETH_ETH__wstETH_VAULT).updateOracle(207);
 
-        // 1.c) Update core risk params
-        IFluidVaultT1(OSETH_ETH__wstETH_ETH_VAULT).updateCoreSettings(
-            10_000, // supplyRateMagnifier_ (100%)
-            10_000, // borrowRateMagnifier_ (100%)
-            9_300, // collateralFactor_ (93%)
-            9_500, // liquidationThreshold_ (95%)
-            9_700, // liquidationMaxLimit_ (97%)
-            0, // withdrawGap_ (0%)
-            200, // liquidationPenalty_ (2%)
-            0 // borrowFee_ (0%)
-        );
+            // 1.c) Update core risk params
+            IFluidVaultT2(OSETH_ETH__wstETH_VAULT).updateCoreSettings(
+                0, // supplyRate_ (0%)
+                100 * 1e2, // borrowRateMagnifier_ (100%)
+                94 * 1e2, // collateralFactor_ (94%)
+                96 * 1e2, // liquidationThreshold_ (96%)
+                97 * 1e2, // liquidationMaxLimit_ (97%)
+                5 * 1e2, // withdrawGap_ (5%)
+                2 * 1e2, // liquidationPenalty_ (2%)
+                0 // borrowFee_ (0%)
+            );
+        }
 
         // ---------------------------------------------------------------------
         // 2) ETH-OSETH DEX (id 43) – supply caps and LL supply limits
@@ -122,26 +284,55 @@ contract PayloadIGP115 is PayloadIGPMain {
             setDexLimits(DEX_OSETH_ETH);
         }
 
-        // 2.c) Set DEX-level supply config for T4 vault on supply side
+        // 2.c) Set DEX-level supply config for T2 vault
         {
             IFluidAdminDex.UserSupplyConfig[]
                 memory configs_ = new IFluidAdminDex.UserSupplyConfig[](1);
 
-            // Base withdraw: $8M for OSETH T4 vault on ETH-OSETH DEX
+            // Base withdraw: $8M for OSETH T2 vault on ETH-OSETH DEX
             configs_[0] = IFluidAdminDex.UserSupplyConfig({
-                user: OSETH_ETH__wstETH_ETH_VAULT,
-                expandPercent: 50 * 1e2, // 50%
-                expandDuration: 1 hours, // 1 hour
-                baseWithdrawalLimit: getRawAmount(
-                    OSETH_ADDRESS,
-                    0,
-                    8 * ONE_MILLION,
-                    true
-                )
+                user: OSETH_ETH__wstETH_VAULT,
+                expandPercent: 35 * 1e2, // 35%
+                expandDuration: 6 hours, // 6 hours
+                baseWithdrawalLimit: 1_200 * 1e18 // 1200 shares = ~8M USD
             });
 
             IFluidDex(ETH_OSETH_DEX).updateUserSupplyConfigs(configs_);
         }
+
+        // 2.d) Set LL borrow config for T2 vault
+        {
+            VaultConfig memory VAULT_OSETH_USDC = VaultConfig({
+                vault: OSETH_ETH__wstETH_VAULT,
+                vaultType: VAULT_TYPE.TYPE_2,
+                supplyToken: address(0), // Set at DEX level
+                borrowToken: wstETH_ADDRESS,
+                baseWithdrawalLimitInUSD: 0,
+                baseBorrowLimitInUSD: 8 * ONE_MILLION, // $8M
+                maxBorrowLimitInUSD: 30 * ONE_MILLION // $30M
+            });
+            setVaultLimits(VAULT_OSETH_USDC);
+        }
+    }
+
+    /// @notice Action 3: Deprecate T4 vault (OSETH-ETH <> wstETH-ETH, VAULT ID 158)
+    function action3() internal isActionSkippable(3) {
+        // VAULT ID 158: OSETH-ETH <> wstETH-ETH (TYPE_4)
+        address OSETH_ETH__wstETH_ETH_VAULT = getVaultAddress(158);
+        address WSTETH_ETH_DEX = getDexAddress(1);
+
+        // max restrict limits
+        setBorrowProtocolLimitsPausedDex(
+            WSTETH_ETH_DEX,
+            OSETH_ETH__wstETH_ETH_VAULT
+        );
+
+        // Pause vault operations at DEX level
+        IFluidDex(WSTETH_ETH_DEX).pauseUser(
+            OSETH_ETH__wstETH_ETH_VAULT,
+            false, // can't pause supply, never given allowance
+            true // pause borrow side
+        );
     }
 
     /**

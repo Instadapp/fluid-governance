@@ -101,11 +101,29 @@ interface IFluidSmartVault {
     }
 
     /// @notice returns all Vault constants
-    function constantsView() external view returns (ConstantViews memory constantsView_);
+    function constantsView()
+        external
+        view
+        returns (ConstantViews memory constantsView_);
 
     function updateOracle(uint256 newOracle_) external;
 }
 
 interface IFluidVault {
     function updateOracle(uint256 newOracle_) external;
+}
+
+interface IFluidVaultT2 {
+    /// @notice updates the all Vault core settings according to input params.
+    /// All input values are expected in 1e2 (1% = 100, 100% = 10_000).
+    function updateCoreSettings(
+        int256 supplyRate_,
+        uint256 borrowRateMagnifier_,
+        uint256 collateralFactor_,
+        uint256 liquidationThreshold_,
+        uint256 liquidationMaxLimit_,
+        uint256 withdrawGap_,
+        uint256 liquidationPenalty_,
+        uint256 borrowFee_
+    ) external;
 }
