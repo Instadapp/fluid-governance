@@ -261,30 +261,14 @@ contract PayloadIGP115 is PayloadIGPMain {
         }
 
         // ---------------------------------------------------------------------
-        // 2) ETH-OSETH DEX (id 43) – supply caps and LL supply limits
+        // 2) ETH-OSETH DEX (id 43) – supply caps and T2 vault launch limits at dex and LL
         // ---------------------------------------------------------------------
         address ETH_OSETH_DEX = getDexAddress(43);
 
         // 2.a) Max supply shares: 5.7k (~$33M)
         IFluidDex(ETH_OSETH_DEX).updateMaxSupplyShares(5_700 * 1e18);
 
-        // // 2.b) Token LL supply limits via Dex smart collateral:
-        // // Base withdrawal: $14M each (OSETH and ETH)
-        // {
-        //     DexConfig memory DEX_OSETH_ETH = DexConfig({
-        //         dex: ETH_OSETH_DEX,
-        //         tokenA: OSETH_ADDRESS,
-        //         tokenB: ETH_ADDRESS,
-        //         smartCollateral: true,
-        //         smartDebt: false,
-        //         baseWithdrawalLimitInUSD: 14 * ONE_MILLION,
-        //         baseBorrowLimitInUSD: 0,
-        //         maxBorrowLimitInUSD: 0
-        //     });
-        //     setDexLimits(DEX_OSETH_ETH);
-        // }
-
-        // 2.c) Set DEX-level supply config for T2 vault
+        // 2.b) Set DEX-level supply config for T2 vault
         {
             IFluidAdminDex.UserSupplyConfig[]
                 memory configs_ = new IFluidAdminDex.UserSupplyConfig[](1);
@@ -300,7 +284,7 @@ contract PayloadIGP115 is PayloadIGPMain {
             IFluidDex(ETH_OSETH_DEX).updateUserSupplyConfigs(configs_);
         }
 
-        // 2.d) Set LL borrow config for T2 vault
+        // 2.c) Set LL borrow config for T2 vault
         {
             VaultConfig memory VAULT_OSETH_USDC = VaultConfig({
                 vault: OSETH_ETH__wstETH_VAULT,
