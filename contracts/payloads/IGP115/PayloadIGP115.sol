@@ -265,24 +265,24 @@ contract PayloadIGP115 is PayloadIGPMain {
         // ---------------------------------------------------------------------
         address ETH_OSETH_DEX = getDexAddress(43);
 
-        // 2.a) Max supply shares: 5.8k (~$33M)
+        // 2.a) Max supply shares: 5.7k (~$33M)
         IFluidDex(ETH_OSETH_DEX).updateMaxSupplyShares(5_700 * 1e18);
 
-        // 2.b) Token LL supply limits via Dex smart collateral:
-        // Base withdrawal: $13M each (OSETH and ETH)
-        {
-            DexConfig memory DEX_OSETH_ETH = DexConfig({
-                dex: ETH_OSETH_DEX,
-                tokenA: OSETH_ADDRESS,
-                tokenB: ETH_ADDRESS,
-                smartCollateral: true,
-                smartDebt: false,
-                baseWithdrawalLimitInUSD: 14 * ONE_MILLION,
-                baseBorrowLimitInUSD: 0,
-                maxBorrowLimitInUSD: 0
-            });
-            setDexLimits(DEX_OSETH_ETH);
-        }
+        // // 2.b) Token LL supply limits via Dex smart collateral:
+        // // Base withdrawal: $14M each (OSETH and ETH)
+        // {
+        //     DexConfig memory DEX_OSETH_ETH = DexConfig({
+        //         dex: ETH_OSETH_DEX,
+        //         tokenA: OSETH_ADDRESS,
+        //         tokenB: ETH_ADDRESS,
+        //         smartCollateral: true,
+        //         smartDebt: false,
+        //         baseWithdrawalLimitInUSD: 14 * ONE_MILLION,
+        //         baseBorrowLimitInUSD: 0,
+        //         maxBorrowLimitInUSD: 0
+        //     });
+        //     setDexLimits(DEX_OSETH_ETH);
+        // }
 
         // 2.c) Set DEX-level supply config for T2 vault
         {
