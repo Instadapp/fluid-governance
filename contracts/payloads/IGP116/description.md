@@ -1,4 +1,4 @@
-## Withdraw Assets from Treasury for Formal Audit and Rewards Funding
+# Withdraw Assets from Treasury for Formal Audit and Rewards Funding
 
 ## Summary
 
