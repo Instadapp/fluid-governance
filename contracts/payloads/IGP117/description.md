@@ -1,4 +1,4 @@
-# Cleanup: Deprecate Unused wstUSR Markets, Remove Multisig Auth from Old DEXes, and Update syrupUSDC DEX Range
+# Cleanup: Restrict Limits and Pause Unused wstUSR Markets, Remove Multisig Auth from Old DEXes, and Update syrupUSDC DEX Range
 
 ## Summary
 This proposal performs routine protocol maintenance: (1) deprecates the unused wstUSR-USDT DEX and related vaults by restricting their limits, (2) removes Team Multisig authorization from several old DEXes that are no longer in active use, and (3) adjusts the trading range for the syrupUSDC-USDC DEX to optimize performance. These changes improve protocol security and reduce operational overhead.
