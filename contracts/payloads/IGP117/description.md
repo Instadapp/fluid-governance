@@ -8,18 +8,24 @@ This proposal performs routine protocol maintenance: (1) deprecates the unused w
 ### Deprecate wstUSR-USDT DEX and Remove Authorization
 - **DEX Pool 29** (wstUSR-USDT):
   - Restrict supply limits to effectively pause new deposits
+  - Pause swap and arbitrage operations
+  - Pause user operations at liquidity layer
   - Remove Team Multisig authorization
 
 ### Deprecate wstUSR Vaults
 - **Vault 142** (wstUSR/USDTb):
   - Restrict supply and borrow limits to pause new activity
+  - Pause user operations at liquidity layer
   
 - **Vault 113** (wstUSR-USDT / USDT):
-  - Restrict supply and borrow limits to pause new activity
+  - Restrict supply limits at DEX level and borrow limits at liquidity layer
+  - Pause user operations at both DEX and liquidity layer
   - Remove Team Multisig authorization
 
 - **Vault 135** (wstUSR-USDC / USDC-USDT Concentrated):
-  - Restrict supply and borrow limits to pause new activity
+  - Restrict supply limits at wstUSR-USDC DEX (Pool 27)
+  - Restrict borrow limits at USDC-USDT Concentrated DEX (Pool 34)
+  - Pause user operations at both DEXes
 
 ### Remove Team Multisig Auth from Deprecated DEXes
 The following DEXes were previously deprecated. This action completes the cleanup by removing Team Multisig authorization:
@@ -40,7 +46,8 @@ This proposal implements several housekeeping updates to maintain protocol healt
 
 1. **wstUSR Market Deprecation**
    - The wstUSR-USDT DEX (Pool 29) and associated vaults (142, 113, 135) are no longer actively used
-   - Restricting their limits prevents new deposits while allowing existing users to withdraw
+   - Restricting limits and pausing user operations prevents new deposits while allowing existing users to withdraw
+   - Swap and arbitrage operations are paused on the wstUSR-USDT DEX
    - Removing Team Multisig authorization reduces operational overhead
 
 2. **Old DEX Authorization Cleanup**
@@ -53,4 +60,4 @@ This proposal implements several housekeeping updates to maintain protocol healt
    - Improves DEX performance under current market conditions
 
 ## Conclusion
-IGP-117 is a maintenance proposal that cleans up deprecated markets and optimizes active ones. By restricting unused wstUSR markets, removing authorization from old DEXes, and tuning the syrupUSDC DEX range, this proposal keeps the protocol lean and secure. Existing users in deprecated markets can still manage and exit their positions.
+IGP-117 is a maintenance proposal that cleans up deprecated markets and optimizes active ones. By restricting limits and pausing operations on unused wstUSR markets, removing authorization from old DEXes, and tuning the syrupUSDC DEX range, this proposal keeps the protocol lean and secure. Existing users in deprecated markets can still manage and exit their positions.

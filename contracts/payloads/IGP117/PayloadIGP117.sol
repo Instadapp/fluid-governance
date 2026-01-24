@@ -90,6 +90,18 @@ contract PayloadIGP117 is PayloadIGPMain {
         setSupplyProtocolLimitsPaused(wstUSR_USDT_DEX, wstUSR_ADDRESS);
         setSupplyProtocolLimitsPaused(wstUSR_USDT_DEX, USDT_ADDRESS);
 
+        // Pause swap and arbitrage
+        IFluidDex(wstUSR_USDT_DEX).pauseSwapAndArbitrage();
+
+        // Pause user operations at LL
+        address[] memory supplyTokens = new address[](2);
+        supplyTokens[0] = wstUSR_ADDRESS;
+        supplyTokens[1] = USDT_ADDRESS;
+
+        address[] memory borrowTokens = new address[](0);
+
+        LIQUIDITY.pauseUser(wstUSR_USDT_DEX, supplyTokens, borrowTokens);
+
         // Remove Team Multisig auth
         DEX_FACTORY.setDexAuth(wstUSR_USDT_DEX, TEAM_MULTISIG, false);
     }
@@ -99,9 +111,18 @@ contract PayloadIGP117 is PayloadIGPMain {
         { // Vault 142: wstUSR/USDTb (TYPE 1)
             address wstUSR_USDTb_VAULT = getVaultAddress(142);
 
-            // Pause supply and borrow at LL
+            // Pause supply and borrow limits at LL
             setSupplyProtocolLimitsPaused(wstUSR_USDTb_VAULT, wstUSR_ADDRESS);
             setBorrowProtocolLimitsPaused(wstUSR_USDTb_VAULT, USDTb_ADDRESS);
+
+            // Pause user operations at LL
+            address[] memory supplyTokens = new address[](1);
+            supplyTokens[0] = wstUSR_ADDRESS;
+
+            address[] memory borrowTokens = new address[](1);
+            borrowTokens[0] = USDTb_ADDRESS;
+
+            LIQUIDITY.pauseUser(wstUSR_USDTb_VAULT, supplyTokens, borrowTokens);
         }
 
         { // Vault 113: wstUSR-USDT<>USDT (TYPE 2)
@@ -114,15 +135,23 @@ contract PayloadIGP117 is PayloadIGPMain {
                 wstUSR_USDT__USDT_VAULT
             );
 
-            // Pause vault at DEX level
+            // Pause vault supply at DEX level
             IFluidDex(wstUSR_USDT_DEX).pauseUser(
                 wstUSR_USDT__USDT_VAULT,
                 true, // pause supply side
                 false
             );
 
-            // Pause borrow at LL
+            // Pause borrow limits at LL
             setBorrowProtocolLimitsPaused(wstUSR_USDT__USDT_VAULT, USDT_ADDRESS);
+
+            // Pause user borrow operations at LL
+            address[] memory supplyTokens = new address[](0);
+
+            address[] memory borrowTokens = new address[](1);
+            borrowTokens[0] = USDT_ADDRESS;
+
+            LIQUIDITY.pauseUser(wstUSR_USDT__USDT_VAULT, supplyTokens, borrowTokens);
 
             // Remove Team Multisig auth from vault
             VAULT_FACTORY.setVaultAuth(
@@ -137,24 +166,32 @@ contract PayloadIGP117 is PayloadIGPMain {
             address wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT = getVaultAddress(
                 135
             );
+            address wstUSR_USDC_DEX = getDexAddress(27);
             address USDC_USDT_CONCENTRATED_DEX = getDexAddress(34);
 
-            // Pause supply at LL
-            setSupplyProtocolLimitsPaused(
-                wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT,
-                wstUSR_ADDRESS
+            // Pause supply side at DEX level (wstUSR-USDC DEX)
+            setSupplyProtocolLimitsPausedDex(
+                wstUSR_USDC_DEX,
+                wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT
             );
 
-            // Pause borrow side at DEX level
+            // Pause vault supply at DEX level
+            IFluidDex(wstUSR_USDC_DEX).pauseUser(
+                wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT,
+                true, // pause supply side
+                false
+            );
+
+            // Pause borrow side at DEX level (USDC-USDT concentrated)
             setBorrowProtocolLimitsPausedDex(
                 USDC_USDT_CONCENTRATED_DEX,
                 wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT
             );
 
-            // Pause vault at DEX level (borrow side)
+            // Pause vault borrow at DEX level
             IFluidDex(USDC_USDT_CONCENTRATED_DEX).pauseUser(
                 wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT,
-                false, // no supply side at this DEX
+                false,
                 true // pause borrow side
             );
         }
@@ -189,7 +226,7 @@ contract PayloadIGP117 is PayloadIGPMain {
         IFluidDex(syrupUSDC_USDC_DEX).updateRangePercents(
             0.0001 * 1e4, // upper range: 0.0001%
             0.4 * 1e4, // lower range: 0.4%
-            0 // instant
+            4 days
         );
     }
 
