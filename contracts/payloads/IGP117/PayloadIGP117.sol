@@ -47,6 +47,7 @@ import {PayloadIGPConstants} from "../common/constants.sol";
 import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 import {ILite} from "../common/interfaces/ILite.sol";
+import {IDexV2} from "../common/interfaces/IDexV2.sol";
 
 contract PayloadIGP117 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 117;
@@ -65,6 +66,9 @@ contract PayloadIGP117 is PayloadIGPMain {
 
         // Action 4: Update range percents for syrupUSDC-USDC DEX
         action4();
+
+        // Action 5: DEX V2 soft launch - set limits, auth, and admin implementations
+        action5();
     }
 
     function verifyProposal() public view override {}
@@ -228,6 +232,84 @@ contract PayloadIGP117 is PayloadIGPMain {
             0.4 * 1e4, // lower range: 0.4%
             4 days
         );
+    }
+
+    /// @notice Action 5: DEX V2 soft launch - set $100K limits, auth, and admin implementations
+    function action5() internal isActionSkippable(5) {
+        // ---------------------------------------------------------------------
+        // Set $100K soft launch limits for DEX V2 and Money Market proxies
+        // ---------------------------------------------------------------------
+        {
+            // Borrow limits: ETH, USDC, USDT -> $100k base, $100k max
+            address[3] memory borrowTokens = [
+                ETH_ADDRESS,
+                USDC_ADDRESS,
+                USDT_ADDRESS
+            ];
+
+            address[2] memory protocols = [DEX_V2_PROXY, MONEY_MARKET_PROXY];
+
+            for (uint256 i = 0; i < protocols.length; i++) {
+                for (uint256 j = 0; j < borrowTokens.length; j++) {
+                    BorrowProtocolConfig memory borrowConfig = BorrowProtocolConfig({
+                        protocol: protocols[i],
+                        borrowToken: borrowTokens[j],
+                        expandPercent: 30 * 1e2, // 30%
+                        expandDuration: 6 hours,
+                        baseBorrowLimitInUSD: 100_000, // $100k
+                        maxBorrowLimitInUSD: 100_000 // $100k
+                    });
+                    setBorrowProtocolLimits(borrowConfig);
+                }
+            }
+
+            // Supply limits: ETH, USDC, USDT, cbBTC, WBTC -> $100k base
+            address[5] memory supplyTokens = [
+                ETH_ADDRESS,
+                USDC_ADDRESS,
+                USDT_ADDRESS,
+                cbBTC_ADDRESS,
+                WBTC_ADDRESS
+            ];
+
+            for (uint256 i = 0; i < protocols.length; i++) {
+                for (uint256 j = 0; j < supplyTokens.length; j++) {
+                    SupplyProtocolConfig memory supplyConfig = SupplyProtocolConfig({
+                        protocol: protocols[i],
+                        supplyToken: supplyTokens[j],
+                        expandPercent: 50 * 1e2, // 50%
+                        expandDuration: 6 hours,
+                        baseWithdrawalLimitInUSD: 100_000 // $100k
+                    });
+                    setSupplyProtocolLimits(supplyConfig);
+                }
+            }
+        }
+
+        { // Set Team Multisig auth of DEX V2 and Money Market proxies
+
+            IDexV2(DEX_V2_PROXY).updateAuth(TEAM_MULTISIG, true);
+            IDexV2(MONEY_MARKET_PROXY).updateAuth(TEAM_MULTISIG, true);
+        }
+
+        { // Add admin implementations for DEX V2 D3 and D4
+            address D3_ADMIN_IMPLEMENTATION = address(0); // TODO: Set D3 admin implementation address
+            address D4_ADMIN_IMPLEMENTATION = address(0); // TODO: Set D4 admin implementation address
+
+            // D3: dexType = 3, adminImplementationId = 1
+            IDexV2(DEX_V2_PROXY).updateDexTypeToAdminImplementation(
+                3,
+                1,
+                D3_ADMIN_IMPLEMENTATION
+            );
+
+            // D4: dexType = 4, adminImplementationId = 1
+            IDexV2(DEX_V2_PROXY).updateDexTypeToAdminImplementation(
+                4,
+                1,
+                D4_ADMIN_IMPLEMENTATION
+            );
+        }
     }
 
     /**
