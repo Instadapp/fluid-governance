@@ -236,10 +236,8 @@ contract PayloadIGP117 is PayloadIGPMain {
 
     /// @notice Action 5: DEX V2 soft launch - set $100K limits, auth, and admin implementations
     function action5() internal isActionSkippable(5) {
-        // ---------------------------------------------------------------------
-        // Set $100K soft launch limits for DEX V2 and Money Market proxies
-        // ---------------------------------------------------------------------
-        {
+        { // Set $100K soft launch limits for DEX V2 and Money Market proxies
+
             // Borrow limits: ETH, USDC, USDT -> $100k base, $100k max
             address[3] memory borrowTokens = [
                 ETH_ADDRESS,
