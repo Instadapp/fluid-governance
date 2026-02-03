@@ -43,9 +43,9 @@ The following DEXes were previously deprecated. This action completes the cleanu
 
 ### DEX V2 Soft Launch Configuration
 - **DEX V2 Proxy** and **Money Market Proxy**:
-  - Set $100K soft launch limits for supply and borrow operations
-  - Supply tokens: ETH, USDC, USDT, cbBTC, WBTC (base withdrawal limit: $100K)
-  - Borrow tokens: ETH, USDC, USDT (base/max borrow limit: $100K)
+  - Set $50K soft launch limits for supply and borrow operations
+  - Supply tokens: ETH, USDC, USDT, cbBTC, WBTC (base withdrawal limit: $50K)
+  - Borrow tokens: ETH, USDC, USDT (base/max borrow limit: $50K)
   - Make Team Multisig an authorized admin
   - Add D3 and D4 admin implementations for new DEX types
 
@@ -68,7 +68,7 @@ This proposal implements several housekeeping updates to maintain protocol healt
    - Improves DEX performance under current market conditions
 
 4. **DEX V2 Soft Launch**
-   - Configures DEX V2 and Money Market proxies with conservative $100K limits for initial launch
+   - Configures DEX V2 and Money Market proxies with conservative $50K limits for initial launch
    - Grants Team Multisig authorization for operational management
    - Registers D3 and D4 admin implementations to support new DEX types
 

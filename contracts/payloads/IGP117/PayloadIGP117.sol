@@ -234,11 +234,11 @@ contract PayloadIGP117 is PayloadIGPMain {
         );
     }
 
-    /// @notice Action 5: DEX V2 soft launch - set $100K limits, auth, and admin implementations
+    /// @notice Action 5: DEX V2 soft launch - set $50K limits, auth, and admin implementations
     function action5() internal isActionSkippable(5) {
-        { // Set $100K soft launch limits for DEX V2 and Money Market proxies
+        { // Set $50K soft launch limits for DEX V2 and Money Market proxies
 
-            // Borrow limits: ETH, USDC, USDT -> $100k base, $100k max
+            // Borrow limits: ETH, USDC, USDT -> $50k base, $50k max
             address[3] memory borrowTokens = [
                 ETH_ADDRESS,
                 USDC_ADDRESS,
@@ -254,14 +254,14 @@ contract PayloadIGP117 is PayloadIGPMain {
                         borrowToken: borrowTokens[j],
                         expandPercent: 30 * 1e2, // 30%
                         expandDuration: 6 hours,
-                        baseBorrowLimitInUSD: 100_000, // $100k
-                        maxBorrowLimitInUSD: 100_000 // $100k
+                        baseBorrowLimitInUSD: 50_000, // $50k
+                        maxBorrowLimitInUSD: 50_000 // $50k
                     });
                     setBorrowProtocolLimits(borrowConfig);
                 }
             }
 
-            // Supply limits: ETH, USDC, USDT, cbBTC, WBTC -> $100k base
+            // Supply limits: ETH, USDC, USDT, cbBTC, WBTC -> $50k base
             address[5] memory supplyTokens = [
                 ETH_ADDRESS,
                 USDC_ADDRESS,
@@ -277,7 +277,7 @@ contract PayloadIGP117 is PayloadIGPMain {
                         supplyToken: supplyTokens[j],
                         expandPercent: 50 * 1e2, // 50%
                         expandDuration: 6 hours,
-                        baseWithdrawalLimitInUSD: 100_000 // $100k
+                        baseWithdrawalLimitInUSD: 50_000 // $50k
                     });
                     setSupplyProtocolLimits(supplyConfig);
                 }
@@ -291,8 +291,8 @@ contract PayloadIGP117 is PayloadIGPMain {
         }
 
         { // Add admin implementations for DEX V2 D3 and D4
-            address D3_ADMIN_IMPLEMENTATION = address(0); // TODO: Set D3 admin implementation address
-            address D4_ADMIN_IMPLEMENTATION = address(0); // TODO: Set D4 admin implementation address
+            address D3_ADMIN_IMPLEMENTATION = 0xF7Ba074e8308d199aB86C1D6A0ccAc20204eaf1d;
+            address D4_ADMIN_IMPLEMENTATION = 0x96c33cCa05ffbdf18c1c608362AC12C168405524;
 
             // D3: dexType = 3, adminImplementationId = 1
             IDexV2(DEX_V2_PROXY).updateDexTypeToAdminImplementation(
