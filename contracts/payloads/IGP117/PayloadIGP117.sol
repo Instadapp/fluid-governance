@@ -64,7 +64,7 @@ contract PayloadIGP117 is PayloadIGPMain {
         // Action 3: Remove MS auth from deprecated dexes 5, 6, 7, 8, 10, 34
         action3();
 
-        // Action 4: Update range percents for syrupUSDC-USDC DEX
+        // Action 4: Update range percents for syrupUSDC-USDC and syrupUSDT-USDT DEXes
         action4();
 
         // Action 5: DEX V2 soft launch - set limits ($50k MM, $75k DEX), auth, and admin implementations
@@ -222,16 +222,31 @@ contract PayloadIGP117 is PayloadIGPMain {
         DEX_FACTORY.setDexAuth(getDexAddress(34), TEAM_MULTISIG, false);
     }
 
-    /// @notice Action 4: Update range percents for syrupUSDC-USDC DEX
+    /// @notice Action 4: Update range percents for syrupUSDC-USDC and syrupUSDT-USDT DEXes
     function action4() internal isActionSkippable(4) {
-        address syrupUSDC_USDC_DEX = getDexAddress(39);
+        // syrupUSDC-USDC DEX #39
+        {
+            address syrupUSDC_USDC_DEX = getDexAddress(39);
 
-        // Update range: Upper 0.0001%, Lower 0.4%
-        IFluidDex(syrupUSDC_USDC_DEX).updateRangePercents(
-            0.0001 * 1e4, // upper range: 0.0001%
-            0.4 * 1e4, // lower range: 0.4%
-            4 days
-        );
+            // Update range: Upper 0.0001%, Lower 0.4%
+            IFluidDex(syrupUSDC_USDC_DEX).updateRangePercents(
+                0.0001 * 1e4, // upper range: 0.0001%
+                0.4 * 1e4, // lower range: 0.4%
+                4 days
+            );
+        }
+
+        // syrupUSDT-USDT DEX #40
+        {
+            address syrupUSDT_USDT_DEX = getDexAddress(40);
+
+            // Update range: Upper 0.0001%, Lower 0.4%
+            IFluidDex(syrupUSDT_USDT_DEX).updateRangePercents(
+                0.0001 * 1e4, // upper range: 0.0001%
+                0.4 * 1e4, // lower range: 0.4%
+                4 days
+            );
+        }
     }
 
     /// @notice Action 5: DEX V2 soft launch - set limits, auth, and admin implementations
