@@ -67,7 +67,7 @@ contract PayloadIGP117 is PayloadIGPMain {
         // Action 4: Update range percents for syrupUSDC-USDC DEX
         action4();
 
-        // Action 5: DEX V2 soft launch - set limits, auth, and admin implementations
+        // Action 5: DEX V2 soft launch - set limits ($50k MM, $75k DEX), auth, and admin implementations
         action5();
     }
 
@@ -234,53 +234,62 @@ contract PayloadIGP117 is PayloadIGPMain {
         );
     }
 
-    /// @notice Action 5: DEX V2 soft launch - set $50K limits, auth, and admin implementations
+    /// @notice Action 5: DEX V2 soft launch - set limits, auth, and admin implementations
     function action5() internal isActionSkippable(5) {
-        { // Set $50K soft launch limits for DEX V2 and Money Market proxies
+        // Tokens for borrow and supply limits
+        address[5] memory tokens = [
+            ETH_ADDRESS,
+            USDC_ADDRESS,
+            USDT_ADDRESS,
+            cbBTC_ADDRESS,
+            WBTC_ADDRESS
+        ];
 
-            // Borrow limits: ETH, USDC, USDT -> $50k base, $50k max
-            address[3] memory borrowTokens = [
-                ETH_ADDRESS,
-                USDC_ADDRESS,
-                USDT_ADDRESS
-            ];
+        { // Set $50K soft launch limits for Money Market proxy
 
-            address[2] memory protocols = [DEX_V2_PROXY, MONEY_MARKET_PROXY];
+            for (uint256 i = 0; i < tokens.length; i++) {
+                BorrowProtocolConfig memory borrowConfig = BorrowProtocolConfig({
+                    protocol: MONEY_MARKET_PROXY,
+                    borrowToken: tokens[i],
+                    expandPercent: 50 * 1e2, // 50%
+                    expandDuration: 6 hours,
+                    baseBorrowLimitInUSD: 50_000, // $50k
+                    maxBorrowLimitInUSD: 50_000 // $50k
+                });
+                setBorrowProtocolLimits(borrowConfig);
 
-            for (uint256 i = 0; i < protocols.length; i++) {
-                for (uint256 j = 0; j < borrowTokens.length; j++) {
-                    BorrowProtocolConfig memory borrowConfig = BorrowProtocolConfig({
-                        protocol: protocols[i],
-                        borrowToken: borrowTokens[j],
-                        expandPercent: 30 * 1e2, // 30%
-                        expandDuration: 6 hours,
-                        baseBorrowLimitInUSD: 50_000, // $50k
-                        maxBorrowLimitInUSD: 50_000 // $50k
-                    });
-                    setBorrowProtocolLimits(borrowConfig);
-                }
+                SupplyProtocolConfig memory supplyConfig = SupplyProtocolConfig({
+                    protocol: MONEY_MARKET_PROXY,
+                    supplyToken: tokens[i],
+                    expandPercent: 50 * 1e2, // 50%
+                    expandDuration: 6 hours,
+                    baseWithdrawalLimitInUSD: 50_000 // $50k
+                });
+                setSupplyProtocolLimits(supplyConfig);
             }
+        }
 
-            // Supply limits: ETH, USDC, USDT, cbBTC, WBTC -> $50k base
-            address[5] memory supplyTokens = [
-                ETH_ADDRESS,
-                USDC_ADDRESS,
-                USDT_ADDRESS,
-                cbBTC_ADDRESS,
-                WBTC_ADDRESS
-            ];
+        { // Set $75K soft launch limits for DEX V2 proxy
 
-            for (uint256 i = 0; i < protocols.length; i++) {
-                for (uint256 j = 0; j < supplyTokens.length; j++) {
-                    SupplyProtocolConfig memory supplyConfig = SupplyProtocolConfig({
-                        protocol: protocols[i],
-                        supplyToken: supplyTokens[j],
-                        expandPercent: 50 * 1e2, // 50%
-                        expandDuration: 6 hours,
-                        baseWithdrawalLimitInUSD: 50_000 // $50k
-                    });
-                    setSupplyProtocolLimits(supplyConfig);
-                }
+            for (uint256 i = 0; i < tokens.length; i++) {
+                BorrowProtocolConfig memory borrowConfig = BorrowProtocolConfig({
+                    protocol: DEX_V2_PROXY,
+                    borrowToken: tokens[i],
+                    expandPercent: 50 * 1e2, // 50%
+                    expandDuration: 6 hours,
+                    baseBorrowLimitInUSD: 75_000, // $75k
+                    maxBorrowLimitInUSD: 75_000 // $75k
+                });
+                setBorrowProtocolLimits(borrowConfig);
+
+                SupplyProtocolConfig memory supplyConfig = SupplyProtocolConfig({
+                    protocol: DEX_V2_PROXY,
+                    supplyToken: tokens[i],
+                    expandPercent: 50 * 1e2, // 50%
+                    expandDuration: 6 hours,
+                    baseWithdrawalLimitInUSD: 75_000 // $75k
+                });
+                setSupplyProtocolLimits(supplyConfig);
             }
         }
 
@@ -317,8 +326,8 @@ contract PayloadIGP117 is PayloadIGPMain {
      */
 
     // Token Prices Constants (same as other IGP files)
-    uint256 public constant ETH_USD_PRICE = 2_900 * 1e2;
-    uint256 public constant wstETH_USD_PRICE = 3_575 * 1e2;
+    uint256 public constant ETH_USD_PRICE = 2_200 * 1e2;
+    uint256 public constant wstETH_USD_PRICE = 2_700 * 1e2;
     uint256 public constant weETH_USD_PRICE = 3_050 * 1e2;
     uint256 public constant rsETH_USD_PRICE = 2_980 * 1e2;
     uint256 public constant weETHs_USD_PRICE = 2_920 * 1e2;
@@ -326,7 +335,7 @@ contract PayloadIGP117 is PayloadIGPMain {
     uint256 public constant ezETH_USD_PRICE = 3_000 * 1e2;
     uint256 public constant OSETH_USD_PRICE = 3_060 * 1e2;
 
-    uint256 public constant BTC_USD_PRICE = 86_000 * 1e2;
+    uint256 public constant BTC_USD_PRICE = 76_000 * 1e2;
 
     uint256 public constant STABLE_USD_PRICE = 1 * 1e2;
     uint256 public constant sUSDe_USD_PRICE = 1.20 * 1e2;

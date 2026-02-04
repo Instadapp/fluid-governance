@@ -42,10 +42,16 @@ The following DEXes were previously deprecated. This action completes the cleanu
   - Lower Range: 0.4%
 
 ### DEX V2 Soft Launch Configuration
-- **DEX V2 Proxy** and **Money Market Proxy**:
+- **Money Market Proxy**:
   - Set $50K soft launch limits for supply and borrow operations
-  - Supply tokens: ETH, USDC, USDT, cbBTC, WBTC (base withdrawal limit: $50K)
-  - Borrow tokens: ETH, USDC, USDT (base/max borrow limit: $50K)
+  - Tokens: ETH, USDC, USDT, cbBTC, WBTC
+  - Base withdrawal limit: $50K, Base/max borrow limit: $50K
+  - Make Team Multisig an authorized admin
+
+- **DEX V2 Proxy**:
+  - Set $75K soft launch limits for supply and borrow operations
+  - Tokens: ETH, USDC, USDT, cbBTC, WBTC
+  - Base withdrawal limit: $75K, Base/max borrow limit: $75K
   - Make Team Multisig an authorized admin
   - Add D3 and D4 admin implementations for new DEX types
 
@@ -68,9 +74,11 @@ This proposal implements several housekeeping updates to maintain protocol healt
    - Improves DEX performance under current market conditions
 
 4. **DEX V2 Soft Launch**
-   - Configures DEX V2 and Money Market proxies with conservative $50K limits for initial launch
+   - Configures Money Market proxy with conservative $50K limits for initial launch
+   - Configures DEX V2 proxy with $75K limits for initial launch
+   - Both proxies support ETH, USDC, USDT, cbBTC, and WBTC for supply and borrow
    - Grants Team Multisig authorization for operational management
    - Registers D3 and D4 admin implementations to support new DEX types
 
 ## Conclusion
-IGP-117 is a maintenance proposal that cleans up deprecated markets, optimizes active ones, and prepares for DEX V2. By restricting limits and pausing operations on unused wstUSR markets, removing authorization from old DEXes, tuning the syrupUSDC DEX range, and setting up DEX V2 soft launch configurations, this proposal keeps the protocol lean, secure, and ready for the next phase. Existing users in deprecated markets can still manage and exit their positions.
+IGP-117 is a maintenance proposal that cleans up deprecated markets, optimizes active ones, and prepares for DEX V2. By restricting limits and pausing operations on unused wstUSR markets, removing authorization from old DEXes, tuning the syrupUSDC DEX range, and setting up DEX V2 soft launch configurations ($50K for Money Market, $75K for DEX V2), this proposal keeps the protocol lean, secure, and ready for the next phase. Existing users in deprecated markets can still manage and exit their positions.
