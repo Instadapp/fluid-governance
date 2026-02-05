@@ -1,4 +1,4 @@
-# Cleanup: Restrict Limits and Pause Unused wstUSR Markets, Remove Multisig Auth from Old DEXes, Update syrup DEX Ranges, and DEX V2 Soft Launch
+# DEX V2 Soft Launch, Restrict Limits and Pause Unused wstUSR Markets, Remove Multisig Auth from Old DEXes, and Update syrup DEX Ranges
 
 ## Summary
 This proposal performs routine protocol maintenance and prepares for DEX V2 launch: (1) deprecates the unused wstUSR-USDT DEX and related vaults by restricting their limits, (2) removes Team Multisig authorization from several old DEXes that are no longer in active use, (3) adjusts the trading ranges for syrupUSDC-USDC and syrupUSDT-USDT DEXes to optimize performance, and (4) sets up DEX V2 and Money Market proxies with soft launch limits and configurations. These changes improve protocol security, reduce operational overhead, and prepare for the next generation of DEX functionality.
