@@ -341,7 +341,7 @@ contract PayloadIGP117 is PayloadIGPMain {
      */
 
     // Token Prices Constants (same as other IGP files)
-    uint256 public constant ETH_USD_PRICE = 2_200 * 1e2;
+    uint256 public constant ETH_USD_PRICE = 2_100 * 1e2;
     uint256 public constant wstETH_USD_PRICE = 2_700 * 1e2;
     uint256 public constant weETH_USD_PRICE = 3_050 * 1e2;
     uint256 public constant rsETH_USD_PRICE = 2_980 * 1e2;
@@ -350,7 +350,7 @@ contract PayloadIGP117 is PayloadIGPMain {
     uint256 public constant ezETH_USD_PRICE = 3_000 * 1e2;
     uint256 public constant OSETH_USD_PRICE = 3_060 * 1e2;
 
-    uint256 public constant BTC_USD_PRICE = 76_000 * 1e2;
+    uint256 public constant BTC_USD_PRICE = 72_000 * 1e2;
 
     uint256 public constant STABLE_USD_PRICE = 1 * 1e2;
     uint256 public constant sUSDe_USD_PRICE = 1.20 * 1e2;
