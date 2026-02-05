@@ -80,7 +80,7 @@ This proposal implements several housekeeping updates to maintain protocol healt
 4. **DEX V2 Soft Launch**
    - Configures Money Market with conservative $50K limits for initial launch
    - Configures DEX V2 with $75K limits for initial launch
-   - Both proxies support ETH, USDC, USDT, cbBTC, and WBTC for supply and borrow
+   - Both support ETH, USDC, USDT, cbBTC, and WBTC for supply and borrow
    - Grants Team Multisig authorization for operational management
    - Registers D3 and D4 admin implementations to support new DEX types
 
