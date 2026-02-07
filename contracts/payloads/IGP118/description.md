@@ -1,7 +1,7 @@
 # Withdraw 1M GHO from Treasury for JupLend Rewards Funding
 
 ## Summary
-This proposal withdraws 1M GHO from the Fluid Treasury to the Team Multisig to fund rewards distribution on JupLend - a lending protocol on Solana powered by Fluid in collaboration with Jupiter.
+This proposal withdraws 1M GHO from the Fluid Treasury to the Team Multisig to fund rewards distribution on JupLend.
 
 ## Code Changes
 
@@ -12,7 +12,7 @@ This proposal withdraws 1M GHO from the Fluid Treasury to the Team Multisig to f
 - **Amount**: 1,000,000 GHO
 
 ## Description
-This proposal executes a single action to transfer 1M GHO from the Fluid Treasury to the Team Multisig. The withdrawal is performed by redeeming fGHO tokens held by the Treasury, which converts them back to GHO. These funds will be bridged and used to fund user rewards on JupLend, supporting ecosystem growth and user incentives for Fluid's expansion to Solana through the Jupiter collaboration.
+This proposal executes a single action to transfer 1M GHO from the Fluid Treasury to the Team Multisig. The withdrawal is performed by redeeming fGHO tokens held by the Treasury, which converts them back to GHO. These funds will be bridged and used to fund user rewards on JupLend.
 
 ## Conclusion
 IGP-118 is a treasury management proposal that allocates 1M GHO for rewards funding on JupLend, supporting Fluid's strategic partnership with Jupiter and multi-chain expansion to Solana.
