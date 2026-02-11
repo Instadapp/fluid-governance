@@ -57,6 +57,9 @@ contract PayloadIGP118 is PayloadIGPMain {
 
         // Action 1: Withdraw 1M GHO from fGHO to Team Multisig for JupLend rewards funding
         action1();
+
+        // Action 2: Withdraw 500k FLUID to Team Multisig for rewards funding
+        action2();
     }
 
     function verifyProposal() public view override {}
@@ -87,6 +90,31 @@ contract PayloadIGP118 is PayloadIGPMain {
                 withdrawSignature,
                 F_GHO_ADDRESS,
                 GHO_AMOUNT,
+                TEAM_MULTISIG,
+                0,
+                0
+            );
+        }
+
+        IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
+    }
+
+    /// @notice Action 2: Withdraw 500k FLUID to Team Multisig for rewards funding
+    function action2() internal isActionSkippable(2) {
+        string[] memory targets = new string[](1);
+        bytes[] memory encodedSpells = new bytes[](1);
+
+        string
+            memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
+
+        // Spell 1: Transfer 500k FLUID to Team Multisig for rewards funding
+        {
+            uint256 FLUID_AMOUNT = 500_000 * 1e18; // 500k FLUID tokens
+            targets[0] = "BASIC-A";
+            encodedSpells[0] = abi.encodeWithSignature(
+                withdrawSignature,
+                FLUID_ADDRESS,
+                FLUID_AMOUNT,
                 TEAM_MULTISIG,
                 0,
                 0
