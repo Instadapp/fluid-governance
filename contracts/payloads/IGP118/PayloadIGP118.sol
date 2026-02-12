@@ -99,7 +99,7 @@ contract PayloadIGP118 is PayloadIGPMain {
         IDSAV2(TREASURY).cast(targets, encodedSpells, address(this));
     }
 
-    /// @notice Action 2: Withdraw 500k FLUID to Team Multisig for rewards funding
+    /// @notice Action 2: Withdraw 1M FLUID to Team Multisig for rewards funding
     function action2() internal isActionSkippable(2) {
         string[] memory targets = new string[](1);
         bytes[] memory encodedSpells = new bytes[](1);
@@ -107,9 +107,9 @@ contract PayloadIGP118 is PayloadIGPMain {
         string
             memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
 
-        // Spell 1: Transfer 500k FLUID to Team Multisig for rewards funding
+        // Spell 1: Transfer 1M FLUID to Team Multisig for rewards funding
         {
-            uint256 FLUID_AMOUNT = 500_000 * 1e18; // 500k FLUID tokens
+            uint256 FLUID_AMOUNT = 1_000_000 * 1e18; // 1M FLUID tokens
             targets[0] = "BASIC-A";
             encodedSpells[0] = abi.encodeWithSignature(
                 withdrawSignature,
