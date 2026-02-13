@@ -1,4 +1,4 @@
-# Withdraw Assets from Treasury for JupLend Rewards Funding
+# Withdraw Assets from Treasury for Rewards Funding
 
 ## Summary
 
