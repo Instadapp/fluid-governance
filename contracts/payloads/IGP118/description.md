@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal withdraws funds from the treasury for JupLend rewards: (1) withdraws 1M GHO from the treasury's fGHO position to Team Multisig for JupLend rewards, and (2) withdraws 1M FLUID tokens to Team Multisig for additional rewards funding. These withdrawals support Fluid's strategic partnership with Jupiter and multi-chain expansion to Solana.
+This proposal withdraws funds from the treasury for JupLend rewards: (1) withdraws 1M GHO from the treasury's fGHO position to Team Multisig for JupLend rewards, and (2) withdraws 1M FLUID tokens to Team Multisig for ongoing rewards funding.
 
 ## Code Changes
 
@@ -20,7 +20,7 @@ This proposal withdraws funds from the treasury for JupLend rewards: (1) withdra
 - **Withdrawal Amount**: 1M FLUID tokens
 - **Recipient**: Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`)
 - **Method**: Direct token withdrawal via BASIC-A connector from treasury DSA
-- **Purpose**: Transfer FLUID tokens to Team Multisig for additional rewards funding and community programs
+- **Purpose**: Transfer FLUID tokens to Team Multisig for ongoing rewards funding and community programs
 
 ## Description
 
@@ -37,8 +37,8 @@ This proposal implements two treasury withdrawals to support user incentives on 
    - Transfers FLUID to Team Multisig for rewards funding and community programs
    - Uses the BASIC-A connector for direct token withdrawal from the treasury DSA
 
-These withdrawals optimize treasury management by allocating assets specifically for JupLend incentives and FLUID-based rewards, reinforcing Fluid's cross-chain strategy and community engagement.
+These withdrawals help in efficient management and allocation of assets for incentives.
 
 ## Conclusion
 
-IGP-118 is a focused treasury management proposal that withdraws 1M GHO and 1M FLUID from the treasury to fund JupLend and FLUID rewards. The proposal follows established patterns from prior treasury withdrawals, ensuring safe and efficient fund allocation to Team Multisig in support of Fluid's multi-chain growth and community programs.
+IGP-118 is a focused treasury management proposal that withdraws 1M GHO and 1M FLUID from the treasury to fund JupLend and FLUID rewards. The proposal follows established patterns from prior treasury withdrawals, ensuring safe and efficient fund allocation to Team Multisig in support of Fluid's multi-chain growth programs.
