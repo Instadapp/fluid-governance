@@ -34,7 +34,7 @@ This proposal implements two treasury withdrawals to support user incentives:
 
 2. **FLUID Withdrawal for Rewards Funding**
    - Withdraws 1M FLUID tokens directly from the treasury
-   - Transfers FLUID to Team Multisig for rewards funding and community programs
+   - Transfers FLUID to Team Multisig for rewards funding
    - Uses the BASIC-A connector for direct token withdrawal from the treasury DSA
 
 These withdrawals help in efficient management and allocation of assets for incentives.
