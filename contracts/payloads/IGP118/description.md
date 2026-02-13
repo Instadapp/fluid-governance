@@ -20,11 +20,11 @@ This proposal withdraws funds from the treasury for JupLend rewards: (1) withdra
 - **Withdrawal Amount**: 1M FLUID tokens
 - **Recipient**: Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`)
 - **Method**: Direct token withdrawal via BASIC-A connector from treasury DSA
-- **Purpose**: Transfer FLUID tokens to Team Multisig for ongoing rewards funding and community programs
+- **Purpose**: Transfer FLUID tokens to Team Multisig for ongoing rewards funding
 
 ## Description
 
-This proposal implements two treasury withdrawals to support user incentives on JupLend and broader community rewards:
+This proposal implements two treasury withdrawals to support user incentives:
 
 1. **GHO Withdrawal for JupLend Rewards**
    - Withdraws 1M GHO from the treasury's fGHO position
