@@ -58,7 +58,7 @@ contract PayloadIGP118 is PayloadIGPMain {
         // Action 1: Withdraw 1M GHO from fGHO to Team Multisig for JupLend rewards funding
         action1();
 
-        // Action 2: Withdraw 500k FLUID to Team Multisig for rewards funding
+        // Action 2: Withdraw 1M FLUID to Team Multisig for rewards funding
         action2();
     }
 
@@ -148,7 +148,7 @@ contract PayloadIGP118 is PayloadIGPMain {
     uint256 public constant syrupUSDT_USD_PRICE = 1.10 * 1e2;
     uint256 public constant syrupUSDC_USD_PRICE = 1.14 * 1e2;
 
-    uint256 public constant FLUID_USD_PRICE = 3.32 * 1e2;
+    uint256 public constant FLUID_USD_PRICE = 2.19 * 1e2;
 
     uint256 public constant RLP_USD_PRICE = 1.26 * 1e2;
     uint256 public constant wstUSR_USD_PRICE = 1.12 * 1e2;
