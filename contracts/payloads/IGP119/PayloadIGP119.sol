@@ -48,14 +48,14 @@ import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 import {ILite} from "../common/interfaces/ILite.sol";
 
-/// @notice IGP119: Withdraw 250 iETHv2 to Team Multisig to refund Lite users for their losses
+/// @notice IGP119: Withdraw 250 iETHv2 to Team Multisig to refund Fluid Lite users
 contract PayloadIGP119 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 119;
 
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Withdraw 250 iETHv2 to Team Multisig for Lite user loss refunds
+        // Action 1: Withdraw 250 iETHv2 to Team Multisig for Fluid Lite user compensation
         action1();
     }
 
@@ -71,7 +71,7 @@ contract PayloadIGP119 is PayloadIGPMain {
      * |__________________________________
      */
 
-    /// @notice Action 1: Withdraw 250 iETHv2 to Team Multisig for Lite user loss refunds
+    /// @notice Action 1: Withdraw 250 iETHv2 to Team Multisig for Lite user refunds
     function action1() internal isActionSkippable(1) {
         string[] memory targets = new string[](1);
         bytes[] memory encodedSpells = new bytes[](1);
@@ -79,7 +79,7 @@ contract PayloadIGP119 is PayloadIGPMain {
         string
             memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
 
-        // Spell 1: Transfer 250 iETHv2 to Team Multisig to refund Lite users for their losses
+        // Spell 1: Transfer 250 iETHv2 to Team Multisig to refund Lite users for their poor rates in current market conditions.
         {
             uint256 IETHV2_AMOUNT = 250 * 1e18; // 250 iETHv2 tokens
             targets[0] = "BASIC-A";
