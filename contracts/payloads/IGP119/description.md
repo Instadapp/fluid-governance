@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal withdraws 250 iETHv2 tokens (~295 ETH) from the Fluid Treasury to the Team Multisig to cover losses incurred by Lite users from ETH borrow rate spikes across underlying lending protocols due to current market conditions.
+This proposal withdraws 250 iETHv2 tokens (~295 ETH) from the Fluid Treasury to the Team Multisig to cover losses incurred by Lite users from ETH borrow rate spikes across underlying lending protocols due to recent market conditions.
 
 ## Code Changes
 
