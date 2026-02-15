@@ -71,7 +71,7 @@ contract PayloadIGP119 is PayloadIGPMain {
      * |__________________________________
      */
 
-    /// @notice Action 1: Withdraw 250 iETHv2 to Team Multisig for Lite user refunds
+    /// @notice Action 1: Withdraw 250 iETHv2 to Team Multisig to cover loss for Lite user
     function action1() internal isActionSkippable(1) {
         string[] memory targets = new string[](1);
         bytes[] memory encodedSpells = new bytes[](1);
@@ -79,7 +79,7 @@ contract PayloadIGP119 is PayloadIGPMain {
         string
             memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
 
-        // Spell 1: Transfer 250 iETHv2 to Team Multisig to refund Lite users for their poor rates in current market conditions.
+        // Spell 1: Transfer 250 iETHv2 to Team Multisig to cover loss for Lite user
         {
             uint256 IETHV2_AMOUNT = 250 * 1e18; // 250 iETHv2 tokens
             targets[0] = "BASIC-A";
