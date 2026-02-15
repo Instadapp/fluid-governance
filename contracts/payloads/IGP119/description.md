@@ -19,7 +19,7 @@ During recent market volatility, ETH borrow rates spiked across protocols used b
 
 In 2025, Fluid Lite has earned approximately ~$4M in revenue for protocol. A similar rate spike event occurred in 2025 resulting in a ~$0.5M loss, which was covered in the same manner.
 
-This proposal withdraws 250 iETHv2 from the treasury to the Team Multisigfor distribution to affected Lite users according to their exposure during the loss period.
+This proposal withdraws 250 iETHv2 from the treasury to the Team Multisig for distribution to affected Lite users according to their exposure during the loss period.
 
 ## Conclusion
 
