@@ -1,28 +1,26 @@
-# Withdraw 250 iETHv2 to Team Multisig for Fluid Lite User Compensation
+# Withdraw 250 iETHv2 to Team Multisig to Cover Fluid Lite Losses
 
 ## Summary
 
-This proposal withdraws 250 iETHv2 tokens from the Fluid Treasury to the Team Multisig to refund Lite users for losses due to poor rates in current market conditions.
+This proposal withdraws 250 iETHv2 tokens (~295 ETH) from the Fluid Treasury to the Team Multisig to cover losses incurred by Lite users from ETH borrow rate spikes across underlying lending protocols due to current market conditions.
 
 ## Code Changes
 
-### Action 1: Withdraw 250 iETHv2 to Team Multisig for Fluid Lite User Refunds
+### Action 1: Withdraw 250 iETHv2 to Team Multisig
 
 - **iETHv2 (Lite) Contract**: `0xA0D3707c569ff8C87FA923d3823eC5D81c98Be78`
-- **Withdrawal Amount**: 250 iETHv2 tokens
+- **Amount**: 250 iETHv2 tokens
 - **Recipient**: Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`)
-- **Method**: Direct token withdrawal via BASIC-A connector from treasury DSA
-- **Purpose**: Transfer iETHv2 to Team Multisig to refund Lite users
+- **Method**: Direct withdrawal via BASIC-A connector from treasury DSA
 
 ## Description
 
-This proposal executes a single treasury withdrawal to support Lite users:
+During recent market volatility, ETH borrow rates spiked across protocols used by Fluid Lite. The elevated borrow rates exceeded stETH staking yield, resulting in losses for Lite vault depositors.
 
-1. **iETHv2 Withdrawal for Lite User Refunds**
-   - Withdraws 250 iETHv2 tokens from the treasury
-   - Transfers iETHv2 to Team Multisig for distribution to Lite users as refunds for losses due to poor rates in current market conditions.
-   - Uses the BASIC-A connector for direct token withdrawal from the treasury DSA
+In 2025, Fluid Lite has earned approximately ~$4M in revenue for protocol. A similar rate spike event occurred in 2025 resulting in a ~$0.5M loss, which was covered in the same manner.
+
+This proposal withdraws 250 iETHv2 from the treasury to the Team Multisigfor distribution to affected Lite users according to their exposure during the loss period.
 
 ## Conclusion
 
-IGP-119 withdraws 250 iETHv2 to the Team Multisig to refund Lite users for for losses due to poor rates in current market conditions. The proposal ensures safe and efficient allocation of funds for user compensation.
+IGP-119 allocates 250 iETHv2 from the treasury to cover Lite user losses from the recent ETH borrow rate spike across underlying lending protocols.
