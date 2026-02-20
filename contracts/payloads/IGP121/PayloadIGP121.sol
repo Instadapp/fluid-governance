@@ -48,20 +48,20 @@ import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 import {ILite} from "../common/interfaces/ILite.sol";
 
-/// @notice IGP121: Set dust limits for REUSD-USDT DEX (id 44) and REUSD vaults (160-164), set Team Multisig as auth on each
+/// @notice IGP121: Set dust limits for REUSD-USDT DEX (id 44) and REUSD vaults (160-164), set Team Multisig as auth on each, and wind down csUSDL smart lending
 contract PayloadIGP121 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 121;
 
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: T1 vaults only (160, 161, 162) - dust limits + Team MS auth
+        // Action 1: T1 vaults (160, 161, 162) and T3 vault (163) - dust limits + Team MS auth
         action1();
 
         // Action 2: Dust limits for DEX 44 (REUSD-USDT) + Team MS auth
         action2();
 
-        // Action 3: Vault 163 (TYPE_3), vault 164 (TYPE_2), and withdraw limits for vault 164 at dex 44
+        // Action 3: Vault 164 (TYPE_2) dust limits + withdraw limits for vault 164 at DEX 44
         action3();
 
         // Action 4: Wind down csUSDL smart lending (restrict limits only, no pause)
@@ -181,7 +181,7 @@ contract PayloadIGP121 is PayloadIGPMain {
         DEX_FACTORY.setDexAuth(REUSD_USDT_DEX, TEAM_MULTISIG, true);
     }
 
-    /// @notice Action 3: Vault 163 (TYPE_3), vault 164 (TYPE_2) + withdraw limits for vault 164 at dex 44
+    /// @notice Action 3: Vault 164 (TYPE_2) dust limits + withdraw limits for vault 164 at DEX 44
     function action3() internal isActionSkippable(3) {
         // Vault 164: REUSD-USDT / USDT (TYPE_2) - pair as collateral, USDT debt
         {
@@ -233,8 +233,8 @@ contract PayloadIGP121 is PayloadIGPMain {
             SupplyProtocolConfig({
                 protocol: csUSDL_USDC_DEX,
                 supplyToken: csUSDL_ADDRESS,
-                expandPercent: 1, // 0.01% - minimum
-                expandDuration: 16777215, // max - minimum expansion
+                expandPercent: 1, // 0.01% -> minimum
+                expandDuration: 16777215, // max -> minimum expansion
                 baseWithdrawalLimitInUSD: 5_000
             })
         );
@@ -253,8 +253,8 @@ contract PayloadIGP121 is PayloadIGPMain {
             memory slConfigs_ = new IFluidAdminDex.UserSupplyConfig[](1);
         slConfigs_[0] = IFluidAdminDex.UserSupplyConfig({
             user: csUSDL_SMART_LENDING,
-            expandPercent: 1, // 0.01% - minimum
-            expandDuration: 16777215, // max - minimum expansion
+            expandPercent: 1, // 0.01% -> minimum
+            expandDuration: 16777215, // max -> minimum expansion
             baseWithdrawalLimit: 2_000 * 1e18 // ~$2k in shares
         });
         IFluidDex(csUSDL_USDC_DEX).updateUserSupplyConfigs(slConfigs_);
