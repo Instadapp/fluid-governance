@@ -63,6 +63,9 @@ contract PayloadIGP121 is PayloadIGPMain {
 
         // Action 3: Vault 163 (TYPE_3), vault 164 (TYPE_2), and withdraw limits for vault 164 at dex 44
         action3();
+
+        // Action 4: Wind down csUSDL smart lending (restrict limits only, no pause)
+        action4();
     }
 
     function verifyProposal() public view override {}
@@ -148,14 +151,15 @@ contract PayloadIGP121 is PayloadIGPMain {
                 true
             );
 
-            DexBorrowProtocolConfigInShares memory config_ = DexBorrowProtocolConfigInShares({
-                dex: USDC_USDT_DEX,
-                protocol: REUSD_USDC_USDT_VAULT,
-                expandPercent: 30 * 1e2, // 30%
-                expandDuration: 6 hours,
-                baseBorrowLimit: 3500 * 1e18, // ~$7k shares
-                maxBorrowLimit: 4500 * 1e18 // ~$9k shares
-            });
+            DexBorrowProtocolConfigInShares
+                memory config_ = DexBorrowProtocolConfigInShares({
+                    dex: USDC_USDT_DEX,
+                    protocol: REUSD_USDC_USDT_VAULT,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours,
+                    baseBorrowLimit: 3500 * 1e18, // ~$7k shares
+                    maxBorrowLimit: 4500 * 1e18 // ~$9k shares
+                });
             setDexBorrowProtocolLimitsInShares(config_);
         }
     }
@@ -216,6 +220,46 @@ contract PayloadIGP121 is PayloadIGPMain {
         }
     }
 
+    /// @notice Action 4: Wind down csUSDL smart lending - restrict limits only (no pause of withdrawals or swaps)
+    function action4() internal isActionSkippable(4) {
+        address csUSDL_USDC_DEX = getDexAddress(38);
+        address csUSDL_SMART_LENDING = getSmartLendingAddress(38);
+
+        // Restrict DEX-level caps to minimal so no new supply can be added
+        IFluidDex(csUSDL_USDC_DEX).updateMaxSupplyShares(1);
+
+        // DEX: base withdrawal limit $5k at LL, expansion minimum possible (0.01%, max duration)
+        setSupplyProtocolLimits(
+            SupplyProtocolConfig({
+                protocol: csUSDL_USDC_DEX,
+                supplyToken: csUSDL_ADDRESS,
+                expandPercent: 1, // 0.01% - minimum
+                expandDuration: 16777215, // max - minimum expansion
+                baseWithdrawalLimitInUSD: 5_000
+            })
+        );
+        setSupplyProtocolLimits(
+            SupplyProtocolConfig({
+                protocol: csUSDL_USDC_DEX,
+                supplyToken: USDC_ADDRESS,
+                expandPercent: 1,
+                expandDuration: 16777215,
+                baseWithdrawalLimitInUSD: 5_000
+            })
+        );
+
+        // Smart lending AT the dex: base withdrawal limit $2k, expansion minimum possible
+        IFluidAdminDex.UserSupplyConfig[]
+            memory slConfigs_ = new IFluidAdminDex.UserSupplyConfig[](1);
+        slConfigs_[0] = IFluidAdminDex.UserSupplyConfig({
+            user: csUSDL_SMART_LENDING,
+            expandPercent: 1, // 0.01% - minimum
+            expandDuration: 16777215, // max - minimum expansion
+            baseWithdrawalLimit: 2_000 * 1e18 // ~$2k in shares
+        });
+        IFluidDex(csUSDL_USDC_DEX).updateUserSupplyConfigs(slConfigs_);
+    }
+
     /**
      * |
      * |     Payload Actions End Here      |
@@ -240,6 +284,7 @@ contract PayloadIGP121 is PayloadIGPMain {
     uint256 public constant syrupUSDT_USD_PRICE = 1.10 * 1e2;
     uint256 public constant syrupUSDC_USD_PRICE = 1.14 * 1e2;
     uint256 public constant REUSD_USD_PRICE = 1.06 * 1e2; // $1.06
+    uint256 public constant csUSDL_USD_PRICE = 1.03 * 1e2; // $1.03
 
     uint256 public constant FLUID_USD_PRICE = 2.19 * 1e2;
 
@@ -325,6 +370,9 @@ contract PayloadIGP121 is PayloadIGPMain {
             decimals = 6;
         } else if (token == REUSD_ADDRESS) {
             usdPrice = REUSD_USD_PRICE;
+            decimals = 18;
+        } else if (token == csUSDL_ADDRESS) {
+            usdPrice = csUSDL_USD_PRICE;
             decimals = 18;
         } else if (token == JRUSDE_ADDRESS) {
             usdPrice = JRUSDE_USD_PRICE;
