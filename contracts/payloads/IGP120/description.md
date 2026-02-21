@@ -1,4 +1,4 @@
-# Update Dex T1 Deployment Logic on DexFactory
+# Update Dex V1 Deployment Logic on DexFactory
 
 ## Summary
 
@@ -14,7 +14,9 @@ This proposal registers a new Dex T1 deployment logic contract (`0x3FB3FE857C1eE
 
 ## Description
 
-The Dex T1 deployment logic determines how new T1 DEX pools are created on the DexFactory. This proposal whitelists an updated deployment logic contract, enabling future T1 DEX deployments to use the latest logic. Once registered, the Team Multisig can deploy new T1 DEX pools and associated vaults as needed.
+The Fusaka upgrade introduced a per-transaction gas limit (EIP-7825). Under this limit, current DexV1 deployment logic no longer fits within a single transaction.
+
+This proposal sets the new Dex T1 deployment logic on the DexFactory. The new logic has reduced bytecode, deprecated logic has been removed and required contracts have been optimized so that deployment stays under the new gas limit. Once this proposal is executed, new T1 DEX pools will use this implementation, and the Team Multisig can deploy pools and associated vaults as needed.
 
 ## Conclusion
 
