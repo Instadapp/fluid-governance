@@ -48,7 +48,7 @@ import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 import {ILite} from "../common/interfaces/ILite.sol";
 
-/// @notice IGP121: Set dust limits for REUSD-USDT DEX (id 44) and REUSD vaults (160-164), set Team Multisig as auth on each, and wind down csUSDL smart lending
+/// @notice IGP121: Set dust limits for REUSD-USDT DEX (id 44) and REUSD vaults (160-163), set Team Multisig as auth on each, and wind down csUSDL smart lending
 contract PayloadIGP121 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 121;
 
@@ -61,11 +61,8 @@ contract PayloadIGP121 is PayloadIGPMain {
         // Action 2: Dust limits for DEX 44 (REUSD-USDT) + Team MS auth
         action2();
 
-        // Action 3: Vault 164 (TYPE_2) dust limits + withdraw limits for vault 164 at DEX 44
+        // Action 3: Wind down csUSDL smart lending (restrict limits only, no pause)
         action3();
-
-        // Action 4: Wind down csUSDL smart lending (restrict limits only, no pause)
-        action4();
     }
 
     function verifyProposal() public view override {}
@@ -181,47 +178,8 @@ contract PayloadIGP121 is PayloadIGPMain {
         DEX_FACTORY.setDexAuth(REUSD_USDT_DEX, TEAM_MULTISIG, true);
     }
 
-    /// @notice Action 3: Vault 164 (TYPE_2) dust limits + withdraw limits for vault 164 at DEX 44
+    /// @notice Action 3: Wind down csUSDL smart lending - restrict limits only (no pause of withdrawals or swaps)
     function action3() internal isActionSkippable(3) {
-        // Vault 164: REUSD-USDT / USDT (TYPE_2) - pair as collateral, USDT debt
-        {
-            address REUSD_USDT__USDT_VAULT = getVaultAddress(164);
-            VaultConfig memory VAULT_REUSD_USDT__USDT = VaultConfig({
-                vault: REUSD_USDT__USDT_VAULT,
-                vaultType: VAULT_TYPE.TYPE_2,
-                supplyToken: address(0),
-                borrowToken: USDT_ADDRESS,
-                baseWithdrawalLimitInUSD: 0,
-                baseBorrowLimitInUSD: 7_000, // $7k
-                maxBorrowLimitInUSD: 9_000 // $9k
-            });
-            setVaultLimits(VAULT_REUSD_USDT__USDT);
-            VAULT_FACTORY.setVaultAuth(
-                REUSD_USDT__USDT_VAULT,
-                TEAM_MULTISIG,
-                true
-            );
-        }
-
-        // Withdraw limits for REUSD_USDT__USDT_VAULT at DEX 44
-        {
-            address REUSD_USDT__USDT_VAULT = getVaultAddress(164);
-            address REUSD_USDT_DEX = getDexAddress(44);
-
-            IFluidAdminDex.UserSupplyConfig[]
-                memory configs_ = new IFluidAdminDex.UserSupplyConfig[](1);
-            configs_[0] = IFluidAdminDex.UserSupplyConfig({
-                user: REUSD_USDT__USDT_VAULT,
-                expandPercent: 50 * 1e2, // 50%
-                expandDuration: 1 hours,
-                baseWithdrawalLimit: 7_000 * 1e18 // ~$7k in shares
-            });
-            IFluidDex(REUSD_USDT_DEX).updateUserSupplyConfigs(configs_);
-        }
-    }
-
-    /// @notice Action 4: Wind down csUSDL smart lending - restrict limits only (no pause of withdrawals or swaps)
-    function action4() internal isActionSkippable(4) {
         address csUSDL_USDC_DEX = getDexAddress(38);
         address csUSDL_SMART_LENDING = getSmartLendingAddress(38);
 
