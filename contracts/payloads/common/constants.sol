@@ -151,6 +151,8 @@ contract PayloadIGPConstants {
         0xC58D044404d8B14e953C115E67823784dEA53d8F;
     address internal constant SRUSDE_ADDRESS =
         0x3d7d6fdf07EE548B939A80edbc9B2256d0cdc003;
+    address internal constant REUSD_ADDRESS =
+        0x5086bf358635B81D8C47C66d1C8b9E567Db70c72;
 
     address internal constant WBTC_ADDRESS =
         0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
