@@ -159,6 +159,16 @@ contract PayloadIGP121 is PayloadIGPMain {
                 });
             setDexBorrowProtocolLimitsInShares(config_);
         }
+
+        // Vault 164: REUSD-USDT / USDT (TYPE_2) - make team MS vault auth
+        {
+            address REUSD_USDT__USDT_VAULT = getVaultAddress(164);
+            VAULT_FACTORY.setVaultAuth(
+                REUSD_USDT__USDT_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
     }
 
     /// @notice Action 2: Dust limits for DEX 44 (REUSD-USDT) + Team MS auth
