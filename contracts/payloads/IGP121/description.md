@@ -2,11 +2,11 @@
 
 ## Summary
 
-This proposal implements two key protocol changes: (1) sets conservative dust limits and Team Multisig authorization for the new REUSD ecosystem including the REUSD-USDT DEX (Pool 44) and five associated vaults (160–164), preparing them for subsequent launch limit configuration, and (2) winds down the csUSDL-USDC smart lending (DEX Pool 38) by restricting supply caps and expansion parameters to prevent new activity while preserving withdrawal access for existing users.
+This proposal implements two key protocol changes: (1) sets conservative dust limits and Team Multisig authorization for the new REUSD ecosystem including the REUSD-USDT DEX (Pool 44) and associated vaults (160–164), preparing them for subsequent launch limit configuration, and (2) winds down the csUSDL-USDC smart lending (DEX Pool 38) by restricting supply caps and expansion parameters to prevent new activity while preserving withdrawal access for existing users.
 
 ## Code Changes
 
-### Action 1: Set Dust Limits for REUSD T1 Vaults (160, 161, 162) and T3 Vault (163)
+### Action 1: Set Dust Limits for REUSD T1 Vaults (160, 161, 162), T3 Vault (163), and Team MS Auth on T2 Vault (164)
 
 - **Vault ID 160**<br>
   **REUSD/USDC (TYPE 1)**:
@@ -36,6 +36,10 @@ This proposal implements two key protocol changes: (1) sets conservative dust li
   - **DEX Borrow Limit**: 3,500 shares ($7k) base, 4,500 shares ($9k) max
   - **Authorization**: Add Team Multisig auth
 
+- **Vault ID 164**<br>
+  **REUSD-USDT/USDT (TYPE 2)**:
+  - **Authorization**: Add Team Multisig auth (dust limits and DEX supply config to be set by Team MS)
+
 ### Action 2: Set Dust Limits for REUSD-USDT DEX (Pool 44)
 
 - **DEX Pool 44**<br>
@@ -47,20 +51,7 @@ This proposal implements two key protocol changes: (1) sets conservative dust li
   - **Smart Debt**: Disabled
   - **Authorization**: Add Team Multisig auth
 
-### Action 3: Set Dust Limits for REUSD-USDT/USDT T2 Vault (164)
-
-- **Vault ID 164**<br>
-  **REUSD-USDT/USDT (TYPE 2)**:
-  - **Base Borrow Limit**: $7,000
-  - **Max Borrow Limit**: $9,000
-  - **Authorization**: Add Team Multisig auth
-
-- **DEX-Level Supply Config** (Vault 164 at REUSD-USDT DEX, Pool 44):
-  - **Base Withdrawal Limit**: 7,000 shares (~$7k)
-  - **Expand Percent**: 50%
-  - **Expand Duration**: 1 hour
-
-### Action 4: Wind Down csUSDL-USDC Smart Lending
+### Action 3: Wind Down csUSDL-USDC Smart Lending
 
 - **DEX Pool 38**<br>
   **csUSDL-USDC DEX**:
@@ -75,9 +66,10 @@ This proposal implements two key protocol changes: (1) sets conservative dust li
 This proposal implements two categories of changes to integrate new offerings and maintain protocol health:
 
 1. **REUSD Ecosystem Dust Limits**
-   - Introduces the REUSD-USDT DEX (Pool 44) and five associated vaults (160–164) with conservative dust limits
+   - Introduces the REUSD-USDT DEX (Pool 44) and associated vaults (160–164) with conservative dust limits
    - Sets appropriate withdrawal and borrow limits to ensure safe initial setup before launch limits are applied
-   - Includes three T1 vaults (REUSD/USDC, REUSD/USDT, REUSD/GHO), one T3 vault (REUSD/USDC-USDT borrowing at the USDC-USDT DEX), and one T2 vault (REUSD-USDT <> USDT with DEX-level supply config)
+   - Includes three T1 vaults (REUSD/USDC, REUSD/USDT, REUSD/GHO) and one T3 vault (REUSD/USDC-USDT borrowing at the USDC-USDT DEX) with full dust limits
+   - Grants Team Multisig authorization on the T2 vault (REUSD-USDT/USDT, ID 164) for subsequent dust limit and DEX supply configuration
    - Establishes Team Multisig authorization on all protocols for proper governance oversight during launch
 
 2. **csUSDL Smart Lending Wind-Down**
@@ -88,4 +80,4 @@ This proposal implements two categories of changes to integrate new offerings an
 
 ## Conclusion
 
-IGP-121 safely integrates the new REUSD ecosystem with conservative dust limits across DEX Pool 44 and vaults 160–164, granting Team Multisig authorization on each for subsequent launch configuration. It simultaneously winds down the csUSDL-USDC smart lending by restricting supply caps while preserving withdrawal access for existing users. These changes support protocol growth through new REUSD offerings while maintaining operational efficiency and risk management best practices.
+IGP-121 integrates the new REUSD ecosystem with conservative dust limits across DEX Pool 44 and vaults 160–163, granting Team Multisig authorization on all REUSD Vaults (160–164) for subsequent launch configuration. It simultaneously winds down the csUSDL-USDC smart lending by restricting supply caps while preserving withdrawal access for existing users. These changes support protocol growth through new REUSD offerings while maintaining operational efficiency and risk management best practices.

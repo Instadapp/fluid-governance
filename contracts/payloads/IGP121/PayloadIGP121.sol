@@ -48,14 +48,14 @@ import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 import {ILite} from "../common/interfaces/ILite.sol";
 
-/// @notice IGP121: Set dust limits for REUSD-USDT DEX (id 44) and REUSD vaults (160-163), set Team Multisig as auth on each, and wind down csUSDL smart lending
+/// @notice IGP121: Set dust limits for REUSD-USDT DEX (id 44) and REUSD vaults (160-164), set Team Multisig as auth on each, and wind down csUSDL smart lending
 contract PayloadIGP121 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 121;
 
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: T1 vaults (160, 161, 162) and T3 vault (163) - dust limits + Team MS auth
+        // Action 1: T1 vaults (160, 161, 162) and T3 vault (163) dust limits + Team MS auth on vaults 160-164
         action1();
 
         // Action 2: Dust limits for DEX 44 (REUSD-USDT) + Team MS auth
@@ -77,7 +77,7 @@ contract PayloadIGP121 is PayloadIGPMain {
      * |__________________________________
      */
 
-    /// @notice Action 1: T1 vaults and T3 vaults (160 REUSD/USDC, 161 REUSD/USDT, 162 REUSD/GHO, 163 REUSD/USDC-USDT) - dust limits + Team MS auth
+    /// @notice Action 1: T1 vaults (160 REUSD/USDC, 161 REUSD/USDT, 162 REUSD/GHO) and T3 vault (163 REUSD/USDC-USDT) dust limits + Team MS auth on vaults 160-164
     function action1() internal isActionSkippable(1) {
         // Vault 160: REUSD / USDC (TYPE_1)
         {
