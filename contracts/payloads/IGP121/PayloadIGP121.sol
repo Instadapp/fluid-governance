@@ -55,7 +55,7 @@ contract PayloadIGP121 is PayloadIGPMain {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: T1 vaults (160, 161, 162) and T3 vault (163) and T2 vault (164) dust limits + Team MS auth
+        // Action 1: T1 vaults (160, 161, 162), T3 vault (163), and T2 vault (164) dust limits + Team MS auth
         action1();
 
         // Action 2: Dust limits for DEX 44 (REUSD-USDT) + Team MS auth
@@ -77,7 +77,7 @@ contract PayloadIGP121 is PayloadIGPMain {
      * |__________________________________
      */
 
-    /// @notice Action 1: T1 vaults (160 REUSD/USDC, 161 REUSD/USDT, 162 REUSD/GHO) and T3 vault (163 REUSD/USDC-USDT) and T2 vault (164 REUSD-USDT/USDT) dust limits + Team MS
+    /// @notice Action 1: T1 vaults (160 REUSD/USDC, 161 REUSD/USDT, 162 REUSD/GHO), T3 vault (163 REUSD/USDC-USDT), and T2 vault (164 REUSD-USDT/USDT) dust limits + Team MS
     function action1() internal isActionSkippable(1) {
         // Vault 160: REUSD / USDC (TYPE_1)
         {
