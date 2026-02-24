@@ -55,7 +55,7 @@ contract PayloadIGP121 is PayloadIGPMain {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: T1 vaults (160, 161, 162) and T3 vault (163) dust limits + Team MS auth on vaults 160-164
+        // Action 1: T1 vaults (160, 161, 162) and T3 vault (163) and T2 vault (164) dust limits + Team MS auth
         action1();
 
         // Action 2: Dust limits for DEX 44 (REUSD-USDT) + Team MS auth
@@ -77,7 +77,7 @@ contract PayloadIGP121 is PayloadIGPMain {
      * |__________________________________
      */
 
-    /// @notice Action 1: T1 vaults (160 REUSD/USDC, 161 REUSD/USDT, 162 REUSD/GHO) and T3 vault (163 REUSD/USDC-USDT) dust limits + Team MS auth on vaults 160-164
+    /// @notice Action 1: T1 vaults (160 REUSD/USDC, 161 REUSD/USDT, 162 REUSD/GHO) and T3 vault (163 REUSD/USDC-USDT) and T2 vault (164 REUSD-USDT/USDT) dust limits + Team MS
     function action1() internal isActionSkippable(1) {
         // Vault 160: REUSD / USDC (TYPE_1)
         {
@@ -160,9 +160,19 @@ contract PayloadIGP121 is PayloadIGPMain {
             setDexBorrowProtocolLimitsInShares(config_);
         }
 
-        // Vault 164: REUSD-USDT / USDT (TYPE_2) - make team MS vault auth
+        // Vault 164: REUSD-USDT / USDT (TYPE_2) - make team MS vault auth, usdt debt dust limits
         {
             address REUSD_USDT__USDT_VAULT = getVaultAddress(164);
+            VaultConfig memory VAULT_REUSD_USDT__USDT = VaultConfig({
+                vault: REUSD_USDT__USDT_VAULT,
+                vaultType: VAULT_TYPE.TYPE_2,
+                supplyToken: address(0),
+                borrowToken: USDT_ADDRESS,
+                baseWithdrawalLimitInUSD: 0,
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 9_000 // $9k
+            });
+            setVaultLimits(VAULT_REUSD_USDT__USDT);
             VAULT_FACTORY.setVaultAuth(
                 REUSD_USDT__USDT_VAULT,
                 TEAM_MULTISIG,
