@@ -1,12 +1,15 @@
 /**
  * Pre-Setup Script for IGP121 Payload Simulation
  *
- * 1. IGP120: set DexT1DeploymentLogic on DexFactory (impersonate factory owner)
- * 2. DEX 44 (REUSD-USDT)
- * 3. Vault 164: REUSD-USDT / USDT (TYPE_2) – supply token is DEX 44 address
+ * 1. Mock Chainlink feed 0x66ac... so latestRoundData() returns fixed values (for FluidGenericOracle._readChainlinkSource)
+ * 2. IGP120: set DexT1DeploymentLogic on DexFactory (from Timelock)
+ * 3. DEX 44 (REUSD-USDT)
+ * 4. Vault 164: REUSD-USDT / USDT (TYPE_2) – supply token is DEX 44 address
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
+import * as fs from "fs";
+import * as path from "path";
 
 const TEAM_MULTISIG = "0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e";
 const VAULT_FACTORY = "0x324c5Dc1fC42c7a4D43d92df1eBA58a54d13Bf2d";
@@ -17,6 +20,9 @@ const DEX_T1_DEPLOYMENT_LOGIC = "0x3FB3FE857C1eE52e7002196E295a7ADfFeD80819";
 const REUSD_ADDRESS = "0x5086bf358635B81D8C47C66d1C8b9E567Db70c72";
 const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
 const VAULT_LOGIC_T2 = "0xf92b954D3B2F6497B580D799Bf0907332AF1f63B";
+
+/** Chainlink feed mocked so latestRoundData() returns (1, 106475560, 1771926611, 1771926611, 1) */
+const CHAINLINK_FEED_TO_MOCK = "0x66ac817f997efd114edfcccdce99f3268557b32c";
 
 function getDeployVaultT2Calldata(
   supplyToken: string,
@@ -36,6 +42,39 @@ function getDeployVaultT2Calldata(
     VAULT_LOGIC_T2,
     logicData,
   ]);
+}
+
+async function mockChainlinkFeed(provider: JsonRpcProvider): Promise<void> {
+  const artifactPath = path.join(
+    process.cwd(),
+    "artifacts",
+    "contracts",
+    "payloads",
+    "IGP121",
+    "simulation",
+    "MockChainlinkFeed.sol",
+    "MockChainlinkFeed.json",
+  );
+  if (!fs.existsSync(artifactPath)) {
+    throw new Error(
+      `MockChainlinkFeed artifact not found at ${artifactPath}. Run 'npm run compile' first.`,
+    );
+  }
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf-8"));
+  const raw =
+    artifact.deployedBytecode?.object ?? artifact.deployedBytecode ?? "";
+  const bytecode =
+    typeof raw === "string" && raw.length > 0
+      ? raw.startsWith("0x")
+        ? raw
+        : "0x" + raw
+      : "";
+  if (!bytecode) {
+    throw new Error(
+      "MockChainlinkFeed artifact has no deployedBytecode.object",
+    );
+  }
+  await provider.send("tenderly_setCode", [CHAINLINK_FEED_TO_MOCK, bytecode]);
 }
 
 async function impersonateAndRunIGP120(
@@ -108,6 +147,8 @@ export async function preSetup(provider: JsonRpcProvider): Promise<void> {
   );
 
   try {
+    await mockChainlinkFeed(provider); // OSETH oracle feed has a built in max time validation
+
     await impersonateAndRunIGP120(provider);
 
     await deployDex44(provider);
