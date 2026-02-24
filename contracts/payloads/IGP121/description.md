@@ -42,7 +42,7 @@ This proposal implements two key protocol changes: (1) sets conservative dust li
   - **Max Borrow Limit**: $9,000
   - **Authorization**: Add Team Multisig auth
 
-### Action 2: Set Dust Limits for REUSD-USDT DEX (Pool 44)
+### Action 2: Set Dust Limits for REUSD-USDT DEX (Pool 44) + Team MS Auth
 
 - **DEX Pool 44**<br>
   **REUSD-USDT DEX**:
