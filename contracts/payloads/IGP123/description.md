@@ -41,14 +41,12 @@ This proposal implements protocol-wide updates across six areas: (1) launches th
   - **Max Borrow Limit**: $10M
   - **Authorization**: Remove Team Multisig auth
 
-### Action 2: Launch Limits for REUSD-USDT DEX (Pool 44) + Fee, Range, Remove Team MS Auth
+### Action 2: Launch Limits for REUSD-USDT DEX (Pool 44) + Remove Team MS Auth
 
 - **DEX Pool 44**<br>
   **REUSD-USDT DEX**:
   - **Base Withdrawal Limit**: $5M per token (LL limits)
-  - **Max Supply Shares**: 12M shares (~$12M)
-  - **Fee**: 2 bps
-  - **Range**: 0.3% symmetric (upper and lower)
+  - **Max Supply Shares**: 6M shares (~$12M)
   - **Smart Collateral**: Enabled
   - **Smart Debt**: Disabled
   - **Authorization**: Remove Team Multisig auth
@@ -131,7 +129,7 @@ This proposal implements a broad set of protocol updates covering new launches, 
    - T1 vaults (160–162): $8M base withdrawal, $8M base borrow, $20M max borrow
    - T3 vault (163): $8M base withdrawal, ~4M/$10M shares DEX borrow (~$8M/$20M)
    - T2 vault (164): $5M base borrow, $10M max borrow
-   - DEX 44: $5M LL token limits, $12M max supply shares, 2 bps fee, 0.3% symmetric range
+   - DEX 44: $5M LL token limits, 6M max supply shares
    - Removes Team Multisig authorization since protocols are now launched with proper governance limits
 
 2. **wstUSR Market Deprecation**

@@ -5,7 +5,6 @@ pragma experimental ABIEncoderV2;
 import {BigMathMinified} from "../libraries/bigMathMinified.sol";
 import {LiquidityCalcs} from "../libraries/liquidityCalcs.sol";
 import {LiquiditySlotsLink} from "../libraries/liquiditySlotsLink.sol";
-import {DexSlotsLink} from "../libraries/dexSlotsLink.sol";
 
 import {IGovernorBravo} from "../common/interfaces/IGovernorBravo.sol";
 import {ITimelock} from "../common/interfaces/ITimelock.sol";
@@ -70,7 +69,7 @@ contract PayloadIGP123 is PayloadIGPMain {
         // Action 1: Launch limits for REUSD vaults (160-164) + remove Team MS auth
         action1();
 
-        // Action 2: Launch limits for REUSD-USDT DEX (44) + fee, range, remove Team MS auth
+        // Action 2: Launch limits for REUSD-USDT DEX (44) + remove Team MS auth
         action2();
 
         // Action 3: Restrict limits and pause wstUSR-USDT DEX and remove MS auth (from IGP117)
@@ -211,7 +210,7 @@ contract PayloadIGP123 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 2: Launch limits for REUSD-USDT DEX (Pool 44) + fee, range, remove Team MS auth
+    /// @notice Action 2: Launch limits for REUSD-USDT DEX (Pool 44) + remove Team MS auth
     function action2() internal isActionSkippable(2) {
         address REUSD_USDT_DEX = getDexAddress(44);
 
@@ -227,26 +226,8 @@ contract PayloadIGP123 is PayloadIGPMain {
         });
         setDexLimits(DEX_REUSD_USDT);
 
-        uint256 maxSupplyShares_ = 12_000_000 * 1e18; // ~$12M equivalent shares
+        uint256 maxSupplyShares_ = 6_000_000 * 1e18; // ~$12M equivalent shares
         IFluidDex(REUSD_USDT_DEX).updateMaxSupplyShares(maxSupplyShares_);
-
-        {
-            uint256 dexVariables2_ = IFluidDex(REUSD_USDT_DEX).readFromStorage(
-                bytes32(DexSlotsLink.DEX_VARIABLES2_SLOT)
-            );
-            uint256 revenueCut_ = (dexVariables2_ >> 19) & X17;
-
-            IFluidDex(REUSD_USDT_DEX).updateFeeAndRevenueCut(
-                200, // 2 bps (0.02%)
-                revenueCut_
-            );
-        }
-
-        IFluidDex(REUSD_USDT_DEX).updateRangePercents(
-            0.3 * 1e4, // upper range: 0.3%
-            0.3 * 1e4, // lower range: 0.3%
-            4 days
-        );
 
         DEX_FACTORY.setDexAuth(REUSD_USDT_DEX, TEAM_MULTISIG, false);
     }
