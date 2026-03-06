@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 import {BigMathMinified} from "../libraries/bigMathMinified.sol";
 import {LiquidityCalcs} from "../libraries/liquidityCalcs.sol";
 import {LiquiditySlotsLink} from "../libraries/liquiditySlotsLink.sol";
+import {DexSlotsLink} from "../libraries/dexSlotsLink.sol";
 
 import {IGovernorBravo} from "../common/interfaces/IGovernorBravo.sol";
 import {ITimelock} from "../common/interfaces/ITimelock.sol";
@@ -49,7 +50,7 @@ import {PayloadIGPMain} from "../common/main.sol";
 import {ILite} from "../common/interfaces/ILite.sol";
 import {IDexV2} from "../common/interfaces/IDexV2.sol";
 
-/// @notice IGP123: Launch limits for REUSD protocols, DEX V2 soft launch (re-send), rollback module on LL, and DexFactory cleanup
+/// @notice IGP123: Launch limits for REUSD protocols, all actions from IGP-117 (with updated DEX V2), rollback module on LL, and DexFactory cleanup
 contract PayloadIGP123 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 123;
 
@@ -69,17 +70,29 @@ contract PayloadIGP123 is PayloadIGPMain {
         // Action 1: Launch limits for REUSD vaults (160-164) + remove Team MS auth
         action1();
 
-        // Action 2: Launch limits for REUSD-USDT DEX (44) + remove Team MS auth
+        // Action 2: Launch limits for REUSD-USDT DEX (44) + fee, range, remove Team MS auth
         action2();
 
-        // Action 3: DEX V2 soft launch - re-send limits, auth, and updated admin implementations
+        // Action 3: Restrict limits and pause wstUSR-USDT DEX and remove MS auth (from IGP117)
         action3();
 
-        // Action 4: Roll out rollbackModule on Liquidity Layer
+        // Action 4: Restrict limits and pause vaults 142, 113, 135 (from IGP117)
         action4();
 
-        // Action 5: Cleanup - disable old DexDeploymentLogic on DexFactory
+        // Action 5: Remove MS auth from deprecated dexes 5, 6, 7, 8, 10, 34 (from IGP117)
         action5();
+
+        // Action 6: Update range percents for syrupUSDC-USDC and syrupUSDT-USDT DEXes (from IGP117)
+        action6();
+
+        // Action 7: DEX V2 soft launch - re-send limits, auth, and updated admin implementations
+        action7();
+
+        // Action 8: Roll out rollbackModule on Liquidity Layer
+        action8();
+
+        // Action 9: Cleanup - disable old DexDeploymentLogic on DexFactory
+        action9();
     }
 
     function verifyProposal() public view override {}
@@ -198,7 +211,7 @@ contract PayloadIGP123 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 2: Launch limits for REUSD-USDT DEX (Pool 44) + remove Team MS auth
+    /// @notice Action 2: Launch limits for REUSD-USDT DEX (Pool 44) + fee, range, remove Team MS auth
     function action2() internal isActionSkippable(2) {
         address REUSD_USDT_DEX = getDexAddress(44);
 
@@ -214,14 +227,178 @@ contract PayloadIGP123 is PayloadIGPMain {
         });
         setDexLimits(DEX_REUSD_USDT);
 
-        uint256 maxSupplyShares_ = 6_000_000 * 1e18; // ~$12M equivalent shares
+        uint256 maxSupplyShares_ = 12_000_000 * 1e18; // ~$12M equivalent shares
         IFluidDex(REUSD_USDT_DEX).updateMaxSupplyShares(maxSupplyShares_);
+
+        {
+            uint256 dexVariables2_ = IFluidDex(REUSD_USDT_DEX).readFromStorage(
+                bytes32(DexSlotsLink.DEX_VARIABLES2_SLOT)
+            );
+            uint256 revenueCut_ = (dexVariables2_ >> 19) & X17;
+
+            IFluidDex(REUSD_USDT_DEX).updateFeeAndRevenueCut(
+                200, // 2 bps (0.02%)
+                revenueCut_
+            );
+        }
+
+        IFluidDex(REUSD_USDT_DEX).updateRangePercents(
+            0.3 * 1e4, // upper range: 0.3%
+            0.3 * 1e4, // lower range: 0.3%
+            4 days
+        );
 
         DEX_FACTORY.setDexAuth(REUSD_USDT_DEX, TEAM_MULTISIG, false);
     }
 
-    /// @notice Action 3: DEX V2 soft launch - re-send limits ($50k MM, $75k DEX), auth, and updated admin implementations
+    /// @notice Action 3: Restrict limits and pause wstUSR-USDT DEX (Pool 29) and remove MS auth (from IGP117)
     function action3() internal isActionSkippable(3) {
+        address wstUSR_USDT_DEX = getDexAddress(29);
+
+        IFluidDex(wstUSR_USDT_DEX).updateMaxSupplyShares(10);
+
+        setSupplyProtocolLimitsPaused(wstUSR_USDT_DEX, wstUSR_ADDRESS);
+        setSupplyProtocolLimitsPaused(wstUSR_USDT_DEX, USDT_ADDRESS);
+
+        IFluidDex(wstUSR_USDT_DEX).pauseSwapAndArbitrage();
+
+        address[] memory supplyTokens = new address[](2);
+        supplyTokens[0] = wstUSR_ADDRESS;
+        supplyTokens[1] = USDT_ADDRESS;
+
+        address[] memory borrowTokens = new address[](0);
+
+        LIQUIDITY.pauseUser(wstUSR_USDT_DEX, supplyTokens, borrowTokens);
+
+        DEX_FACTORY.setDexAuth(wstUSR_USDT_DEX, TEAM_MULTISIG, false);
+    }
+
+    /// @notice Action 4: Restrict limits and pause vaults 142, 113, 135 (from IGP117)
+    function action4() internal isActionSkippable(4) {
+        {
+            // Vault 142: wstUSR/USDTb (TYPE 1)
+            address wstUSR_USDTb_VAULT = getVaultAddress(142);
+
+            setSupplyProtocolLimitsPaused(wstUSR_USDTb_VAULT, wstUSR_ADDRESS);
+            setBorrowProtocolLimitsPaused(wstUSR_USDTb_VAULT, USDTb_ADDRESS);
+
+            address[] memory supplyTokens = new address[](1);
+            supplyTokens[0] = wstUSR_ADDRESS;
+
+            address[] memory borrowTokens = new address[](1);
+            borrowTokens[0] = USDTb_ADDRESS;
+
+            LIQUIDITY.pauseUser(
+                wstUSR_USDTb_VAULT,
+                supplyTokens,
+                borrowTokens
+            );
+        }
+
+        {
+            // Vault 113: wstUSR-USDT<>USDT (TYPE 2)
+            address wstUSR_USDT__USDT_VAULT = getVaultAddress(113);
+            address wstUSR_USDT_DEX = getDexAddress(29);
+
+            setSupplyProtocolLimitsPausedDex(
+                wstUSR_USDT_DEX,
+                wstUSR_USDT__USDT_VAULT
+            );
+
+            IFluidDex(wstUSR_USDT_DEX).pauseUser(
+                wstUSR_USDT__USDT_VAULT,
+                true,
+                false
+            );
+
+            setBorrowProtocolLimitsPaused(
+                wstUSR_USDT__USDT_VAULT,
+                USDT_ADDRESS
+            );
+
+            address[] memory supplyTokens = new address[](0);
+
+            address[] memory borrowTokens = new address[](1);
+            borrowTokens[0] = USDT_ADDRESS;
+
+            LIQUIDITY.pauseUser(
+                wstUSR_USDT__USDT_VAULT,
+                supplyTokens,
+                borrowTokens
+            );
+
+            VAULT_FACTORY.setVaultAuth(
+                wstUSR_USDT__USDT_VAULT,
+                TEAM_MULTISIG,
+                false
+            );
+        }
+
+        {
+            // Vault 135: wstUSR-USDC<>USDC-USDT concentrated (TYPE 3)
+            address wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT = getVaultAddress(
+                135
+            );
+            address wstUSR_USDC_DEX = getDexAddress(27);
+            address USDC_USDT_CONCENTRATED_DEX = getDexAddress(34);
+
+            setSupplyProtocolLimitsPausedDex(
+                wstUSR_USDC_DEX,
+                wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT
+            );
+
+            IFluidDex(wstUSR_USDC_DEX).pauseUser(
+                wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT,
+                true,
+                false
+            );
+
+            setBorrowProtocolLimitsPausedDex(
+                USDC_USDT_CONCENTRATED_DEX,
+                wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT
+            );
+
+            IFluidDex(USDC_USDT_CONCENTRATED_DEX).pauseUser(
+                wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT,
+                false,
+                true
+            );
+        }
+    }
+
+    /// @notice Action 5: Remove MS auth from deprecated dexes 5, 6, 7, 8, 10, 34 (from IGP117)
+    function action5() internal isActionSkippable(5) {
+        DEX_FACTORY.setDexAuth(getDexAddress(5), TEAM_MULTISIG, false);
+        DEX_FACTORY.setDexAuth(getDexAddress(6), TEAM_MULTISIG, false);
+        DEX_FACTORY.setDexAuth(getDexAddress(7), TEAM_MULTISIG, false);
+        DEX_FACTORY.setDexAuth(getDexAddress(8), TEAM_MULTISIG, false);
+        DEX_FACTORY.setDexAuth(getDexAddress(10), TEAM_MULTISIG, false);
+        DEX_FACTORY.setDexAuth(getDexAddress(34), TEAM_MULTISIG, false);
+    }
+
+    /// @notice Action 6: Update range percents for syrupUSDC-USDC and syrupUSDT-USDT DEXes (from IGP117)
+    function action6() internal isActionSkippable(6) {
+        {
+            address syrupUSDC_USDC_DEX = getDexAddress(39);
+            IFluidDex(syrupUSDC_USDC_DEX).updateRangePercents(
+                0.0001 * 1e4, // upper range: 0.0001%
+                0.4 * 1e4, // lower range: 0.4%
+                4 days
+            );
+        }
+
+        {
+            address syrupUSDT_USDT_DEX = getDexAddress(40);
+            IFluidDex(syrupUSDT_USDT_DEX).updateRangePercents(
+                0.0001 * 1e4, // upper range: 0.0001%
+                0.4 * 1e4, // lower range: 0.4%
+                4 days
+            );
+        }
+    }
+
+    /// @notice Action 7: DEX V2 soft launch - re-send limits ($50k MM, $75k DEX), auth, and updated admin implementations
+    function action7() internal isActionSkippable(7) {
         address[5] memory tokens = [
             ETH_ADDRESS,
             USDC_ADDRESS,
@@ -303,8 +480,8 @@ contract PayloadIGP123 is PayloadIGPMain {
         }
     }
 
-    /// @notice Action 4: Roll out rollbackModule on Liquidity Layer (audited by Statemind)
-    function action4() internal isActionSkippable(4) {
+    /// @notice Action 8: Roll out rollbackModule on Liquidity Layer (audited by Statemind)
+    function action8() internal isActionSkippable(8) {
         address newImplementation_ = PayloadIGP123(ADDRESS_THIS)
             .rollbackModuleAddress();
         require(newImplementation_ != address(0), "rollback-module-not-set");
@@ -321,8 +498,8 @@ contract PayloadIGP123 is PayloadIGPMain {
         );
     }
 
-    /// @notice Action 5: Cleanup - disable old DexT1DeploymentLogic on DexFactory
-    function action5() internal isActionSkippable(5) {
+    /// @notice Action 9: Cleanup - disable old DexT1DeploymentLogic on DexFactory
+    function action9() internal isActionSkippable(9) {
         DEX_FACTORY.setDexDeploymentLogic(
             0x7db5101f12555bD7Ef11B89e4928061B7C567D27,
             false
