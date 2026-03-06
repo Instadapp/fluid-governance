@@ -10,29 +10,29 @@ This proposal implements four categories of changes: (1) sets launch limits for 
 
 - **Vault ID 160**<br>
   **REUSD/USDC (TYPE 1)**:
-  - **Base Withdrawal Limit**: $7.5M
-  - **Base Borrow Limit**: $5M  
-  - **Max Borrow Limit**: $10M
+  - **Base Withdrawal Limit**: $8M
+  - **Base Borrow Limit**: $8M
+  - **Max Borrow Limit**: $20M
   - **Authorization**: Remove Team Multisig auth
 
 - **Vault ID 161**<br>
   **REUSD/USDT (TYPE 1)**:
-  - **Base Withdrawal Limit**: $7.5M
-  - **Base Borrow Limit**: $5M
-  - **Max Borrow Limit**: $10M
+  - **Base Withdrawal Limit**: $8M
+  - **Base Borrow Limit**: $8M
+  - **Max Borrow Limit**: $20M
   - **Authorization**: Remove Team Multisig auth
 
 - **Vault ID 162**<br>
   **REUSD/GHO (TYPE 1)**:
-  - **Base Withdrawal Limit**: $7.5M
-  - **Base Borrow Limit**: $5M
-  - **Max Borrow Limit**: $10M
+  - **Base Withdrawal Limit**: $8M
+  - **Base Borrow Limit**: $8M
+  - **Max Borrow Limit**: $20M
   - **Authorization**: Remove Team Multisig auth
 
 - **Vault ID 163**<br>
   **REUSD/USDC-USDT (TYPE 3)**:
-  - **Base Withdrawal Limit**: $7.5M
-  - **DEX Borrow Limit**: ~2.5M shares (~$5M) base, ~5M shares (~$10M) max (TODO: confirm)
+  - **Base Withdrawal Limit**: $8M
+  - **DEX Borrow Limit**: ~4M shares (~$8M) base, ~10M shares (~$20M) max
   - **Authorization**: Remove Team Multisig auth
 
 - **Vault ID 164**<br>
@@ -45,8 +45,8 @@ This proposal implements four categories of changes: (1) sets launch limits for 
 
 - **DEX Pool 44**<br>
   **REUSD-USDT DEX**:
-  - **Base Withdrawal Limit**: $5M per token
-  - **Max Supply Shares**: 10M shares (~$10M)
+  - **Base Withdrawal Limit**: $5M per token (LL limits)
+  - **Max Supply Shares**: 6M shares (~$12M)
   - **Smart Collateral**: Enabled
   - **Smart Debt**: Disabled
   - **Authorization**: Remove Team Multisig auth
@@ -84,9 +84,11 @@ This proposal covers four areas of protocol development and maintenance:
 
 1. **REUSD Ecosystem Launch**
    - Upgrades all REUSD protocols from dust limits (IGP-122) to full launch limits
-   - Sets operational withdrawal and borrow limits across DEX Pool 44 and vaults 160–164
+   - T1 vaults (160–162): $8M base withdrawal, $8M base borrow, $20M max borrow
+   - T3 vault (163): $8M base withdrawal, ~4M/$10M shares DEX borrow (~$8M/$20M)
+   - T2 vault (164): $5M base borrow, $10M max borrow
+   - DEX 44: $5M LL token limits, 6M max supply shares
    - Removes Team Multisig authorization since protocols are now launched with proper governance limits
-   - Sets max supply shares on DEX 44 to enable real liquidity provision
 
 2. **DEX V2 Soft Launch (Re-send)**
    - Re-sends the DEX V2 soft launch action from IGP-117

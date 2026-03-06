@@ -104,9 +104,9 @@ contract PayloadIGP123 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: REUSD_ADDRESS,
                 borrowToken: USDC_ADDRESS,
-                baseWithdrawalLimitInUSD: 7_500_000, // to confirm $7.5M
-                baseBorrowLimitInUSD: 5_000_000, // to confirm $5M
-                maxBorrowLimitInUSD: 10_000_000 // to confirm $10M
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                baseBorrowLimitInUSD: 8_000_000, // $8M
+                maxBorrowLimitInUSD: 20_000_000 // $20M
             });
             setVaultLimits(VAULT_REUSD_USDC);
             VAULT_FACTORY.setVaultAuth(REUSD_USDC_VAULT, TEAM_MULTISIG, false);
@@ -120,9 +120,9 @@ contract PayloadIGP123 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: REUSD_ADDRESS,
                 borrowToken: USDT_ADDRESS,
-                baseWithdrawalLimitInUSD: 7_500_000, // to confirm $7.5M
-                baseBorrowLimitInUSD: 5_000_000, // to confirm $5M
-                maxBorrowLimitInUSD: 10_000_000 // to confirm $10M
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                baseBorrowLimitInUSD: 8_000_000, // $8M
+                maxBorrowLimitInUSD: 20_000_000 // $20M
             });
             setVaultLimits(VAULT_REUSD_USDT);
             VAULT_FACTORY.setVaultAuth(REUSD_USDT_VAULT, TEAM_MULTISIG, false);
@@ -136,9 +136,9 @@ contract PayloadIGP123 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_1,
                 supplyToken: REUSD_ADDRESS,
                 borrowToken: GHO_ADDRESS,
-                baseWithdrawalLimitInUSD: 7_500_000, // to confirm $7.5M
-                baseBorrowLimitInUSD: 5_000_000, // to confirm $5M
-                maxBorrowLimitInUSD: 10_000_000 // to confirm $10M
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                baseBorrowLimitInUSD: 8_000_000, // $8M
+                maxBorrowLimitInUSD: 20_000_000 // $20M
             });
             setVaultLimits(VAULT_REUSD_GHO);
             VAULT_FACTORY.setVaultAuth(REUSD_GHO_VAULT, TEAM_MULTISIG, false);
@@ -154,7 +154,7 @@ contract PayloadIGP123 is PayloadIGPMain {
                 vaultType: VAULT_TYPE.TYPE_3,
                 supplyToken: REUSD_ADDRESS,
                 borrowToken: address(0),
-                baseWithdrawalLimitInUSD: 7_500_000, // to confirm $7.5M
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
                 baseBorrowLimitInUSD: 0,
                 maxBorrowLimitInUSD: 0
             });
@@ -171,8 +171,8 @@ contract PayloadIGP123 is PayloadIGPMain {
                     protocol: REUSD_USDC_USDT_VAULT,
                     expandPercent: 30 * 1e2, // 30%
                     expandDuration: 6 hours,
-                    baseBorrowLimit: 2_500_000 * 1e18, // to confirm ~2.5M shares (~$5M)
-                    maxBorrowLimit: 5_000_000 * 1e18 // to confirm ~5M shares (~$10M)
+                    baseBorrowLimit: 4_000_000 * 1e18, // ~4M shares (~$8M)
+                    maxBorrowLimit: 10_000_000 * 1e18 // ~10M shares (~$20M)
                 });
             setDexBorrowProtocolLimitsInShares(config_);
         }
@@ -186,8 +186,8 @@ contract PayloadIGP123 is PayloadIGPMain {
                 supplyToken: address(0),
                 borrowToken: USDT_ADDRESS,
                 baseWithdrawalLimitInUSD: 0,
-                baseBorrowLimitInUSD: 5_000_000, // to confirm $5M
-                maxBorrowLimitInUSD: 10_000_000 // to confirm $10M
+                baseBorrowLimitInUSD: 5_000_000, // $5M
+                maxBorrowLimitInUSD: 10_000_000 // $10M
             });
             setVaultLimits(VAULT_REUSD_USDT__USDT);
             VAULT_FACTORY.setVaultAuth(
@@ -208,14 +208,13 @@ contract PayloadIGP123 is PayloadIGPMain {
             tokenB: USDT_ADDRESS,
             smartCollateral: true,
             smartDebt: false,
-            baseWithdrawalLimitInUSD: 5_000_000, // TODO: confirm $5M per token
+            baseWithdrawalLimitInUSD: 5_000_000, // $5M per token
             baseBorrowLimitInUSD: 0,
             maxBorrowLimitInUSD: 0
         });
         setDexLimits(DEX_REUSD_USDT);
 
-        // TODO: confirm max supply shares
-        uint256 maxSupplyShares_ = 10_000_000 * 1e18; // ~$10M equivalent shares
+        uint256 maxSupplyShares_ = 6_000_000 * 1e18; // ~$12M equivalent shares
         IFluidDex(REUSD_USDT_DEX).updateMaxSupplyShares(maxSupplyShares_);
 
         DEX_FACTORY.setDexAuth(REUSD_USDT_DEX, TEAM_MULTISIG, false);
