@@ -112,8 +112,8 @@ The following DEXes were previously deprecated. This action completes the cleanu
 ### Action 8: Roll Out Rollback Module on Liquidity Layer
 
 - **Rollback Module** (audited by Statemind):
-  - Adds rollbackModule as a new implementation on the Liquidity Layer's InfiniteProxy
-  - Address to be set via `setRollbackModuleAddress()` by Team Multisig after deployment
+  - Adds `InfiniteProxyRollbackModule` (`0x463874c5A102ceEa919D63f748a433304D1bd1c0`) as a new implementation on the Liquidity Layer's InfiniteProxy
+  - Registers 9 function selectors for rollback registration, execution, cleanup, and view functions
 
 ### Action 9: DexFactory Cleanup
 
@@ -150,8 +150,7 @@ This proposal implements a broad set of protocol updates covering new launches, 
    - Registers D3 (`0x48956a66F1d7Df6356b2C9364ef786fD7aCACCd9`) and D4 (`0x944E4C51fCE91587f89352098Fe3C9E341fE1E65`) admin implementations to support new DEX types
 
 5. **Rollback Module and DexFactory Cleanup**
-   - Introduces the Statemind-audited rollbackModule on the Liquidity Layer for enhanced protocol safety with rollback capabilities
-   - Address to be set by Team Multisig before proposal execution
+   - Introduces the Statemind-audited `InfiniteProxyRollbackModule` (`0x463874c5A102ceEa919D63f748a433304D1bd1c0`) on the Liquidity Layer for enhanced protocol safety with rollback capabilities
    - Disables the old DexT1DeploymentLogic (`0x7db5101f12555bD7Ef11B89e4928061B7C567D27`) on DexFactory to prevent deployments using deprecated logic
 
 ## Conclusion

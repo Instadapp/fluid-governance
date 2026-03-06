@@ -1,11 +1,10 @@
 /**
  * Pre-Setup Script for IGP123 Payload Simulation
  *
- * 1. Upgrade DEX V2 and Money Market proxies (same as IGP117 setup)
- * 2. Set rollback module address on payload contract (once deployed)
+ * 1. Upgrade DEX V2 and Money Market proxies
  */
 
-import { JsonRpcProvider, ethers } from "ethers";
+import { JsonRpcProvider } from "ethers";
 
 const TEAM_MULTISIG = "0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e";
 
@@ -40,17 +39,6 @@ export async function preSetup(provider: JsonRpcProvider): Promise<void> {
         },
       ]);
     }
-
-    // TODO: Set rollback module address on payload contract after deployment
-    // const payloadAddress = "0x..."; // IGP123 payload address
-    // const rollbackModuleAddress = "0x..."; // Deployed rollback module address
-    // const iface = new ethers.Interface([
-    //   "function setRollbackModuleAddress(address rollbackModuleAddress_) external",
-    // ]);
-    // const data = iface.encodeFunctionData("setRollbackModuleAddress", [rollbackModuleAddress]);
-    // await provider.send("eth_sendTransaction", [
-    //   { from: TEAM_MULTISIG, to: payloadAddress, data, value: "0x0", gas: "0x9896800", gasPrice: "0x0" },
-    // ]);
 
     console.log("[SETUP] Pre-setup completed successfully");
   } catch (error: any) {

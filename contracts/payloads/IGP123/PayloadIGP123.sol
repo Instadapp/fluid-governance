@@ -53,16 +53,6 @@ import {IDexV2} from "../common/interfaces/IDexV2.sol";
 contract PayloadIGP123 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 123;
 
-    // TODO: Set after rollback module deployment
-    address public rollbackModuleAddress = address(0);
-
-    function setRollbackModuleAddress(
-        address rollbackModuleAddress_
-    ) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        rollbackModuleAddress = rollbackModuleAddress_;
-    }
-
     function execute() public virtual override {
         super.execute();
 
@@ -463,18 +453,21 @@ contract PayloadIGP123 is PayloadIGPMain {
 
     /// @notice Action 8: Roll out rollbackModule on Liquidity Layer (audited by Statemind)
     function action8() internal isActionSkippable(8) {
-        address newImplementation_ = PayloadIGP123(ADDRESS_THIS)
-            .rollbackModuleAddress();
-        require(newImplementation_ != address(0), "rollback-module-not-set");
+        address ROLLBACK_MODULE = 0x463874c5A102ceEa919D63f748a433304D1bd1c0;
 
-        // TODO: Set the correct function selectors for the rollback module after deployment
-        bytes4[] memory sigs_ = new bytes4[](1);
-        sigs_[0] = bytes4(
-            keccak256("rollback(address,address,address,uint256)")
-        );
+        bytes4[] memory sigs_ = new bytes4[](9);
+        sigs_[0] = 0x3ff8b31d; // registerRollbackImplementation(address,address)
+        sigs_[1] = 0x47e870e6; // rollbackDummyImplementation()
+        sigs_[2] = 0x4cc44703; // cleanupExpiredRollbackImplementation(address)
+        sigs_[3] = 0x52d3667c; // getRollbackForImplementation(address)
+        sigs_[4] = 0x553fea25; // ROLLBACK_PERIOD()
+        sigs_[5] = 0x981c829f; // registerRollbackDummyImplementation()
+        sigs_[6] = 0xb788f3a1; // TEAM_MULTISIG()
+        sigs_[7] = 0xde465d79; // rollbackImplementation(address,address)
+        sigs_[8] = 0xe7934bb5; // getRollbackDummyImplementation()
 
         IInfiniteProxy(address(LIQUIDITY)).addImplementation(
-            newImplementation_,
+            ROLLBACK_MODULE,
             sigs_
         );
     }
