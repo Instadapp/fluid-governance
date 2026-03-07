@@ -216,9 +216,6 @@ contract PayloadIGP123 is PayloadIGPMain {
         });
         setDexLimits(DEX_REUSD_USDT);
 
-        uint256 maxSupplyShares_ = 6_000_000 * 1e18; // ~$12M equivalent shares
-        IFluidDex(REUSD_USDT_DEX).updateMaxSupplyShares(maxSupplyShares_);
-
         DEX_FACTORY.setDexAuth(REUSD_USDT_DEX, TEAM_MULTISIG, false);
     }
 
