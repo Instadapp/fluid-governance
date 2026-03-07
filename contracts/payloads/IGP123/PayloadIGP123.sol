@@ -256,11 +256,7 @@ contract PayloadIGP123 is PayloadIGPMain {
             address[] memory borrowTokens = new address[](1);
             borrowTokens[0] = USDTb_ADDRESS;
 
-            LIQUIDITY.pauseUser(
-                wstUSR_USDTb_VAULT,
-                supplyTokens,
-                borrowTokens
-            );
+            LIQUIDITY.pauseUser(wstUSR_USDTb_VAULT, supplyTokens, borrowTokens);
         }
 
         {
