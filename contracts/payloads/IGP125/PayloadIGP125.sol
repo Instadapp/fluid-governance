@@ -64,7 +64,7 @@ contract PayloadIGP125 is PayloadIGPMain {
 
     /// @notice Action 1: Unpause vault 135 (wstUSR-USDC<>USDC-USDT concentrated) at both DEXes and set withdrawal limits
     function action1() internal isActionSkippable(1) {
-        address VAULT_135 = getVaultAddress(135);
+        address wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT = getVaultAddress(135);
         address wstUSR_USDC_DEX = getDexAddress(27);
         address USDC_USDT_CONCENTRATED_DEX = getDexAddress(34);
 
@@ -74,7 +74,7 @@ contract PayloadIGP125 is PayloadIGPMain {
                 memory configs_ = new IFluidAdminDex.UserSupplyConfig[](1);
 
             configs_[0] = IFluidAdminDex.UserSupplyConfig({
-                user: VAULT_135,
+                user: wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT,
                 expandPercent: 50 * 1e2, // 50%
                 expandDuration: 6 hours,
                 baseWithdrawalLimit: 5_000_000 * 1e18 // 5M in shares
@@ -83,11 +83,11 @@ contract PayloadIGP125 is PayloadIGPMain {
             IFluidDex(wstUSR_USDC_DEX).updateUserSupplyConfigs(configs_);
         }
 
-        // Step 2: Unpause vault 135 at wstUSR-USDC DEX (supply side)
-        IFluidDex(wstUSR_USDC_DEX).pauseUser(VAULT_135, false, false);
+        // Step 2: Unpause at wstUSR-USDC DEX (supply side)
+        IFluidDex(wstUSR_USDC_DEX).pauseUser(wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT, false, false);
 
-        // Step 3: Unpause vault 135 at USDC-USDT concentrated DEX (borrow side, payback only — borrow limits stay restricted)
-        IFluidDex(USDC_USDT_CONCENTRATED_DEX).pauseUser(VAULT_135, false, false);
+        // Step 3: Unpause at USDC-USDT concentrated DEX (borrow side, payback only — borrow limits stay restricted)
+        IFluidDex(USDC_USDT_CONCENTRATED_DEX).pauseUser(wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT, false, false);
     }
 
     /**
