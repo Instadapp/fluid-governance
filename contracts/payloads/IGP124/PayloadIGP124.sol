@@ -39,7 +39,7 @@ import {PayloadIGPConstants} from "../common/constants.sol";
 import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 
-/// @notice IGP124: Transfer 250,000 USDC from Treasury to Fluid Foundation
+/// @notice IGP124: Transfer 250,000 GHO from Treasury to Fluid Foundation
 contract PayloadIGP124 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 124;
 
@@ -51,7 +51,7 @@ contract PayloadIGP124 is PayloadIGPMain {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Transfer 250,000 USDC from Treasury to Fluid Foundation
+        // Action 1: Transfer 250,000 GHO from Treasury to Fluid Foundation
         action1();
     }
 
@@ -67,7 +67,7 @@ contract PayloadIGP124 is PayloadIGPMain {
      * |__________________________________
      */
 
-    /// @notice Action 1: Transfer 250,000 USDC from Treasury to Fluid Foundation
+    /// @notice Action 1: Transfer 250,000 GHO from Treasury to Fluid Foundation
     function action1() internal isActionSkippable(1) {
         string[] memory targets = new string[](1);
         bytes[] memory encodedSpells = new bytes[](1);
@@ -75,14 +75,14 @@ contract PayloadIGP124 is PayloadIGPMain {
         string
             memory withdrawSignature = "withdraw(address,uint256,address,uint256,uint256)";
 
-        // Spell 1: Transfer 250,000 USDC to Fluid Foundation
+        // Spell 1: Transfer 250,000 GHO to Fluid Foundation
         {
-            uint256 USDC_AMOUNT = 250_000 * 1e6; // 250,000 USDC
+            uint256 GHO_AMOUNT = 250_000 * 1e18; // 250,000 GHO
             targets[0] = "BASIC-A";
             encodedSpells[0] = abi.encodeWithSignature(
                 withdrawSignature,
-                USDC_ADDRESS,
-                USDC_AMOUNT,
+                GHO_ADDRESS,
+                GHO_AMOUNT,
                 FLUID_FOUNDATION_ADDRESS,
                 0,
                 0
