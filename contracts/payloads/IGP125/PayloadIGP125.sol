@@ -77,7 +77,7 @@ contract PayloadIGP125 is PayloadIGPMain {
                 user: wstUSR_USDC__USDC_USDT_CONCENTRATED_VAULT,
                 expandPercent: 50 * 1e2, // 50%
                 expandDuration: 6 hours,
-                baseWithdrawalLimit: 5_000_000 * 1e18 // 5M in shares
+                baseWithdrawalLimit: 2_500_000 * 1e18 // 2.5M shares
             });
 
             IFluidDex(wstUSR_USDC_DEX).updateUserSupplyConfigs(configs_);
