@@ -43,10 +43,6 @@ import {PayloadIGPMain} from "../common/main.sol";
 contract PayloadIGP124 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 124;
 
-    /// @notice Fluid Foundation wallet address (Cayman Islands non-profit entity)
-    address public constant FLUID_FOUNDATION_ADDRESS =
-        0xde0377eF25aD02dBcFbc87D632E46bf1972A0Dc3;
-
     function execute() public virtual override {
         super.execute();
 
@@ -82,7 +78,7 @@ contract PayloadIGP124 is PayloadIGPMain {
                 withdrawSignature,
                 F_GHO_ADDRESS,
                 GHO_AMOUNT,
-                FLUID_FOUNDATION_ADDRESS,
+                FLUID_FOUNDATION,
                 0,
                 0
             );

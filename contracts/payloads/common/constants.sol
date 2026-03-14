@@ -180,6 +180,10 @@ contract PayloadIGPConstants {
     address internal constant PAXG_ADDRESS =
         0x45804880De22913dAFE09f4980848ECE6EcbAf78;
 
+    // Fluid Foundation
+    address internal constant FLUID_FOUNDATION =
+        0xde0377eF25aD02dBcFbc87D632E46bf1972A0Dc3;
+
     // fTokens
     address internal constant F_USDT_ADDRESS =
         0x5C20B550819128074FD538Edf79791733ccEdd18;
