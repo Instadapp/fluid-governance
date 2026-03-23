@@ -51,7 +51,7 @@ contract PayloadIGP126 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 126;
 
     address public constant OLD_USER_MODULE =
-        0x8bd91778fcF8bcF4e578710C9F5AD9bC852DC103;
+        0x2e4015880367b7C2613Df77f816739D97A8C46aD;
 
     // --- Configurable addresses (Team Multisig can set before execution) ---
     address public userModuleAddress = address(0);
