@@ -2,14 +2,22 @@
  * Pre-Setup Script for IGP126 Payload Simulation
  *
  * 1. Mock Chainlink feed 0x66ac... so latestRoundData() returns fixed values (for FluidGenericOracle._readChainlinkSource / OSETH oracle)
+ * 2. Set configurable addresses on the payload (userModuleAddress, onBehalfOfAuth, vaultFactoryOwner)
  */
 
-import { JsonRpcProvider } from "ethers";
+import { JsonRpcProvider, ethers } from "ethers";
 import * as fs from "fs";
 import * as path from "path";
 
+const TEAM_MULTISIG = "0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e";
+
 /** Chainlink feed mocked so latestRoundData() returns (1, 106475560, 1771926611, 1771926611, 1) */
 const CHAINLINK_FEED_TO_MOCK = "0x66ac817f997efd114edfcccdce99f3268557b32c";
+
+/** Dummy addresses for simulation (non-zero so require checks pass) */
+const DUMMY_USER_MODULE = "0x0000000000000000000000000000000000000001";
+const DUMMY_ON_BEHALF_OF_AUTH = "0x0000000000000000000000000000000000000002";
+const DUMMY_VAULT_FACTORY_OWNER = "0x0000000000000000000000000000000000000003";
 
 async function mockChainlinkFeed(provider: JsonRpcProvider): Promise<void> {
   const artifactPath = path.join(
@@ -44,11 +52,72 @@ async function mockChainlinkFeed(provider: JsonRpcProvider): Promise<void> {
   await provider.send("tenderly_setCode", [CHAINLINK_FEED_TO_MOCK, bytecode]);
 }
 
-export async function preSetup(provider: JsonRpcProvider): Promise<void> {
+async function setConfigurableAddresses(
+  provider: JsonRpcProvider,
+  payloadAddress: string,
+): Promise<void> {
+  const iface = new ethers.Interface([
+    "function setUserModuleAddress(address) external",
+    "function setOnBehalfOfAuth(address) external",
+    "function setVaultFactoryOwner(address) external",
+  ]);
+
+  const calls: { name: string; data: string }[] = [
+    {
+      name: "setUserModuleAddress",
+      data: iface.encodeFunctionData("setUserModuleAddress", [
+        DUMMY_USER_MODULE,
+      ]),
+    },
+    {
+      name: "setOnBehalfOfAuth",
+      data: iface.encodeFunctionData("setOnBehalfOfAuth", [
+        DUMMY_ON_BEHALF_OF_AUTH,
+      ]),
+    },
+    {
+      name: "setVaultFactoryOwner",
+      data: iface.encodeFunctionData("setVaultFactoryOwner", [
+        DUMMY_VAULT_FACTORY_OWNER,
+      ]),
+    },
+  ];
+
+  for (const call of calls) {
+    const txHash = await provider.send("eth_sendTransaction", [
+      {
+        from: TEAM_MULTISIG,
+        to: payloadAddress,
+        data: call.data,
+        value: "0x0",
+        gas: "0x989680",
+        gasPrice: "0x0",
+      },
+    ]);
+    const receipt = await provider.waitForTransaction(txHash);
+    if (!receipt || receipt.status !== 1) {
+      throw new Error(`${call.name} transaction failed`);
+    }
+    console.log(`[SETUP] ${call.name} set successfully`);
+  }
+}
+
+export async function preSetup(
+  provider: JsonRpcProvider,
+  payloadAddress?: string,
+): Promise<void> {
   console.log("[SETUP] Running pre-setup for IGP126...");
 
   try {
-    await mockChainlinkFeed(provider); // OSETH oracle feed has a built-in max time validation
+    await mockChainlinkFeed(provider);
+
+    if (payloadAddress) {
+      await setConfigurableAddresses(provider, payloadAddress);
+    } else {
+      console.warn(
+        "[SETUP] No payload address provided, skipping configurable address setup",
+      );
+    }
 
     console.log("[SETUP] Pre-setup completed successfully");
   } catch (error: any) {

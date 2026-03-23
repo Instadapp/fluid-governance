@@ -519,7 +519,7 @@ class TenderlyGovernanceSimulator {
     }
   }
 
-  async runPreSetup(provider: JsonRpcProvider): Promise<void> {
+  async runPreSetup(provider: JsonRpcProvider, payloadAddress?: string): Promise<void> {
     console.log('\n=== Step 3: Running Pre-Setup (if available) ===');
 
     const setupPath = path.join(
@@ -542,7 +542,7 @@ class TenderlyGovernanceSimulator {
 
       if (typeof setupModule.preSetup === 'function') {
         console.log('Executing preSetup...');
-        await setupModule.preSetup(provider);
+        await setupModule.preSetup(provider, payloadAddress);
         console.log('[SUCCESS] Pre-setup completed');
         console.log('[STAGE:COMPLETED] preSetup');
       }
@@ -1152,7 +1152,7 @@ ${vnetSection}
         staticNetwork: true,
         polling: false
       });
-      await this.runPreSetup(provider);
+      await this.runPreSetup(provider, payloadAddress);
 
       const result = await this.runGovernanceSimulation(vnetConfig, payloadAddress);
 
