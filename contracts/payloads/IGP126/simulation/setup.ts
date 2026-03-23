@@ -2,7 +2,7 @@
  * Pre-Setup Script for IGP126 Payload Simulation
  *
  * 1. Mock Chainlink feed 0x66ac... so latestRoundData() returns fixed values (for FluidGenericOracle._readChainlinkSource / OSETH oracle)
- * 2. Set configurable addresses on the payload (userModuleAddress, onBehalfOfAuth, vaultFactoryOwner)
+ * 2. Set configurable addresses on the payload (userModuleAddress, dummyImplementationAddress, onBehalfOfAuth, vaultFactoryOwner)
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
@@ -16,6 +16,8 @@ const CHAINLINK_FEED_TO_MOCK = "0x66ac817f997efd114edfcccdce99f3268557b32c";
 
 /** Dummy addresses for simulation (non-zero so require checks pass) */
 const DUMMY_USER_MODULE = "0x0000000000000000000000000000000000000001";
+const DUMMY_DUMMY_IMPLEMENTATION =
+  "0x0000000000000000000000000000000000000004";
 const DUMMY_ON_BEHALF_OF_AUTH = "0x0000000000000000000000000000000000000002";
 const DUMMY_VAULT_FACTORY_OWNER = "0x0000000000000000000000000000000000000003";
 
@@ -58,6 +60,7 @@ async function setConfigurableAddresses(
 ): Promise<void> {
   const iface = new ethers.Interface([
     "function setUserModuleAddress(address) external",
+    "function setDummyImplementationAddress(address) external",
     "function setOnBehalfOfAuth(address) external",
     "function setVaultFactoryOwner(address) external",
   ]);
@@ -67,6 +70,12 @@ async function setConfigurableAddresses(
       name: "setUserModuleAddress",
       data: iface.encodeFunctionData("setUserModuleAddress", [
         DUMMY_USER_MODULE,
+      ]),
+    },
+    {
+      name: "setDummyImplementationAddress",
+      data: iface.encodeFunctionData("setDummyImplementationAddress", [
+        DUMMY_DUMMY_IMPLEMENTATION,
       ]),
     },
     {

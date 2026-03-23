@@ -43,6 +43,8 @@ interface IFluidLiquidityRollback {
         address oldImplementation_,
         address newImplementation_
     ) external;
+
+    function registerRollbackDummyImplementation() external;
 }
 
 interface IOwnable {
@@ -59,12 +61,20 @@ contract PayloadIGP126 is PayloadIGPMain {
 
     // --- Configurable addresses (Team Multisig can set before execution) ---
     address public userModuleAddress = address(0);
+    address public dummyImplementationAddress = address(0);
     address public onBehalfOfAuth = address(0);
     address public vaultFactoryOwner = address(0);
 
     function setUserModuleAddress(address userModuleAddress_) external {
         require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
         userModuleAddress = userModuleAddress_;
+    }
+
+    function setDummyImplementationAddress(
+        address dummyImplementationAddress_
+    ) external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        dummyImplementationAddress = dummyImplementationAddress_;
     }
 
     function setOnBehalfOfAuth(address onBehalfOfAuth_) external {
@@ -89,14 +99,20 @@ contract PayloadIGP126 is PayloadIGPMain {
         // Action 3: Update UserModule LL to settable address
         action3();
 
-        // Action 4: Set a contract as auth on LL (for operateOnBehalfOf)
+        // Action 4: Register DummyImplementation rollback on RollbackModule
         action4();
 
-        // Action 5: Set new owner of VaultFactory (for position transfer wrapper)
+        // Action 5: Update DummyImplementation on LL to settable address
         action5();
 
-        // Action 6: Set max restricted borrow limits on all wstUSR vaults
+        // Action 6: Set a contract as auth on LL (for operateOnBehalfOf)
         action6();
+
+        // Action 7: Set new owner of VaultFactory (for position transfer wrapper)
+        action7();
+
+        // Action 8: Set max restricted borrow limits on all wstUSR vaults
+        action8();
     }
 
     function verifyProposal() public view override {}
@@ -159,8 +175,25 @@ contract PayloadIGP126 is PayloadIGPMain {
         );
     }
 
-    /// @notice Action 4: Set a contract as auth on LL (for operateOnBehalfOf)
+    /// @notice Action 4: Register DummyImplementation rollback on RollbackModule (must happen before the actual update)
     function action4() internal isActionSkippable(4) {
+        IFluidLiquidityRollback(address(LIQUIDITY))
+            .registerRollbackDummyImplementation();
+    }
+
+    /// @notice Action 5: Update DummyImplementation on LL to settable address
+    function action5() internal isActionSkippable(5) {
+        address newDummyImpl_ = PayloadIGP126(ADDRESS_THIS)
+            .dummyImplementationAddress();
+        require(newDummyImpl_ != address(0), "dummy-impl-not-set");
+
+        IInfiniteProxy(address(LIQUIDITY)).setDummyImplementation(
+            newDummyImpl_
+        );
+    }
+
+    /// @notice Action 6: Set a contract as auth on LL (for operateOnBehalfOf)
+    function action6() internal isActionSkippable(6) {
         address authAddress_ = PayloadIGP126(ADDRESS_THIS).onBehalfOfAuth();
         require(authAddress_ != address(0), "on-behalf-of-auth-not-set");
 
@@ -175,16 +208,16 @@ contract PayloadIGP126 is PayloadIGPMain {
         LIQUIDITY.updateAuths(authsStatus_);
     }
 
-    /// @notice Action 5: Set new owner of VaultFactory (for position transfer wrapper)
-    function action5() internal isActionSkippable(5) {
+    /// @notice Action 7: Set new owner of VaultFactory (for position transfer wrapper)
+    function action7() internal isActionSkippable(7) {
         address newOwner_ = PayloadIGP126(ADDRESS_THIS).vaultFactoryOwner();
         require(newOwner_ != address(0), "vault-factory-owner-not-set");
 
         IOwnable(address(VAULT_FACTORY)).transferOwnership(newOwner_);
     }
 
-    /// @notice Action 6: Set max restricted borrow limits on all wstUSR vaults
-    function action6() internal isActionSkippable(6) {
+    /// @notice Action 8: Set max restricted borrow limits on all wstUSR vaults
+    function action8() internal isActionSkippable(8) {
         // --- Borrow limits at Liquidity Layer (T1 and T2 vaults) ---
 
         // Vault 110: wstUSR / USDC (T1)
