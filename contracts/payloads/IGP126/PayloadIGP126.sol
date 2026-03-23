@@ -139,11 +139,11 @@ contract PayloadIGP126 is PayloadIGPMain {
         VAULT_FACTORY.setVaultAuth(getVaultAddress(110), TEAM_MULTISIG, true); // wstUSR / USDC
         VAULT_FACTORY.setVaultAuth(getVaultAddress(111), TEAM_MULTISIG, true); // wstUSR / USDT
         VAULT_FACTORY.setVaultAuth(getVaultAddress(112), TEAM_MULTISIG, true); // wstUSR / GHO
-        VAULT_FACTORY.setVaultAuth(getVaultAddress(113), TEAM_MULTISIG, true); // wstUSR-USDT <> USDT
+        // skip 113 wstUSR-USDT / USDT: already max restricted / deprecated
         VAULT_FACTORY.setVaultAuth(getVaultAddress(133), TEAM_MULTISIG, true); // wstUSR-USDC <> USDC
         VAULT_FACTORY.setVaultAuth(getVaultAddress(134), TEAM_MULTISIG, true); // wstUSR-USDC <> USDC-USDT
         VAULT_FACTORY.setVaultAuth(getVaultAddress(135), TEAM_MULTISIG, true); // wstUSR-USDC <> USDC-USDT concentrated
-        VAULT_FACTORY.setVaultAuth(getVaultAddress(142), TEAM_MULTISIG, true); // wstUSR / USDtb
+        // skip 142 wstUSR / USDtb: already max restricted / deprecated
         VAULT_FACTORY.setVaultAuth(getVaultAddress(143), TEAM_MULTISIG, true); // wstUSR <> USDC-USDT
         VAULT_FACTORY.setVaultAuth(getVaultAddress(144), TEAM_MULTISIG, true); // wstUSR <> USDC-USDT concentrated
 
@@ -241,14 +241,12 @@ contract PayloadIGP126 is PayloadIGPMain {
         // Vault 112: wstUSR / GHO (T1)
         setBorrowProtocolLimitsPaused(getVaultAddress(112), GHO_ADDRESS);
 
-        // Vault 113: wstUSR-USDT <> USDT (T2)
-        setBorrowProtocolLimitsPaused(getVaultAddress(113), USDT_ADDRESS);
+        // skip 113 wstUSR-USDT / USDT: already max restricted / deprecated
 
         // Vault 133: wstUSR-USDC <> USDC (T2)
         setBorrowProtocolLimitsPaused(getVaultAddress(133), USDC_ADDRESS);
 
-        // Vault 142: wstUSR / USDtb (T1)
-        setBorrowProtocolLimitsPaused(getVaultAddress(142), USDTb_ADDRESS);
+        // skip 142 wstUSR / USDtb: already max restricted / deprecated
 
         // --- Borrow limits at DEX level (T3 and T4 vaults) ---
 
@@ -258,11 +256,7 @@ contract PayloadIGP126 is PayloadIGPMain {
         // Vault 134: wstUSR-USDC <> USDC-USDT (T4) — borrows from USDC-USDT DEX
         setBorrowProtocolLimitsPausedDex(USDC_USDT_DEX, getVaultAddress(134));
 
-        // Vault 135: wstUSR-USDC <> USDC-USDT concentrated (T4) — borrows from USDC-USDT concentrated DEX
-        setBorrowProtocolLimitsPausedDex(
-            USDC_USDT_CONCENTRATED_DEX,
-            getVaultAddress(135)
-        );
+        // skip 135 wstUSR-USDC / USDC-USDT concentrated: already max restricted / deprecated
 
         // Vault 143: wstUSR <> USDC-USDT (T3) — borrows from USDC-USDT DEX
         setBorrowProtocolLimitsPausedDex(USDC_USDT_DEX, getVaultAddress(143));
