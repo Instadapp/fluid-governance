@@ -59,6 +59,12 @@ contract PayloadIGP126 is PayloadIGPMain {
     address public constant OLD_USER_MODULE =
         0x2e4015880367b7C2613Df77f816739D97A8C46aD;
 
+    /// @dev IFluidLiquidityLogic.operateOnBehalfOf(address,address,int256,int256,bytes)
+    bytes4 private constant OPERATE_ON_BEHALF_OF_SIG =
+        bytes4(
+            keccak256("operateOnBehalfOf(address,address,int256,int256,bytes)")
+        );
+
     // --- Configurable addresses (Team Multisig can set before execution) ---
     address public userModuleAddress = address(0);
     address public dummyImplementationAddress = address(0);
@@ -162,8 +168,14 @@ contract PayloadIGP126 is PayloadIGPMain {
             .userModuleAddress();
         require(newUserModule_ != address(0), "user-module-not-set");
 
-        bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
+        bytes4[] memory baseSigs_ = IInfiniteProxy(address(LIQUIDITY))
             .getImplementationSigs(OLD_USER_MODULE);
+        uint256 len = baseSigs_.length;
+        bytes4[] memory sigs_ = new bytes4[](len + 1);
+        for (uint256 i; i < len; ++i) {
+            sigs_[i] = baseSigs_[i];
+        }
+        sigs_[len] = OPERATE_ON_BEHALF_OF_SIG;
 
         IInfiniteProxy(address(LIQUIDITY)).removeImplementation(
             OLD_USER_MODULE
