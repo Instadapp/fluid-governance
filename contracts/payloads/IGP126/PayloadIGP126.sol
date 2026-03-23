@@ -45,6 +45,10 @@ interface IFluidLiquidityRollback {
     ) external;
 }
 
+interface IOwnable {
+    function transferOwnership(address newOwner) external;
+}
+
 /// @notice IGP126: Add TEAM_MULTISIG as auth on wstUSR vaults/DEXes, register & upgrade UserModule LL via RollbackModule,
 ///         set LL auth for operateOnBehalfOf, and set new VaultFactory owner for position transfer wrapper.
 contract PayloadIGP126 is PayloadIGPMain {
@@ -176,7 +180,7 @@ contract PayloadIGP126 is PayloadIGPMain {
         address newOwner_ = PayloadIGP126(ADDRESS_THIS).vaultFactoryOwner();
         require(newOwner_ != address(0), "vault-factory-owner-not-set");
 
-        IInfiniteProxy(address(VAULT_FACTORY)).setAdmin(newOwner_);
+        IOwnable(address(VAULT_FACTORY)).transferOwnership(newOwner_);
     }
 
     /// @notice Action 6: Set max restricted borrow limits on all wstUSR vaults
