@@ -73,8 +73,47 @@ contract PayloadIGP126 is PayloadIGPMain {
     address public pauseableAuth = address(0);
     address public pausableDexAuth = address(0);
 
+    // --- Lock flags (once true, the corresponding address can no longer be changed) ---
+    bool public userModuleAddressLocked;
+    bool public dummyImplementationAddressLocked;
+    bool public onBehalfOfAuthLocked;
+    bool public vaultFactoryOwnerLocked;
+    bool public pauseableAuthLocked;
+    bool public pausableDexAuthLocked;
+
+    function lockUserModuleAddress() external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        userModuleAddressLocked = true;
+    }
+
+    function lockDummyImplementationAddress() external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        dummyImplementationAddressLocked = true;
+    }
+
+    function lockOnBehalfOfAuth() external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        onBehalfOfAuthLocked = true;
+    }
+
+    function lockVaultFactoryOwner() external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        vaultFactoryOwnerLocked = true;
+    }
+
+    function lockPauseableAuth() external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        pauseableAuthLocked = true;
+    }
+
+    function lockPausableDexAuth() external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        pausableDexAuthLocked = true;
+    }
+
     function setUserModuleAddress(address userModuleAddress_) external {
         require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        require(!userModuleAddressLocked, "locked");
         userModuleAddress = userModuleAddress_;
     }
 
@@ -82,26 +121,31 @@ contract PayloadIGP126 is PayloadIGPMain {
         address dummyImplementationAddress_
     ) external {
         require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        require(!dummyImplementationAddressLocked, "locked");
         dummyImplementationAddress = dummyImplementationAddress_;
     }
 
     function setOnBehalfOfAuth(address onBehalfOfAuth_) external {
         require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        require(!onBehalfOfAuthLocked, "locked");
         onBehalfOfAuth = onBehalfOfAuth_;
     }
 
     function setVaultFactoryOwner(address vaultFactoryOwner_) external {
         require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        require(!vaultFactoryOwnerLocked, "locked");
         vaultFactoryOwner = vaultFactoryOwner_;
     }
 
     function setPauseableAuth(address pauseableAuth_) external {
         require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        require(!pauseableAuthLocked, "locked");
         pauseableAuth = pauseableAuth_;
     }
 
     function setPausableDexAuth(address pausableDexAuth_) external {
         require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        require(!pausableDexAuthLocked, "locked");
         pausableDexAuth = pausableDexAuth_;
     }
 
