@@ -152,7 +152,7 @@ contract PayloadIGP126 is PayloadIGPMain {
 
         // wstUSR DEXes
         DEX_FACTORY.setDexAuth(getDexAddress(27), TEAM_MULTISIG, true); // wstUSR-USDC
-        DEX_FACTORY.setDexAuth(getDexAddress(29), TEAM_MULTISIG, true); // wstUSR-USDT
+        // skip 29 wstUSR-USDT: already max restricted / deprecated
     }
 
     /// @notice Action 2: Register UserModule LL upgrade on RollbackModule (must happen before the actual upgrade)
@@ -274,7 +274,7 @@ contract PayloadIGP126 is PayloadIGPMain {
     /// @notice Action 9: Pause `swapAndArbitrage` on all wstUSR-related DEXes
     function action9() internal isActionSkippable(9) {
         IFluidDex(getDexAddress(27)).pauseSwapAndArbitrage(); // wstUSR-USDC
-        IFluidDex(getDexAddress(29)).pauseSwapAndArbitrage(); // wstUSR-USDT
+        // skip 29 wstUSR-USDT: already max restricted / deprecated
     }
 
     /**
