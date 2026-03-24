@@ -52,7 +52,7 @@ interface IOwnable {
 }
 
 /// @notice IGP126: Add TEAM_MULTISIG as auth on wstUSR vaults/DEXes, register & upgrade UserModule LL via RollbackModule,
-///         set LL auth for operateOnBehalfOf, and set new VaultFactory owner for position transfer wrapper.
+///         set LL auth for operateOnBehalfOf, set new VaultFactory owner, max-restrict borrows, pause wstUSR DEX swapAndArbitrage.
 contract PayloadIGP126 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 126;
 
@@ -119,6 +119,9 @@ contract PayloadIGP126 is PayloadIGPMain {
 
         // Action 8: Set max restricted borrow limits on all wstUSR vaults
         action8();
+
+        // Action 9: Pause swapAndArbitrage on all wstUSR-related DEXes
+        action9();
     }
 
     function verifyProposal() public view override {}
@@ -266,6 +269,12 @@ contract PayloadIGP126 is PayloadIGPMain {
             USDC_USDT_CONCENTRATED_DEX,
             getVaultAddress(144)
         );
+    }
+
+    /// @notice Action 9: Pause `swapAndArbitrage` on all wstUSR-related DEXes
+    function action9() internal isActionSkippable(9) {
+        IFluidDex(getDexAddress(27)).pauseSwapAndArbitrage(); // wstUSR-USDC
+        IFluidDex(getDexAddress(29)).pauseSwapAndArbitrage(); // wstUSR-USDT
     }
 
     /**
