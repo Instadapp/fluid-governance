@@ -70,6 +70,8 @@ contract PayloadIGP126 is PayloadIGPMain {
     address public dummyImplementationAddress = address(0);
     address public onBehalfOfAuth = address(0);
     address public vaultFactoryOwner = address(0);
+    address public pauseableAuth = address(0);
+    address public pausableDexAuth = address(0);
 
     function setUserModuleAddress(address userModuleAddress_) external {
         require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
@@ -91,6 +93,16 @@ contract PayloadIGP126 is PayloadIGPMain {
     function setVaultFactoryOwner(address vaultFactoryOwner_) external {
         require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
         vaultFactoryOwner = vaultFactoryOwner_;
+    }
+
+    function setPauseableAuth(address pauseableAuth_) external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        pauseableAuth = pauseableAuth_;
+    }
+
+    function setPausableDexAuth(address pausableDexAuth_) external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        pausableDexAuth = pausableDexAuth_;
     }
 
     function execute() public virtual override {
@@ -122,6 +134,12 @@ contract PayloadIGP126 is PayloadIGPMain {
 
         // Action 9: Pause swapAndArbitrage on all wstUSR-related DEXes
         action9();
+
+        // Action 10: Set pauseableAuth as auth on LL
+        action10();
+
+        // Action 11: Set pausableDexAuth as globalAuth on DexFactory
+        action11();
     }
 
     function verifyProposal() public view override {}
@@ -275,6 +293,30 @@ contract PayloadIGP126 is PayloadIGPMain {
     function action9() internal isActionSkippable(9) {
         IFluidDex(getDexAddress(27)).pauseSwapAndArbitrage(); // wstUSR-USDC
         // skip 29 wstUSR-USDT: already max restricted / deprecated
+    }
+
+    /// @notice Action 10: Set pauseableAuth as auth on Liquidity Layer
+    function action10() internal isActionSkippable(10) {
+        address authAddress_ = PayloadIGP126(ADDRESS_THIS).pauseableAuth();
+        require(authAddress_ != address(0), "pauseable-auth-not-set");
+
+        FluidLiquidityAdminStructs.AddressBool[]
+            memory authsStatus_ = new FluidLiquidityAdminStructs.AddressBool[](
+                1
+            );
+        authsStatus_[0] = FluidLiquidityAdminStructs.AddressBool({
+            addr: authAddress_,
+            value: true
+        });
+        LIQUIDITY.updateAuths(authsStatus_);
+    }
+
+    /// @notice Action 11: Set pausableDexAuth as globalAuth on DexFactory
+    function action11() internal isActionSkippable(11) {
+        address authAddress_ = PayloadIGP126(ADDRESS_THIS).pausableDexAuth();
+        require(authAddress_ != address(0), "pausable-dex-auth-not-set");
+
+        DEX_FACTORY.setGlobalAuth(authAddress_, true);
     }
 
     /**

@@ -2,7 +2,7 @@
  * Pre-Setup Script for IGP126 Payload Simulation
  *
  * 1. Mock Chainlink feed 0x66ac... so latestRoundData() returns fixed values (for FluidGenericOracle._readChainlinkSource / OSETH oracle)
- * 2. Set configurable addresses on the payload (userModuleAddress, dummyImplementationAddress, onBehalfOfAuth, vaultFactoryOwner)
+ * 2. Set configurable addresses on the payload (userModuleAddress, dummyImplementationAddress, onBehalfOfAuth, vaultFactoryOwner, pauseableAuth, pausableDexAuth)
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
@@ -20,6 +20,8 @@ const DUMMY_DUMMY_IMPLEMENTATION =
   "0x0000000000000000000000000000000000000004";
 const DUMMY_ON_BEHALF_OF_AUTH = "0x0000000000000000000000000000000000000002";
 const DUMMY_VAULT_FACTORY_OWNER = "0x0000000000000000000000000000000000000003";
+const DUMMY_PAUSEABLE_AUTH = "0x0000000000000000000000000000000000000005";
+const DUMMY_PAUSABLE_DEX_AUTH = "0x0000000000000000000000000000000000000006";
 
 async function mockChainlinkFeed(provider: JsonRpcProvider): Promise<void> {
   const artifactPath = path.join(
@@ -63,6 +65,8 @@ async function setConfigurableAddresses(
     "function setDummyImplementationAddress(address) external",
     "function setOnBehalfOfAuth(address) external",
     "function setVaultFactoryOwner(address) external",
+    "function setPauseableAuth(address) external",
+    "function setPausableDexAuth(address) external",
   ]);
 
   const calls: { name: string; data: string }[] = [
@@ -88,6 +92,18 @@ async function setConfigurableAddresses(
       name: "setVaultFactoryOwner",
       data: iface.encodeFunctionData("setVaultFactoryOwner", [
         DUMMY_VAULT_FACTORY_OWNER,
+      ]),
+    },
+    {
+      name: "setPauseableAuth",
+      data: iface.encodeFunctionData("setPauseableAuth", [
+        DUMMY_PAUSEABLE_AUTH,
+      ]),
+    },
+    {
+      name: "setPausableDexAuth",
+      data: iface.encodeFunctionData("setPausableDexAuth", [
+        DUMMY_PAUSABLE_DEX_AUTH,
       ]),
     },
   ];
