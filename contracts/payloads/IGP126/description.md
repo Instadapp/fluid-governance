@@ -1,8 +1,8 @@
-# wstUSR Migration Prep, Liquidity Layer Upgrades, Pauseable Auth, VaultFactory Ownership, and reUSD-USDT/USDC-USDT T4 Vault Launch
+# wstUSR Migration Prep, Liquidity Layer Upgrades, Pauseable Auth, and VaultFactory Ownership Transfer
 
 ## Summary
 
-This proposal implements protocol updates across five areas: (1) adds Team Multisig authorization on active wstUSR vaults and DEXes, max-restricts their borrow limits, and pauses swapAndArbitrage to prepare for wstUSR migration, (2) upgrades the Liquidity Layer UserModule and DummyImplementation via the RollbackModule with rollback safety registrations, and adds a new LL auth for `operateOnBehalfOf`, (3) registers pauseable auth contracts on the Liquidity Layer and DexFactory for emergency pause capabilities, (4) transfers VaultFactory ownership to enable a position transfer wrapper, and (5) launches a new reUSD-USDT/USDC-USDT T4 vault (Vault 165) with operational limits and increases the reUSD-USDT DEX capacity to grow the USDC-USDT pool and attract net new USDT supply.
+This proposal implements protocol updates across four areas: (1) adds Team Multisig authorization on active wstUSR vaults and DEXes, max-restricts their borrow limits, and pauses swapAndArbitrage to prepare for wstUSR migration, (2) upgrades the Liquidity Layer UserModule and DummyImplementation via the RollbackModule with rollback safety registrations, and adds a new LL auth for `operateOnBehalfOf`, (3) registers pauseable auth contracts on the Liquidity Layer and DexFactory for emergency pause capabilities, and (4) transfers VaultFactory ownership to enable a position transfer wrapper.
 
 All implementation addresses (`userModuleAddress`, `dummyImplementationAddress`, `onBehalfOfAuth`, `vaultFactoryOwner`, `pauseableAuth`, `pausableDexAuth`) are configurable by Team Multisig before governance execution.
 
@@ -96,33 +96,9 @@ Applies max-restriction borrow protocol limits (0.01% expand, max duration, mini
 - Enables the pausable contract to execute emergency pauses on DEX protocols
 - Requires `pausableDexAuth` to be set by Team Multisig before execution
 
-### Action 12: Launch reUSD-USDT / USDC-USDT T4 Vault (Vault 165)
-
-Configures the newly deployed reUSD-USDT / USDC-USDT T4 vault with operational limits and updates the reUSD-USDT DEX to support increased capacity.
-
-- **Vault ID 165**<br>
-  **reUSD-USDT / USDC-USDT (TYPE 4)**:
-
-  **Supply Limits** (on reUSD-USDT DEX, Pool 44 — smart collateral):
-  - **Base Withdrawal Limit**: ~4M shares (~$8M)
-  - **Expand Percent**: 30%
-  - **Expand Duration**: 6 hours
-
-  **Borrow Limits** (on USDC-USDT DEX, Pool 2 — smart debt):
-  - **Base Borrow Limit**: ~2.5M shares (~$5M)
-  - **Max Borrow Limit**: ~5M shares (~$10M)
-  - **Expand Percent**: 30%
-  - **Expand Duration**: 6 hours
-
-  **reUSD-USDT DEX (Pool 44) Updates**:
-  - **Max Supply Shares**: ~12M shares (~$24M)
-  - **Token LL Limits**: $10M base withdrawal per token (smart collateral enabled, smart debt disabled)
-
-  **Authorization**: Set Team Multisig as vault auth
-
 ## Description
 
-This proposal covers five areas of protocol maintenance, infrastructure upgrades, and growth:
+This proposal covers four areas of protocol maintenance and infrastructure upgrades:
 
 1. **wstUSR Migration Preparation**
    - Adds Team Multisig as authorized on 8 active wstUSR vaults (110, 111, 112, 133, 134, 135, 143, 144) and DEX Pool 27 to enable emergency operations during the migration period
@@ -145,12 +121,6 @@ This proposal covers five areas of protocol maintenance, infrastructure upgrades
    - Transfers VaultFactory ownership to a new contract (`vaultFactoryOwner`) to enable a position transfer wrapper that allows users to transfer vault positions
    - The new owner address is configurable by Team Multisig before governance execution
 
-5. **reUSD-USDT / USDC-USDT T4 Vault Launch**
-   - Launches vault 165 (reUSD-USDT / USDC-USDT, TYPE 4) with $8M base withdrawal from the reUSD-USDT DEX (Pool 44) and $5M/$10M base/max borrow from the USDC-USDT DEX (Pool 2)
-   - Increases the reUSD-USDT DEX (Pool 44) max supply shares to ~$24M and token LL limits to $10M per token to support the new vault's capacity requirements
-   - The vault borrows from the USDC-USDT DEX (Pool 2), growing that pool's utilization and attracting net new USDT supply into the protocol
-   - Team Multisig is set as vault auth for initial operational management
-
 ### Configurable Addresses (Team Multisig sets before execution)
 
 | Variable | Purpose |
@@ -164,4 +134,4 @@ This proposal covers five areas of protocol maintenance, infrastructure upgrades
 
 ## Conclusion
 
-IGP-126 prepares the wstUSR ecosystem for migration by adding Team Multisig authorization and max-restricting borrow limits across active vaults, upgrades the Liquidity Layer with a new UserModule (adding `operateOnBehalfOf` support) and DummyImplementation via the RollbackModule for safe rollback capability, registers pauseable auth contracts on both the Liquidity Layer and DexFactory for emergency response, transfers VaultFactory ownership to enable position transfers, and launches the reUSD-USDT/USDC-USDT T4 vault with increased reUSD-USDT DEX capacity to grow the USDC-USDT pool and bring in net new USDT supply. Existing users in wstUSR markets can still manage and exit their positions.
+IGP-126 prepares the wstUSR ecosystem for migration by adding Team Multisig authorization and max-restricting borrow limits across active vaults, upgrades the Liquidity Layer with a new UserModule (adding `operateOnBehalfOf` support) and DummyImplementation via the RollbackModule for safe rollback capability, registers pauseable auth contracts on both the Liquidity Layer and DexFactory for emergency response, and transfers VaultFactory ownership to enable position transfers. Existing users in wstUSR markets can still manage and exit their positions.

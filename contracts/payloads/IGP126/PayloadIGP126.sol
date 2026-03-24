@@ -141,8 +141,6 @@ contract PayloadIGP126 is PayloadIGPMain {
         // Action 11: Set pausableDexAuth as globalAuth on DexFactory
         action11();
 
-        // Action 12: Initiate reUSD-USDT / USDC-USDT T4 vault
-        action12();
     }
 
     function verifyProposal() public view override {}
@@ -320,63 +318,6 @@ contract PayloadIGP126 is PayloadIGPMain {
         require(authAddress_ != address(0), "pausable-dex-auth-not-set");
 
         DEX_FACTORY.setGlobalAuth(authAddress_, true);
-    }
-
-    /// @notice Action 12: Initiate reUSD-USDT / USDC-USDT T4 vault
-    function action12() internal isActionSkippable(12) {
-        address REUSD_USDT_DEX = getDexAddress(44);
-        address USDC_USDT_DEX = getDexAddress(2);
-        address vault_ = getVaultAddress(165);
-
-        // --- T4 Vault supply limits on reUSD-USDT DEX (smart collateral): Base Withdraw $8M ---
-        {
-            IFluidAdminDex.UserSupplyConfig[]
-                memory supplyConfigs_ = new IFluidAdminDex.UserSupplyConfig[](
-                    1
-                );
-            supplyConfigs_[0] = IFluidAdminDex.UserSupplyConfig({
-                user: vault_,
-                expandPercent: 30 * 1e2, // 30%
-                expandDuration: 6 hours,
-                baseWithdrawalLimit: 4_000_000 * 1e18 // ~$8M in DEX shares
-            });
-            IFluidDex(REUSD_USDT_DEX).updateUserSupplyConfigs(supplyConfigs_);
-        }
-
-        // --- T4 Vault borrow limits on USDC-USDT DEX (smart debt): Base $5M / Max $10M ---
-        {
-            DexBorrowProtocolConfigInShares
-                memory borrowConfig_ = DexBorrowProtocolConfigInShares({
-                    dex: USDC_USDT_DEX,
-                    protocol: vault_,
-                    expandPercent: 30 * 1e2, // 30%
-                    expandDuration: 6 hours,
-                    baseBorrowLimit: 2_500_000 * 1e18, // ~$5M in DEX shares
-                    maxBorrowLimit: 5_000_000 * 1e18 // ~$10M in DEX shares
-                });
-            setDexBorrowProtocolLimitsInShares(borrowConfig_);
-        }
-
-        // --- Increase reUSD-USDT DEX (44) Max Supply Shares to $24M ---
-        IFluidDex(REUSD_USDT_DEX).updateMaxSupplyShares(12_000_000 * 1e18);
-
-        // --- Increase reUSD-USDT DEX (44) Token LL Limits to $10M ---
-        {
-            DexConfig memory dexConfig_ = DexConfig({
-                dex: REUSD_USDT_DEX,
-                tokenA: REUSD_ADDRESS,
-                tokenB: USDT_ADDRESS,
-                smartCollateral: true,
-                smartDebt: false,
-                baseWithdrawalLimitInUSD: 10_000_000, // $10M
-                baseBorrowLimitInUSD: 0,
-                maxBorrowLimitInUSD: 0
-            });
-            setDexLimits(dexConfig_);
-        }
-
-        // --- Set TEAM_MULTISIG as vault auth ---
-        VAULT_FACTORY.setVaultAuth(vault_, TEAM_MULTISIG, true);
     }
 
     /**
