@@ -1,4 +1,4 @@
-# Fix Pauseable Auth on Liquidity Layer — Set as Guardian Instead of Auth
+# Pauseable Auth on Liquidity Layer — Set as Guardian Instead of Auth
 
 ## Summary
 
