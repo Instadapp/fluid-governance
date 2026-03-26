@@ -66,7 +66,7 @@ contract PayloadIGP127 is PayloadIGPMain {
         // Action 1: Set pauseableAuth as guardian on Liquidity Layer
         action1();
 
-        // Action 2: Initiate reUSD-USDT / USDC-USDT T4 vault
+        // Action 2: Initiate reUSD-USDT / USDC-USDT T4 vault with dust limits
         action2();
     }
 
