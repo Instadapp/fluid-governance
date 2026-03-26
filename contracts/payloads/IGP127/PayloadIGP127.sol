@@ -38,8 +38,8 @@ import {PayloadIGPConstants} from "../common/constants.sol";
 import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 
-/// @notice IGP127: Fix IGP126 Action 10 — set pauseableAuth as guardian (not auth) on Liquidity Layer.
-///         IGP126 Action 10 incorrectly used updateAuths(); pauseUser/unpauseUser require onlyGuardians.
+/// @notice IGP127: Fix IGP126 Action 10 — set pauseableAuth as guardian (not auth) on Liquidity Layer,
+///         and initiate reUSD-USDT / USDC-USDT T4 vault (Vault 165).
 contract PayloadIGP127 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 127;
 
@@ -65,6 +65,9 @@ contract PayloadIGP127 is PayloadIGPMain {
 
         // Action 1: Set pauseableAuth as guardian on Liquidity Layer
         action1();
+
+        // Action 2: Initiate reUSD-USDT / USDC-USDT T4 vault
+        action2();
     }
 
     function verifyProposal() public view override {}
@@ -79,11 +82,12 @@ contract PayloadIGP127 is PayloadIGPMain {
      * |__________________________________
      */
 
-    /// @notice Action 1: Set pauseableAuth as guardian on Liquidity Layer (fixes IGP126 Action 10)
+    /// @notice Action 1: Set pauseableAuth as guardian on Liquidity Layer 
     function action1() internal isActionSkippable(1) {
         address guardianAddress_ = PayloadIGP127(ADDRESS_THIS).pauseableAuth();
         require(guardianAddress_ != address(0), "pauseable-auth-not-set");
 
+        // Fixes IGP126 Action 10
         FluidLiquidityAdminStructs.AddressBool[]
             memory guardiansStatus_ = new FluidLiquidityAdminStructs.AddressBool[](
                 1
@@ -93,6 +97,63 @@ contract PayloadIGP127 is PayloadIGPMain {
             value: true
         });
         LIQUIDITY.updateGuardians(guardiansStatus_);
+    }
+
+    /// @notice Action 2: Initiate reUSD-USDT / USDC-USDT T4 vault
+    function action2() internal isActionSkippable(2) {
+        address REUSD_USDT_DEX = getDexAddress(44);
+        address USDC_USDT_DEX = getDexAddress(2);
+        address vault_ = getVaultAddress(165);
+
+        // --- T4 Vault supply limits on reUSD-USDT DEX (smart collateral): Base Withdraw $8M ---
+        {
+            IFluidAdminDex.UserSupplyConfig[]
+                memory supplyConfigs_ = new IFluidAdminDex.UserSupplyConfig[](
+                    1
+                );
+            supplyConfigs_[0] = IFluidAdminDex.UserSupplyConfig({
+                user: vault_,
+                expandPercent: 30 * 1e2, // 30%
+                expandDuration: 6 hours,
+                baseWithdrawalLimit: 4_000_000 * 1e18 // ~$8M in DEX shares
+            });
+            IFluidDex(REUSD_USDT_DEX).updateUserSupplyConfigs(supplyConfigs_);
+        }
+
+        // --- T4 Vault borrow limits on USDC-USDT DEX (smart debt): Base $5M / Max $10M ---
+        {
+            DexBorrowProtocolConfigInShares
+                memory borrowConfig_ = DexBorrowProtocolConfigInShares({
+                    dex: USDC_USDT_DEX,
+                    protocol: vault_,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours,
+                    baseBorrowLimit: 2_500_000 * 1e18, // ~$5M in DEX shares
+                    maxBorrowLimit: 5_000_000 * 1e18 // ~$10M in DEX shares
+                });
+            setDexBorrowProtocolLimitsInShares(borrowConfig_);
+        }
+
+        // --- Increase reUSD-USDT DEX (44) Max Supply Shares to $24M ---
+        IFluidDex(REUSD_USDT_DEX).updateMaxSupplyShares(12_000_000 * 1e18);
+
+        // --- Increase reUSD-USDT DEX (44) Token LL Limits to $10M ---
+        {
+            DexConfig memory dexConfig_ = DexConfig({
+                dex: REUSD_USDT_DEX,
+                tokenA: REUSD_ADDRESS,
+                tokenB: USDT_ADDRESS,
+                smartCollateral: true,
+                smartDebt: false,
+                baseWithdrawalLimitInUSD: 10_000_000, // $10M
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
+            });
+            setDexLimits(dexConfig_);
+        }
+
+        // --- Set TEAM_MULTISIG as vault auth ---
+        VAULT_FACTORY.setVaultAuth(vault_, TEAM_MULTISIG, true);
     }
 
     /**
