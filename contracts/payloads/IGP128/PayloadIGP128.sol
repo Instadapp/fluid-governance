@@ -38,7 +38,7 @@ import {PayloadIGPConstants} from "../common/constants.sol";
 import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 
-/// @notice IGP128: List new admin module on LL and update USDC/USDT rate-curve kinks.
+/// @notice IGP128: List new admin module on LL and update USDC/USDT rate curve.
 contract PayloadIGP128 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 128;
 
