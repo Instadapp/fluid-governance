@@ -34,39 +34,32 @@ import {ICodeReader} from "../common/interfaces/ICodeReader.sol";
 import {IDSAV2} from "../common/interfaces/IDSA.sol";
 import {IERC20} from "../common/interfaces/IERC20.sol";
 import {IInfiniteProxy} from "../common/interfaces/IInfiniteProxy.sol";
+import {IFluidLiquidityRollback} from "../common/interfaces/IFluidLiquidityRollback.sol";
 import {PayloadIGPConstants} from "../common/constants.sol";
 import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 
-/// @notice IGP128: List new admin module on LL and update USDC/USDT rate curve.
+/// @notice IGP128: Upgrade admin module on LL and update USDC/USDT rate curve.
 contract PayloadIGP128 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 128;
 
-    // --- Configurable address (Team Multisig can set before execution) ---
-    address public liquidityAdminModule = address(0);
+    address public constant OLD_ADMIN_MODULE =
+        0x53EFFA0e612d88f39Ab32eb5274F2fae478d261C;
 
-    // --- Lock flag ---
-    bool public liquidityAdminModuleLocked;
-
-    function lockLiquidityAdminModule() external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        liquidityAdminModuleLocked = true;
-    }
-
-    function setLiquidityAdminModule(address liquidityAdminModule_) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        require(!liquidityAdminModuleLocked, "locked");
-        liquidityAdminModule = liquidityAdminModule_;
-    }
+    address public constant NEW_ADMIN_MODULE =
+        0xea78faBC13D603895FE9efe8BB4A4f2c56e5698E;
 
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: List new admin module on Liquidity Layer
+        // Action 1: Register AdminModule LL upgrade on RollbackModule
         action1();
 
-        // Action 2: Update USDC & USDT Interest Rate Curve on Ethereum
+        // Action 2: Upgrade AdminModule LL on InfiniteProxy
         action2();
+
+        // Action 3: Update USDC & USDT Interest Rate Curve on Ethereum
+        action3();
     }
 
     function verifyProposal() public view override {}
@@ -81,24 +74,29 @@ contract PayloadIGP128 is PayloadIGPMain {
      * |__________________________________
      */
 
-    /// @notice Action 1: List new admin module on Liquidity Layer
+    /// @notice Action 1: Register AdminModule LL upgrade on RollbackModule (must happen before the actual upgrade)
     function action1() internal isActionSkippable(1) {
-        address adminModule_ = PayloadIGP128(ADDRESS_THIS).liquidityAdminModule();
-        require(adminModule_ != address(0), "liquidity-admin-module-not-set");
-
-        FluidLiquidityAdminStructs.AddressBool[]
-            memory authsStatus_ = new FluidLiquidityAdminStructs.AddressBool[](
-                1
-            );
-        authsStatus_[0] = FluidLiquidityAdminStructs.AddressBool({
-            addr: adminModule_,
-            value: true
-        });
-        LIQUIDITY.updateAuths(authsStatus_);
+        IFluidLiquidityRollback(address(LIQUIDITY))
+            .registerRollbackImplementation(OLD_ADMIN_MODULE, NEW_ADMIN_MODULE);
     }
 
-    /// @notice Action 2: Update USDC & USDT rate-curve kinks (90%, 95%) while keeping kink rates (4.5%, 7.5%)
+    /// @notice Action 2: Upgrade AdminModule LL on InfiniteProxy
     function action2() internal isActionSkippable(2) {
+        bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
+            .getImplementationSigs(OLD_ADMIN_MODULE);
+
+        IInfiniteProxy(address(LIQUIDITY)).removeImplementation(
+            OLD_ADMIN_MODULE
+        );
+
+        IInfiniteProxy(address(LIQUIDITY)).addImplementation(
+            NEW_ADMIN_MODULE,
+            sigs_
+        );
+    }
+
+    /// @notice Action 3: Update USDC & USDT rate-curve kinks (90%, 95%) while keeping kink rates (4.5%, 7.5%)
+    function action3() internal isActionSkippable(3) {
         FluidLiquidityAdminStructs.RateDataV2Params[]
             memory params_ = new FluidLiquidityAdminStructs.RateDataV2Params[](
                 2
