@@ -60,6 +60,9 @@ contract PayloadIGP128 is PayloadIGPMain {
 
         // Action 3: Update USDC & USDT Interest Rate Curve on Ethereum
         action3();
+
+        // Action 4: Update CF, LT, LML for ETH vaults (11, 12, 45, 54, 128)
+        action4();
     }
 
     function verifyProposal() public view override {}
@@ -82,8 +85,15 @@ contract PayloadIGP128 is PayloadIGPMain {
 
     /// @notice Action 2: Upgrade AdminModule LL on InfiniteProxy
     function action2() internal isActionSkippable(2) {
-        bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
+        bytes4[] memory baseSigs_ = IInfiniteProxy(address(LIQUIDITY))
             .getImplementationSigs(OLD_ADMIN_MODULE);
+        uint256 len = baseSigs_.length;
+        bytes4[] memory sigs_ = new bytes4[](len + 2);
+        for (uint256 i; i < len; ++i) {
+            sigs_[i] = baseSigs_[i];
+        }
+        sigs_[len] = bytes4(keccak256("pauseTokens(address[])"));
+        sigs_[len + 1] = bytes4(keccak256("unpauseTokens(address[])"));
 
         IInfiniteProxy(address(LIQUIDITY)).removeImplementation(
             OLD_ADMIN_MODULE
@@ -123,6 +133,28 @@ contract PayloadIGP128 is PayloadIGPMain {
         });
 
         LIQUIDITY.updateRateDataV2s(params_);
+    }
+
+    /// @notice Action 4: Update CF, LT, LML for ETH vaults (11, 12, 45, 54, 128)
+    function action4() internal isActionSkippable(4) {
+        uint256 CF = 90 * 1e2; // 90%
+        uint256 LT = 93 * 1e2; // 93%
+        uint256 LML = 96 * 1e2; // 96%
+
+        uint256[] memory vaultIds = new uint256[](5);
+        vaultIds[0] = 11;
+        vaultIds[1] = 12;
+        vaultIds[2] = 45;
+        vaultIds[3] = 54;
+        vaultIds[4] = 128;
+
+        for (uint256 i = 0; i < vaultIds.length; i++) {
+            address vaultAddress = getVaultAddress(vaultIds[i]);
+
+            IFluidVaultT1(vaultAddress).updateLiquidationMaxLimit(LML);
+            IFluidVaultT1(vaultAddress).updateLiquidationThreshold(LT);
+            IFluidVaultT1(vaultAddress).updateCollateralFactor(CF);
+        }
     }
 
     /**
