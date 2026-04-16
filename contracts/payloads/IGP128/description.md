@@ -1,14 +1,15 @@
-# Set Timelock as VaultFactory Global Auth, Upgrade LL Admin Module, Update USDC/USDT Rate Curve, and Update ETH Vault Params
+# Set Timelock as VaultFactory Global Auth, Upgrade LL Admin Module, Update USDC/USDT Rate Curve, Update ETH Vault Params, and Update sUSDe-USDT DEX Range
 
 ## Summary
 
-This proposal introduces five updates on Ethereum:
+This proposal introduces six updates on Ethereum:
 
 1. Sets the timelock as a global auth on VaultFactory via the VaultFactoryOwner wrapper (`0xB031913cB7AD81b8A4Ba412B471c2dA69BEA410B`).
 2. Registers a rollback for the AdminModule upgrade on the RollbackModule.
 3. Upgrades the AdminModule on the Liquidity Layer InfiniteProxy from `0x53EFFA0e612d88f39Ab32eb5274F2fae478d261C` to `0xea78faBC13D603895FE9efe8BB4A4F2c56e5698E`.
 4. Updates the USDC and USDT V2 interest-rate curve kinks from `85%/93%` to `90%/95%`, while keeping the kink rates unchanged at `4.5%/7.5%`.
 5. Updates CF, LT, and LML for ETH vaults (IDs 11, 12, 45, 54, 128) to `90%/93%/96%`, keeping LPs unchanged.
+6. Updates the sUSDe-USDT DEX (ID: 15) range percents to upper `0.15%` and lower `0.4%`.
 
 ## Code Changes
 
@@ -47,6 +48,11 @@ This proposal introduces five updates on Ethereum:
 - Liquidation Penalty (LP) is kept unchanged.
 - Updates are applied in safe order: LML first, then LT, then CF.
 
+### Action 6: Update sUSDe-USDT DEX Range Percents
+
+- Calls `IFluidDex.updateRangePercents()` on DEX ID `15` (sUSDe-USDT).
+- Sets upper range to `0.15%` and lower range to `0.4%`, with a `5 day` shift time.
+
 ## Description
 
 The first action sets the timelock as a global auth on VaultFactory through the VaultFactoryOwner wrapper contract, enabling governance to execute privileged VaultFactory operations.
@@ -59,6 +65,8 @@ The fourth action adjusts only the utilization breakpoints for USDC and USDT bor
 
 The fifth action raises the collateral factor, liquidation threshold, and liquidation max limit for five ETH vaults (11, 12, 45, 54, 128) to `90%/93%/96%` respectively, while keeping liquidation penalties unchanged.
 
+The sixth action updates the range percents for the sUSDe-USDT DEX (ID: 15), setting the upper range to `0.15%` and the lower range to `0.4%` with a `5 day` shift time.
+
 ## Conclusion
 
-IGP128 sets the timelock as VaultFactory global auth, upgrades the Liquidity Layer AdminModule via InfiniteProxy (with rollback registration), updates Ethereum USDC/USDT curve kinks to `90%/95%` while preserving the existing kink rates (`4.5%/7.5%`), and raises CF/LT/LML to `90%/93%/96%` for ETH vaults 11, 12, 45, 54, 128.
+IGP128 sets the timelock as VaultFactory global auth, upgrades the Liquidity Layer AdminModule via InfiniteProxy (with rollback registration), updates Ethereum USDC/USDT curve kinks to `90%/95%` while preserving the existing kink rates (`4.5%/7.5%`), raises CF/LT/LML to `90%/93%/96%` for ETH vaults 11, 12, 45, 54, 128, and updates sUSDe-USDT DEX (ID: 15) range to upper `0.15%` / lower `0.4%`.

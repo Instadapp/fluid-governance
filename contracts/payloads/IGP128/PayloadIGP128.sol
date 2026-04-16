@@ -45,7 +45,7 @@ import {PayloadIGPConstants} from "../common/constants.sol";
 import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 
-/// @notice IGP128: Set timelock as global auth on VaultFactory, upgrade admin module on LL, and update USDC/USDT rate curve.
+/// @notice IGP128: Set timelock as global auth on VaultFactory, upgrade admin module on LL, update USDC/USDT rate curve, and update sUSDe-USDT DEX range.
 contract PayloadIGP128 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 128;
 
@@ -75,6 +75,9 @@ contract PayloadIGP128 is PayloadIGPMain {
 
         // Action 5: Update CF, LT, LML for ETH vaults (11, 12, 45, 54, 128)
         action5();
+
+        // Action 6: Update sUSDe-USDT DEX range percents
+        action6();
     }
 
     function verifyProposal() public view override {}
@@ -175,6 +178,17 @@ contract PayloadIGP128 is PayloadIGPMain {
             IFluidVaultT1(vaultAddress).updateLiquidationThreshold(LT);
             IFluidVaultT1(vaultAddress).updateCollateralFactor(CF);
         }
+    }
+
+    /// @notice Action 6: Update sUSDe-USDT DEX (ID: 15) range percents
+    function action6() internal isActionSkippable(6) {
+        address sUSDe_USDT_DEX = getDexAddress(15);
+
+        IFluidDex(sUSDe_USDT_DEX).updateRangePercents(
+            0.15 * 1e4, // upper range: 0.15%
+            0.4 * 1e4, // lower range: 0.4%
+            5 days
+        );
     }
 
     /**
