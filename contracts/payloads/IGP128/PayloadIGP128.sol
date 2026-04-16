@@ -34,7 +34,9 @@ import {ICodeReader} from "../common/interfaces/ICodeReader.sol";
 import {IDSAV2} from "../common/interfaces/IDSA.sol";
 import {IERC20} from "../common/interfaces/IERC20.sol";
 import {IInfiniteProxy} from "../common/interfaces/IInfiniteProxy.sol";
-import {IFluidLiquidityRollback} from "../common/interfaces/IFluidLiquidityRollback.sol";
+import {
+    IFluidLiquidityRollback
+} from "../common/interfaces/IFluidLiquidityRollback.sol";
 import {PayloadIGPConstants} from "../common/constants.sol";
 import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
@@ -47,7 +49,7 @@ contract PayloadIGP128 is PayloadIGPMain {
         0x53EFFA0e612d88f39Ab32eb5274F2fae478d261C;
 
     address public constant NEW_ADMIN_MODULE =
-        0xea78faBC13D603895FE9efe8BB4A4f2c56e5698E;
+        0xea78faBC13D603895FE9efe8BB4A4F2c56e5698E;
 
     function execute() public virtual override {
         super.execute();
