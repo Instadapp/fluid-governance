@@ -1,29 +1,34 @@
-# Upgrade LL Admin Module and Update USDC/USDT Rate Curve Kinks
+# Set Timelock as VaultFactory Global Auth, Upgrade LL Admin Module, Update USDC/USDT Rate Curve, and Update ETH Vault Params
 
 ## Summary
 
-This proposal introduces four updates on the Ethereum Liquidity Layer:
+This proposal introduces five updates on Ethereum:
 
-1. Registers a rollback for the AdminModule upgrade on the RollbackModule.
-2. Upgrades the AdminModule on the Liquidity Layer InfiniteProxy from `0x53EFFA0e612d88f39Ab32eb5274F2fae478d261C` to `0xea78faBC13D603895FE9efe8BB4A4f2c56e5698E`.
-3. Updates the USDC and USDT V2 interest-rate curve kinks from `85%/93%` to `90%/95%`, while keeping the kink rates unchanged at `4.5%/7.5%`.
-4. Updates CF, LT, and LML for ETH vaults (IDs 11, 12, 45, 54, 128) to `90%/93%/96%`, keeping LPs unchanged.
+1. Sets the timelock as a global auth on VaultFactory via the VaultFactoryOwner wrapper (`0xB031913cB7AD81b8A4Ba412B471c2dA69BEA410B`).
+2. Registers a rollback for the AdminModule upgrade on the RollbackModule.
+3. Upgrades the AdminModule on the Liquidity Layer InfiniteProxy from `0x53EFFA0e612d88f39Ab32eb5274F2fae478d261C` to `0xea78faBC13D603895FE9efe8BB4A4F2c56e5698E`.
+4. Updates the USDC and USDT V2 interest-rate curve kinks from `85%/93%` to `90%/95%`, while keeping the kink rates unchanged at `4.5%/7.5%`.
+5. Updates CF, LT, and LML for ETH vaults (IDs 11, 12, 45, 54, 128) to `90%/93%/96%`, keeping LPs unchanged.
 
 ## Code Changes
 
-### Action 1: Register AdminModule LL Upgrade on RollbackModule
+### Action 1: Set Timelock as Global Auth on VaultFactory
+
+- Calls `IVaultFactoryOwner.setGlobalAuth()` on the VaultFactoryOwner wrapper (`0xB031913cB7AD81b8A4Ba412B471c2dA69BEA410B`) to add the timelock as a global auth on VaultFactory.
+
+### Action 2: Register AdminModule LL Upgrade on RollbackModule
 
 - Calls `IFluidLiquidityRollback.registerRollbackImplementation()` to register the old and new AdminModule addresses on the RollbackModule.
 - Must execute before the actual upgrade so the RollbackModule can record the old implementation.
 
-### Action 2: Upgrade AdminModule LL on InfiniteProxy
+### Action 3: Upgrade AdminModule LL on InfiniteProxy
 
 - Reads existing function selectors from the old AdminModule via `getImplementationSigs()`.
 - Appends two new function selectors: `pauseTokens(address[])` and `unpauseTokens(address[])`.
 - Removes the old AdminModule (`0x53EFFA0e612d88f39Ab32eb5274F2fae478d261C`) from the InfiniteProxy.
-- Adds the new AdminModule (`0xea78faBC13D603895FE9efe8BB4A4f2c56e5698E`) with the combined function selectors.
+- Adds the new AdminModule (`0xea78faBC13D603895FE9efe8BB4A4F2c56e5698E`) with the combined function selectors.
 
-### Action 3: Update USDC & USDT Rate-Curve
+### Action 4: Update USDC & USDT Rate-Curve
 
 - Calls `LIQUIDITY.updateRateDataV2s()` for `USDC` and `USDT`.
 - Changes:
@@ -35,7 +40,7 @@ This proposal introduces four updates on the Ethereum Liquidity Layer:
   - `rateAtUtilizationZero = 0%`
   - `rateAtUtilizationMax = 100%`
 
-### Action 4: Update CF, LT, LML for ETH Vaults
+### Action 5: Update CF, LT, LML for ETH Vaults
 
 - Updates vault IDs: 11, 12, 45, 54, 128.
 - Sets `CF = 90%`, `LT = 93%`, `LML = 96%`.
@@ -44,14 +49,16 @@ This proposal introduces four updates on the Ethereum Liquidity Layer:
 
 ## Description
 
-The first action registers the upcoming AdminModule upgrade on the RollbackModule, enabling a rollback to the old implementation if needed.
+The first action sets the timelock as a global auth on VaultFactory through the VaultFactoryOwner wrapper contract, enabling governance to execute privileged VaultFactory operations.
 
-The second action performs the actual module upgrade on the Liquidity Layer's InfiniteProxy by swapping the old AdminModule implementation for the new one, carrying over all existing function selectors and registering the two new selectors (`pauseTokens`, `unpauseTokens`).
+The second action registers the upcoming AdminModule upgrade on the RollbackModule, enabling a rollback to the old implementation if needed.
 
-The third action adjusts only the utilization breakpoints for USDC and USDT borrow curves to become more conservative near high utilization. By moving the kinks to `90%` and `95%` while preserving kink rates (`4.5%` and `7.5%`), the proposal changes where the slope transitions occur without modifying the target rates at those transition points.
+The third action performs the actual module upgrade on the Liquidity Layer's InfiniteProxy by swapping the old AdminModule implementation for the new one, carrying over all existing function selectors and registering the two new selectors (`pauseTokens`, `unpauseTokens`).
 
-The fourth action raises the collateral factor, liquidation threshold, and liquidation max limit for five ETH vaults (11, 12, 45, 54, 128) to `90%/93%/96%` respectively, while keeping liquidation penalties unchanged.
+The fourth action adjusts only the utilization breakpoints for USDC and USDT borrow curves to become more conservative near high utilization. By moving the kinks to `90%` and `95%` while preserving kink rates (`4.5%` and `7.5%`), the proposal changes where the slope transitions occur without modifying the target rates at those transition points.
+
+The fifth action raises the collateral factor, liquidation threshold, and liquidation max limit for five ETH vaults (11, 12, 45, 54, 128) to `90%/93%/96%` respectively, while keeping liquidation penalties unchanged.
 
 ## Conclusion
 
-IGP128 upgrades the Liquidity Layer AdminModule via InfiniteProxy (with rollback registration), updates Ethereum USDC/USDT curve kinks to `90%/95%` while preserving the existing kink rates (`4.5%/7.5%`), and raises CF/LT/LML to `90%/93%/96%` for ETH vaults 11, 12, 45, 54, 128.
+IGP128 sets the timelock as VaultFactory global auth, upgrades the Liquidity Layer AdminModule via InfiniteProxy (with rollback registration), updates Ethereum USDC/USDT curve kinks to `90%/95%` while preserving the existing kink rates (`4.5%/7.5%`), and raises CF/LT/LML to `90%/93%/96%` for ETH vaults 11, 12, 45, 54, 128.
