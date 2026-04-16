@@ -20,6 +20,10 @@ import {
 import {IFluidVaultFactory} from "../common/interfaces/IFluidVaultFactory.sol";
 import {IFluidDexFactory} from "../common/interfaces/IFluidDexFactory.sol";
 
+interface IVaultFactoryOwner {
+    function setGlobalAuth(address globalAuth_, bool allowed_) external;
+}
+
 import {
     IFluidDex,
     IFluidAdminDex,
@@ -41,9 +45,12 @@ import {PayloadIGPConstants} from "../common/constants.sol";
 import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 
-/// @notice IGP128: Upgrade admin module on LL and update USDC/USDT rate curve.
+/// @notice IGP128: Set timelock as global auth on VaultFactory, upgrade admin module on LL, and update USDC/USDT rate curve.
 contract PayloadIGP128 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 128;
+
+    address public constant VAULT_FACTORY_OWNER =
+        0xB031913cB7AD81b8A4Ba412B471c2dA69BEA410B;
 
     address public constant OLD_ADMIN_MODULE =
         0x53EFFA0e612d88f39Ab32eb5274F2fae478d261C;
@@ -54,17 +61,20 @@ contract PayloadIGP128 is PayloadIGPMain {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Register AdminModule LL upgrade on RollbackModule
+        // Action 1: Set timelock as global auth on VaultFactory (via VaultFactoryOwner wrapper)
         action1();
 
-        // Action 2: Upgrade AdminModule LL on InfiniteProxy
+        // Action 2: Register AdminModule LL upgrade on RollbackModule
         action2();
 
-        // Action 3: Update USDC & USDT Interest Rate Curve on Ethereum
+        // Action 3: Upgrade AdminModule LL on InfiniteProxy
         action3();
 
-        // Action 4: Update CF, LT, LML for ETH vaults (11, 12, 45, 54, 128)
+        // Action 4: Update USDC & USDT Interest Rate Curve on Ethereum
         action4();
+
+        // Action 5: Update CF, LT, LML for ETH vaults (11, 12, 45, 54, 128)
+        action5();
     }
 
     function verifyProposal() public view override {}
@@ -79,14 +89,22 @@ contract PayloadIGP128 is PayloadIGPMain {
      * |__________________________________
      */
 
-    /// @notice Action 1: Register AdminModule LL upgrade on RollbackModule (must happen before the actual upgrade)
+    /// @notice Action 1: Set timelock as global auth on VaultFactory via VaultFactoryOwner wrapper
     function action1() internal isActionSkippable(1) {
+        IVaultFactoryOwner(VAULT_FACTORY_OWNER).setGlobalAuth(
+            address(TIMELOCK),
+            true
+        );
+    }
+
+    /// @notice Action 2: Register AdminModule LL upgrade on RollbackModule (must happen before the actual upgrade)
+    function action2() internal isActionSkippable(2) {
         IFluidLiquidityRollback(address(LIQUIDITY))
             .registerRollbackImplementation(OLD_ADMIN_MODULE, NEW_ADMIN_MODULE);
     }
 
-    /// @notice Action 2: Upgrade AdminModule LL on InfiniteProxy
-    function action2() internal isActionSkippable(2) {
+    /// @notice Action 3: Upgrade AdminModule LL on InfiniteProxy
+    function action3() internal isActionSkippable(3) {
         bytes4[] memory baseSigs_ = IInfiniteProxy(address(LIQUIDITY))
             .getImplementationSigs(OLD_ADMIN_MODULE);
         uint256 len = baseSigs_.length;
@@ -107,8 +125,8 @@ contract PayloadIGP128 is PayloadIGPMain {
         );
     }
 
-    /// @notice Action 3: Update USDC & USDT rate-curve kinks (90%, 95%) while keeping kink rates (4.5%, 7.5%)
-    function action3() internal isActionSkippable(3) {
+    /// @notice Action 4: Update USDC & USDT rate-curve kinks (90%, 95%) while keeping kink rates (4.5%, 7.5%)
+    function action4() internal isActionSkippable(4) {
         FluidLiquidityAdminStructs.RateDataV2Params[]
             memory params_ = new FluidLiquidityAdminStructs.RateDataV2Params[](
                 2
@@ -137,8 +155,8 @@ contract PayloadIGP128 is PayloadIGPMain {
         LIQUIDITY.updateRateDataV2s(params_);
     }
 
-    /// @notice Action 4: Update CF, LT, LML for ETH vaults (11, 12, 45, 54, 128)
-    function action4() internal isActionSkippable(4) {
+    /// @notice Action 5: Update CF, LT, LML for ETH vaults (11, 12, 45, 54, 128)
+    function action5() internal isActionSkippable(5) {
         uint256 CF = 90 * 1e2; // 90%
         uint256 LT = 93 * 1e2; // 93%
         uint256 LML = 96 * 1e2; // 96%
