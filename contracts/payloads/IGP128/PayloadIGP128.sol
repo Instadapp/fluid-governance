@@ -45,7 +45,7 @@ import {PayloadIGPConstants} from "../common/constants.sol";
 import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 
-/// @notice IGP128: Set timelock as global auth on VaultFactory, upgrade admin module on LL, update USDC/USDT rate curve, update sUSDe-USDT DEX range, and set rsETH vault borrow to min values.
+/// @notice IGP128: Set timelock as global auth on VaultFactory, upgrade admin module on LL, update USDC/USDT rate curve, update sUSDe-USDT DEX range, set rsETH vault borrow to min values, and cap ETH max-util borrow rate at 10%.
 contract PayloadIGP128 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 128;
 
@@ -81,6 +81,9 @@ contract PayloadIGP128 is PayloadIGPMain {
 
         // Action 7: Set rsETH vault borrow configs to min values
         action7();
+
+        // Action 8: ETH borrow curve — same as on-chain rate model v2 except max-utilization → 10%
+        action8();
     }
 
     function verifyProposal() public view override {}
@@ -198,6 +201,24 @@ contract PayloadIGP128 is PayloadIGPMain {
     function action7() internal isActionSkippable(7) {
         setBorrowProtocolLimitsPaused(getVaultAddress(78), wstETH_ADDRESS);
         setBorrowProtocolLimitsPaused(getVaultAddress(79), wstETH_ADDRESS);
+    }
+
+    /// @notice Action 8: ETH rate model v2 — values match mainnet Liquidity `getRateConfig(ETH)` at proposal prep (packed slot `193428249239386233417760768002`); only `rateAtUtilizationMax` changes from 100% to 10%
+    function action8() internal isActionSkippable(8) {
+        FluidLiquidityAdminStructs.RateDataV2Params[]
+            memory params_ = new FluidLiquidityAdminStructs.RateDataV2Params[](1);
+
+        params_[0] = FluidLiquidityAdminStructs.RateDataV2Params({
+            token: ETH_ADDRESS,
+            kink1: 88 * 1e2, // 88%
+            kink2: 93 * 1e2, // 93%
+            rateAtUtilizationZero: 0,
+            rateAtUtilizationKink1: 2.5 * 1e2, // 2.5%
+            rateAtUtilizationKink2: 4 * 1e2, // 4%
+            rateAtUtilizationMax: 10 * 1e2 // 10% (was 100% on-chain)
+        });
+
+        LIQUIDITY.updateRateDataV2s(params_);
     }
 
     /**
