@@ -196,30 +196,8 @@ contract PayloadIGP128 is PayloadIGPMain {
 
     /// @notice Action 7: Set rsETH vault borrow configs to min values on Liquidity Layer
     function action7() internal isActionSkippable(7) {
-        FluidLiquidityAdminStructs.UserBorrowConfig[]
-            memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](2);
-
-        configs_[0] = FluidLiquidityAdminStructs.UserBorrowConfig({
-            user: 0x9A64E3EB9c2F917CBAdDe75Ad23bb402257acf2E,
-            token: wstETH_ADDRESS,
-            mode: 1,
-            expandPercent: 1,
-            expandDuration: 16777215,
-            baseDebtCeiling: 5,
-            maxDebtCeiling: 10
-        });
-
-        configs_[1] = FluidLiquidityAdminStructs.UserBorrowConfig({
-            user: 0x025C1494b7d15aa931E011f6740E0b46b2136cb9,
-            token: wstETH_ADDRESS,
-            mode: 1,
-            expandPercent: 1,
-            expandDuration: 16777215,
-            baseDebtCeiling: 5,
-            maxDebtCeiling: 10
-        });
-
-        LIQUIDITY.updateUserBorrowConfigs(configs_);
+        setBorrowProtocolLimitsPaused(getVaultAddress(78), wstETH_ADDRESS);
+        setBorrowProtocolLimitsPaused(getVaultAddress(79), wstETH_ADDRESS);
     }
 
     /**
