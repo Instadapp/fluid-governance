@@ -229,9 +229,9 @@ contract PayloadIGP128 is PayloadIGPMain {
 
     // Token Prices Constants
     uint256 public constant ETH_USD_PRICE = 2_000 * 1e2;
-    uint256 public constant wstETH_USD_PRICE = 3_575 * 1e2;
+    uint256 public constant wstETH_USD_PRICE = 2_900 * 1e2;
     uint256 public constant weETH_USD_PRICE = 3_050 * 1e2;
-    uint256 public constant rsETH_USD_PRICE = 2_980 * 1e2;
+    uint256 public constant rsETH_USD_PRICE = 2_500 * 1e2;
     uint256 public constant weETHs_USD_PRICE = 2_920 * 1e2;
     uint256 public constant mETH_USD_PRICE = 3_040 * 1e2;
     uint256 public constant ezETH_USD_PRICE = 3_000 * 1e2;
