@@ -45,7 +45,7 @@ import {PayloadIGPConstants} from "../common/constants.sol";
 import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 
-/// @notice IGP128: Set timelock as global auth on VaultFactory, upgrade admin module on LL, update USDC/USDT rate curve, and update sUSDe-USDT DEX range.
+/// @notice IGP128: Set timelock as global auth on VaultFactory, upgrade admin module on LL, update USDC/USDT rate curve, update sUSDe-USDT DEX range, and set rsETH vault borrow min values.
 contract PayloadIGP128 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 128;
 
@@ -78,6 +78,9 @@ contract PayloadIGP128 is PayloadIGPMain {
 
         // Action 6: Update sUSDe-USDT DEX range percents
         action6();
+
+        // Action 7: Set rsETH vault borrow configs to min values
+        action7();
     }
 
     function verifyProposal() public view override {}
@@ -189,6 +192,34 @@ contract PayloadIGP128 is PayloadIGPMain {
             0.4 * 1e4, // lower range: 0.4%
             5 days
         );
+    }
+
+    /// @notice Action 7: Set rsETH vault borrow configs to min values on Liquidity Layer
+    function action7() internal isActionSkippable(7) {
+        FluidLiquidityAdminStructs.UserBorrowConfig[]
+            memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](2);
+
+        configs_[0] = FluidLiquidityAdminStructs.UserBorrowConfig({
+            user: 0x9A64E3EB9c2F917CBAdDe75Ad23bb402257acf2E,
+            token: wstETH_ADDRESS,
+            mode: 1,
+            expandPercent: 1,
+            expandDuration: 16777215,
+            baseDebtCeiling: 5,
+            maxDebtCeiling: 10
+        });
+
+        configs_[1] = FluidLiquidityAdminStructs.UserBorrowConfig({
+            user: 0x025C1494b7d15aa931E011f6740E0b46b2136cb9,
+            token: wstETH_ADDRESS,
+            mode: 1,
+            expandPercent: 1,
+            expandDuration: 16777215,
+            baseDebtCeiling: 5,
+            maxDebtCeiling: 10
+        });
+
+        LIQUIDITY.updateUserBorrowConfigs(configs_);
     }
 
     /**
