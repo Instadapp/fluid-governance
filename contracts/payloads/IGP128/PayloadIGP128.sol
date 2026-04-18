@@ -45,7 +45,7 @@ import {PayloadIGPConstants} from "../common/constants.sol";
 import {PayloadIGPHelpers} from "../common/helpers.sol";
 import {PayloadIGPMain} from "../common/main.sol";
 
-/// @notice IGP128: Set timelock as global auth on VaultFactory, upgrade admin module on LL, update USDC/USDT rate curve, update sUSDe-USDT DEX range, and set rsETH vault borrow min values.
+/// @notice IGP128: Set timelock as global auth on VaultFactory, upgrade admin module on LL, update USDC/USDT rate curve, update sUSDe-USDT DEX range, and set rsETH vault borrow to min values.
 contract PayloadIGP128 is PayloadIGPMain {
     uint256 public constant PROPOSAL_ID = 128;
 

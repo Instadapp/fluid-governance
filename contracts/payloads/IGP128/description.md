@@ -1,4 +1,4 @@
-# Set Timelock as VaultFactory Global Auth, Upgrade LL Admin Module, Update USDC/USDT Rate Curve, Update ETH Vault Params, Update sUSDe-USDT DEX Range, and Set rsETH Vault Borrow Min Values
+# Set Timelock as VaultFactory Global Auth, Upgrade LL Admin Module, Update USDC/USDT Rate Curve, Update ETH Vault Params, Update sUSDe-USDT DEX Range, and Set rsETH Vault Borrow to Min Values
 
 ## Summary
 
