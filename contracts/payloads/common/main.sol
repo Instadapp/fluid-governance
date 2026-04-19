@@ -27,23 +27,11 @@ import { IDSAV2 } from "./interfaces/IDSA.sol";
 
 import { PayloadIGPConstants } from "./constants.sol";
 import { PayloadIGPHelpers } from "./helpers.sol";
+import { PayloadIGPVariables } from "./variables.sol";
+import { PayloadIGPEvents } from "./events.sol";
 
 
-abstract contract PayloadIGPMain is PayloadIGPHelpers {
-    /**
-     * |
-     * |     State Variables      |
-     * |__________________________
-     */
-    /// @notice The unix time when the proposal was created
-    uint40 internal _proposalCreationTime;
-
-    /// @notice Boolean value to check if the proposal is executable. Default is not executable.
-    bool internal _isProposalExecutable;
-
-    /// @notice Actions that can be skipped
-    mapping(uint256 => bool) internal _skipAction;
-
+abstract contract PayloadIGPMain is PayloadIGPHelpers, PayloadIGPVariables, PayloadIGPEvents {
     /// @notice Modifier to check if an action can be skipped
     modifier isActionSkippable(uint256 action_) {
         // If function is not skippable, then execute
@@ -65,7 +53,10 @@ abstract contract PayloadIGPMain is PayloadIGPHelpers {
         }
 
         for (uint256 i = 0; i < actionsToSkip_.length; i++) {
-            _skipAction[actionsToSkip_[i]] = true;
+            if (!_skipAction[actionsToSkip_[i]]) {
+                _skipAction[actionsToSkip_[i]] = true;
+                emit ActionSkipped(actionsToSkip_[i], msg.sender);
+            }
         }
     }
 
@@ -150,6 +141,7 @@ abstract contract PayloadIGPMain is PayloadIGPHelpers {
             "msg.sender-not-allowed"
         );
         _proposalCreationTime = proposalCreationTime_;
+        emit ProposalCreationTimeSet(proposalCreationTime_);
     }
 
 
