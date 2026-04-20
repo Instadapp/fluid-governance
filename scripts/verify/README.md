@@ -83,13 +83,18 @@ npm run verify:deployment -- \
 
 The script:
 
-1. Reads `artifacts/contracts/payloads/IGP129/PayloadIGP129.sol/PayloadIGP129.json`.
+1. Resolves the local artifact in this precedence order (first match wins; the choice is printed on stdout):
+   1. `--deployment-artifact <path>` — explicit override, always wins.
+   2. `ignition/deployments/chain-1/artifacts/PayloadModule#PayloadIGP<N>.json` — the Ignition deploy-time snapshot committed alongside the deployment. **Recommended** and the default: it freezes the exact `deployedBytecode` that was shipped, so unrelated post-deploy refactors of shared base contracts (new public getters on `variables.sol`, etc.) don't flip a perfectly valid deployment to `FAIL`.
+   3. `artifacts/contracts/payloads/IGP<N>/PayloadIGP<N>.sol/PayloadIGP<N>.json` — the fresh Hardhat artifact. Used when no Ignition snapshot exists, or when `--hh-artifact` is passed to force re-verification against the current source tree.
 2. Fetches `eth_getCode(address)` from the supplied RPC.
 3. Zeros out the CBOR metadata tail and every `immutableReferences` region on both sides.
 4. Keccak-hashes and compares.
-5. Prints both hashes and `PASS` / `FAIL`; exits non-zero on mismatch.
+5. Prints both hashes, the artifact source it used, and `PASS` / `FAIL`; exits non-zero on mismatch.
 
 `ETH_RPC` or `RPC_URL` are honoured if `--rpc` is omitted.
+
+When a fresh-compile (hardhat) comparison fails but an Ignition snapshot exists, the script prints a hint reminding you to re-run without `--hh-artifact` to check against the deploy-frozen bytecode first — only investigate the diff further if both comparisons fail.
 
 ## Historical action index
 

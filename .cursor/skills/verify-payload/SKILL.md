@@ -15,9 +15,14 @@ report only.
 ## 1. Scope & invariants
 
 - Input: one payload file + the human's proposal intent (paragraph or
-  bullet list).
+  bullet list). If the proposer ships a `contracts/payloads/IGP<N>/description.md`
+  in-tree, use that as intent when no external text is provided, and call
+  that out in the report's "Run mode" line.
 - Output: a single markdown document shaped like `§6 Report template`
-  below. Nothing else.
+  below. Nothing else. The document **must end** with the `## Concise
+  verdict` block described in §6 — this is the part a reader should be
+  able to consume in 10 seconds, so it goes last (under the full
+  findings), not first.
 - You will **not** run `prepare-prices.ts`, `verify-deployment.ts`, or any
   compiler. Those are separate workflows.
 - You will **not** rewrite the payload. Findings belong in the report.
@@ -238,7 +243,48 @@ verbatim so automated diffs between runs stay clean.
 
 - <unresolved ambiguity 1>
 - ...
+
+## Concise verdict
+
+- **Overall:** <✅ PASS | ⚠️ PASS_WITH_NOTES | ❌ BLOCK> — <≤15-word reason>
+
+| Action | Status | Description |
+| --- | --- | --- |
+| action1 | <✅ PASS \| ⚠️ WARN \| ❌ FAIL> | <≤18-word self-contained headline> |
+| action2 | <✅ PASS \| ⚠️ WARN \| ❌ FAIL> | <≤18-word self-contained headline> |
+| ... | ... | ... |
+
+- **Must-check before execution:** <1–3 bullets of on-chain reads or
+  ordering constraints the executor has to verify; omit the bullet
+  entirely if there are none>
 ```
+
+**Emoji rule (strict):** every status label in the `Concise verdict`
+block — the Overall line and every row of the table — **must** be
+prefixed inline with its emoji (`✅`, `⚠️`, `❌`). No separate
+status-icon column, no emoji-only cells. The emoji goes in front of the
+word, e.g. `✅ PASS`, `⚠️ WARN`, `❌ FAIL`, `⚠️ PASS_WITH_NOTES`,
+`❌ BLOCK`. Do not introduce new emoji or replace the word itself.
+
+**Concise-verdict mapping rules (strict; do not improvise):**
+
+- `PASS` on an action ⇔ no flag raised on it other than
+  `HISTORICALLY_VERIFIED` or `REVIEW_DIFF` where every literal delta is
+  spec-validated and no `EXTERNAL_UNVERIFIABLE` / dependency note exists.
+- `WARN` on an action ⇔ at least one of `NEW_PATTERN`,
+  `EXTERNAL_UNVERIFIABLE`, `UNMAPPED_TARGET`, `OUT_OF_SCOPE_HANDLER`,
+  `STALE_INDEX`, `FLUID_REPO_MISSING`, `EXPECTED_BEHAVIOR_CONFLICT`
+  (resolved positively), or a parameter-sanity caveat that is
+  informational only.
+- `FAIL` on an action ⇔ any `SPEC_VIOLATION`, `UNCLAIMED_ACTION`, or a
+  red-flag sanity finding (order-of-magnitude price, `address(0)` in a
+  recipient slot, wrong `isActionSkippable` index, etc.).
+- **Overall verdict** is the max over per-action severity and the
+  intent-coverage pass (a `MISSING_ACTION` from §4 forces `BLOCK`).
+- The per-action `Description` cell must be self-contained — a reader
+  who skipped the full report should still understand what the action
+  does and (for `WARN` / `FAIL`) why it's flagged. Keep it to one line;
+  do not include bullet lists or links inside the cell.
 
 ## 7. Flag glossary (phrasing reference)
 
