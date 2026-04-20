@@ -88,11 +88,42 @@ Using the action index:
      - For each changed literal, render `old → new`.
      - Validate each new literal against the relevant SPEC.md bounds
        (see 3.4). Plausible changes go in the report as informational.
-2. **Partial hit**: same externals signature vector
-   `(targetSymbol, interfaceName, method)` but different `bodyHash`.
-   Mark `REVIEW_DIFF`. Produce a short textual diff against the closest
-   historical precedent. Focus the review on the delta.
-3. **No hit**: mark `NEW_PATTERN`. Full review required via 3.4–3.5.
+2. **Partial hit**: same *Fluid external-call set* as some earlier
+   action but different `bodyHash`. Mark `REVIEW_DIFF`. Produce a short
+   textual diff against the closest historical precedent. Focus the
+   review on the delta.
+
+   The "external-call set" used for this comparison is:
+
+   ```
+   {  (interfaceName, method)  for every extracted external call whose
+      `receiver` is NOT the payload contract itself or one of its
+      inherited helper / variables / constants contracts }
+   ```
+
+   In particular:
+
+   - Intra-payload calls (receiver `Payload*`, `PayloadIGPMain`,
+     `PayloadIGPHelpers`, `PayloadIGPPriceHelpers`, `Constants`,
+     `Variables`, private storage-getter helpers like
+     `userModuleAddress()`) are **ignored** for the partial-hit check —
+     they are plumbing, not protocol calls.
+   - Differences in call order and in the argument literals do **not**
+     downgrade a partial hit to `NEW_PATTERN`; they are the `delta` you
+     describe in the review.
+   - Being the "first time since rollback was introduced" does not
+     matter for classification if a prior IGP used the same
+     `(interfaceName, method)` tuple. Precedent is precedent.
+
+3. **No hit**: the external-call set has no match in the index. Only
+   now mark `NEW_PATTERN`. Full review required via 3.4–3.5.
+
+   Before emitting `NEW_PATTERN`, you **must** explicitly state:
+   "No prior IGP calls `<interfaceName>.<method>` on a contract of role
+   `<role>`", after a full scan of `action-index.json`. If this
+   statement is not true, reclassify to `REVIEW_DIFF`. The most common
+   regression here is treating an extra intra-payload helper call as a
+   novel external call — don't.
 
 ### 3.4 Per-call spec checks
 
@@ -132,7 +163,76 @@ For each external call returned by `externalsExtractor.extractExternalCalls`:
 4. Decode any numeric revert-code literals via
    `../fluid-contracts/docs/errors.md` when reasoning about failure
    modes.
-5. For non-Fluid targets (Avo, Reserve wrappers used only through a
+5. Resolve vault / dex / oracle / module addresses and their bound
+   tokens against `../fluid-contracts/deployments/<chain>/*.json` before
+   labelling anything as "on-chain state, not re-verified". The
+   deployment JSONs are committed constructor-args snapshots; they are
+   the authoritative static mapping between vault ids and their
+   supply/borrow tokens, between DEX ids and token pairs, between
+   `AdminModule` / `UserModule` addresses and their versions, etc.
+   Procedure:
+   1. Grep the `deployments/<chain>/` directory for the numeric id
+      (`"vaultId": <N>`, `"dexId": <N>`, etc.) — not the filename,
+      which is cosmetic.
+   2. Read the matching JSON's `args` and extract the constructor
+      fields relevant to the action (`supplyToken`, `borrowToken`,
+      `borrowToken.token0/token1` for smart-collateral / smart-debt
+      DEX vaults, `vaultType`, etc.).
+   3. Compare against the literal passed by the payload (typically a
+      `*_ADDRESS` constant from
+      `contracts/payloads/common/constants.sol`). If they match, the
+      mapping is **verified**, not `EXTERNAL_UNVERIFIABLE`. If they
+      disagree, flag `SPEC_VIOLATION` — a wrong token ↔ vault binding
+      is a deploy-time error, not a runtime assumption.
+   4. Only fall back to `EXTERNAL_UNVERIFIABLE` when the id is not
+      present in the deployments folder at all (chain not tracked,
+      vault not yet registered, etc.). Cite the exact JSON path in the
+      report so a reader can re-verify in one click.
+
+6. Read live mutable state via Fluid resolver contracts before flagging
+   a `REVIEW_DIFF` as "other params need on-chain confirmation". The
+   resolvers exist precisely so payload reviewers can diff a proposed
+   `updateX` struct against the current packed storage without
+   hand-decoding slots. Every deployed resolver has a committed address
+   in `../fluid-contracts/deployments/<chain>/<Name>Resolver.json`.
+
+   Coverage map (resolver → the payload-call it validates):
+
+   | Resolver | Proposed call | Getter to read |
+   | --- | --- | --- |
+   | `LiquidityResolver` | `LIQUIDITY.updateRateDataV2s` / `V1s` | `getTokenRateData(token)` (and the batch variant) |
+   | `LiquidityResolver` | `LIQUIDITY.updateTokenConfigs` / `UserSupplyConfigs` / `UserBorrowConfigs` | `getOverallTokenData(token)`, `getUserSupplyData`, `getUserBorrowData` |
+   | `VaultResolver` / `VaultT1Resolver` | `IFluidVaultT1.update{CollateralFactor,LiquidationThreshold,LiquidationMaxLimit,LiquidationPenalty,CollateralPerUnitBorrow}` | `getVaultEntireData(vault)` and `getVaultConfiguration` — read current `CF / LT / LML / liquidationPenalty / collateralPerUnitBorrow` |
+   | `DexResolver` / `DexReservesResolver` / `DexLiteResolver` | `IFluidDex.update{RangePercents,ThresholdPercents,CenterPriceLimits,FeeAndRevenueCut,Fees,Shares}` | `getDexEntireData(dex)` / `getDexRangeShift` / `getDexThresholdShift` |
+   | `InfiniteProxy` + code `eth_getCode` | `IInfiniteProxy.{addImplementation,removeImplementation,setAdmin,setDummyImplementation}` | `getImplementations()`, `getImplementationSigs(impl)`, `getAdmin()`, `readFromStorage(slot)` |
+   | `rollbackModule` | `IFluidLiquidityRollback.registerRollbackImplementation` | `readFromStorage(ROLLBACK_SLOT)` and prior-registration check |
+
+   Procedure:
+
+   1. Pick the resolver for the `(interfaceName, method)` tuple via the
+      table. If none matches, document it and fall through to step 7.
+   2. Load the deployment JSON to get the resolver address on the
+      relevant chain.
+   3. Call the getter with the RPC configured in the repo (default:
+      `https://eth-mainnet.public.blastapi.io`, or `$ETH_RPC` /
+      `$RPC_URL` when set). Use the resolver's `iXxxResolver.sol` ABI
+      that lives next to the SPEC.md.
+   4. For every field in the payload's proposed struct, print the
+      on-chain value side-by-side with the proposed value. Mark each
+      as `unchanged` / `Δ old → new`.
+   5. Every `unchanged` field gets a ✅ — no need to list it as a
+      caveat. Every `Δ` field must be explained in the intent and
+      bounded against SPEC.md; otherwise flag `SPEC_VIOLATION`.
+   6. If the RPC is unreachable or the resolver call reverts, flag
+      `EXTERNAL_UNVERIFIABLE` with the resolver address, method,
+      calldata, and the revert reason. Do **not** silently downgrade
+      the finding.
+
+   The purpose is to convert "large economic change — other curve
+   params need on-chain confirmation" into a concrete field-by-field
+   proof in the audit report. If you wrote that phrase verbatim, you
+   did not run this step.
+7. For non-Fluid targets (Avo, Reserve wrappers used only through a
    non-Fluid interface, third-party tokens, etc.), record
    `EXTERNAL_UNVERIFIABLE` with a one-line note about what could not be
    verified.
