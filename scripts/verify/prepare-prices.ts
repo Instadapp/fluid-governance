@@ -24,7 +24,10 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve, join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { detectTokensUsed } from "./lib/tokenUsage.js";
+import {
+  checkDispatchCoverage,
+  detectTokensUsed,
+} from "./lib/tokenUsage.js";
 import { CoinGeckoClient } from "./lib/coingecko.js";
 import { generate, spliceIntoSource } from "./lib/generator.js";
 import { isDeterministic } from "./lib/rounding.js";
@@ -120,6 +123,37 @@ async function main(): Promise<void> {
         `Nothing to write.\n`
     );
     process.exit(0);
+  }
+
+  // ---- 1a. verify pricehelpers.sol dispatches every used token ------
+  const pricehelpersPath = join(
+    repoRoot,
+    "contracts",
+    "payloads",
+    "common",
+    "pricehelpers.sol"
+  );
+  if (!existsSync(pricehelpersPath)) {
+    fail(
+      1,
+      `pricehelpers.sol not found at ${pricehelpersPath}. ` +
+        `This file is required for future payloads.`
+    );
+  }
+  const coverage = checkDispatchCoverage(pricehelpersPath, usage.used);
+  if (coverage.missing.length > 0) {
+    const lines = [
+      `pricehelpers.sol has no dispatch branch for:`,
+      ...coverage.missing.map(
+        (t) => `  - ${t.constantName} (priceVar=${t.priceVarName}, decimals=${t.decimals})`
+      ),
+      "",
+      "Fix: add an `else if (token == X_ADDRESS) { usdPrice = X_USD_PRICE(); decimals = N; }`",
+      "branch to `getRawAmount` in contracts/payloads/common/pricehelpers.sol,",
+      "and declare the `X_USD_PRICE()` virtual getter there if it's new.",
+      "See .cursor/skills/add-payload-token/SKILL.md for the full workflow.",
+    ];
+    fail(2, lines.join("\n"));
   }
 
   // ---- 2. fetch live prices -----------------------------------------

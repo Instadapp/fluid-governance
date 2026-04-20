@@ -33,12 +33,69 @@ import {
   END_MARKER,
 } from "./markers.js";
 
+/**
+ * Token constants NOT required to be dispatched in `pricehelpers.sol`
+ * because they only appear in payload code for book-keeping (approve,
+ * transfer, event topics) and never flow through `getRawAmount`. Listed
+ * in `constants.sol` but intentionally absent from the priced universe.
+ *
+ * Keep this small and explicit — widening it silently weakens the
+ * dispatch-coverage check.
+ */
+const NON_PRICED_EXEMPT = new Set<string>([
+  // WETH is used as a transfer-path target but priced through ETH when
+  // it appears on the Liquidity side.
+  "WETH_ADDRESS",
+  // Lido stETH — historical payloads reference it as a transfer target;
+  // liquidity-side pricing goes through wstETH. Add only if a new payload
+  // genuinely needs a stETH exchange-price lookup.
+  "stETH_ADDRESS",
+]);
+
 export interface TokenUsageResult {
   used: TokenEntry[];
   /** `*_ADDRESS` identifiers that have no registry entry. */
   unknown: string[];
   /** Debug: raw set of `*_ADDRESS` identifiers found in the payload. */
   allReferences: string[];
+}
+
+export interface DispatchCoverageResult {
+  /** Tokens that have a `token == X_ADDRESS` branch in pricehelpers.sol. */
+  covered: TokenEntry[];
+  /** Tokens the payload uses but which are not dispatched. */
+  missing: TokenEntry[];
+}
+
+/**
+ * Scan `contracts/payloads/common/pricehelpers.sol` and return which of the
+ * requested tokens have a dispatch branch (`token == X_ADDRESS`) in its
+ * `getRawAmount`. Token constants in `NON_PRICED_EXEMPT` are treated as
+ * covered unconditionally — they never need a price lookup.
+ */
+export function checkDispatchCoverage(
+  pricehelpersPath: string,
+  tokens: readonly TokenEntry[]
+): DispatchCoverageResult {
+  const src = readFileSync(pricehelpersPath, "utf8");
+  const covered: TokenEntry[] = [];
+  const missing: TokenEntry[] = [];
+  for (const t of tokens) {
+    if (NON_PRICED_EXEMPT.has(t.constantName)) {
+      covered.push(t);
+      continue;
+    }
+    const pattern = new RegExp(
+      `token\\s*==\\s*${escapeRegex(t.constantName)}\\b`
+    );
+    if (pattern.test(src)) covered.push(t);
+    else missing.push(t);
+  }
+  return { covered, missing };
+}
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export function detectTokensUsed(payloadPath: string): TokenUsageResult {
