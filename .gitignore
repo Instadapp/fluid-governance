@@ -22,3 +22,6 @@
 .env
 
 /ignition/deployments/simulation-1/
+
+# verify scripts cache
+scripts/verify/.cache/
