@@ -4,7 +4,7 @@ Read-only tooling for governance-payload reviews. Two main entry points:
 
 | Script | Phase | What it does |
 | --- | --- | --- |
-| `prepare-prices.ts` | pre-deploy | Emits a minimal block of `<SYMBOL>_USD_PRICE()` overrides into the payload (one per distinct priceVar it references), using live CoinGecko quotes rounded per the registry's rules. The `getRawAmount` dispatch itself lives once in `contracts/payloads/common/pricehelpers.sol`. |
+| `prepare-prices.ts` | pre-deploy | Emits a minimal block of `<SYMBOL>_USD_PRICE()` overrides into the payload (one per distinct priceVar used by USD-denominated `getRawAmount` logic), using live CoinGecko quotes rounded per the registry's rules. The `getRawAmount` dispatch itself lives once in `contracts/payloads/common/pricehelpers.sol`. |
 | `verify-deployment.ts` | post-deploy | Compares on-chain bytecode vs the local Hardhat artifact, normalising the CBOR metadata tail and every `immutableReferences` region. |
 
 Supporting libraries (`lib/`):
@@ -12,7 +12,7 @@ Supporting libraries (`lib/`):
 - `tokens.ts` — registry of every token address a payload may legitimately reference, its CoinGecko id, decimals, `priceVarName` (the getter name declared in `pricehelpers.sol`), and rounding rule.
 - `rounding.ts` — rounding policies (`exactOneDollar`, `nearestCent`, `nearestTenDollars`, `nearestThousandDollars`) matching historical payload style.
 - `coingecko.ts` — minimal client for the public `simple/price` endpoint with 429/5xx retries.
-- `tokenUsage.ts` — regex-based scanner that returns the set of `*_ADDRESS` constants a payload references (ignores comments, strings, and the auto-generated region itself). Also provides `checkDispatchCoverage` which verifies `pricehelpers.sol` has a `token == <X_ADDRESS>` branch for every used token.
+- `tokenUsage.ts` — regex-based scanner that returns the set of `*_ADDRESS` constants a payload uses in price-relevant `getRawAmount` paths (ignores comments, strings, and the auto-generated region itself). Raw token references are kept only for debugging. Also provides `checkDispatchCoverage` which verifies `pricehelpers.sol` has a `token == <X_ADDRESS>` branch for every price-relevant token.
 - `generator.ts` — deterministic renderer for the override block. Emits one `function <priceVar>() public pure override returns (uint256) { return … }` per *distinct* priceVar referenced by the payload.
 - `bytecode.ts` — metadata + immutables-aware bytecode comparator.
 - `markers.ts` — shared `BEGIN` / `END` strings.

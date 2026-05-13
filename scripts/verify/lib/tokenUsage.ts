@@ -2,21 +2,22 @@
  * Token-usage detector.
  *
  * Given a payload's `.sol` source, figure out which token address constants
- * it actually references so `prepare-prices.ts` only emits constants for
- * tokens the payload uses.
+ * flow through USD-denominated limit helpers so `prepare-prices.ts` only emits
+ * constants for tokens whose price getters may actually be reached.
  *
  * Strategy:
  *   1. Strip comments and strings from the source so identifier names inside
  *      them are not counted. (Otherwise an explanatory NatSpec about "ETH"
  *      or a URL would falsely flag the token as used.)
- *   2. Regex-match every identifier ending in `_ADDRESS` that also lives in
- *      the token registry.
- *   3. Exclude identifiers that appear only inside the auto-generated marker
- *      region itself — we're asking "what does the human-written payload
- *      use", not "what does the last run emit".
- *   4. Anything that looks like a token address reference (`*_ADDRESS`) but
- *      is not in the registry is returned as `unknown` so the caller can
- *      surface an actionable error pointing to the add-token skill.
+ *   2. Keep `allReferences` as every `*_ADDRESS` identifier for debugging.
+ *   3. Mark only price-relevant identifiers as `used`:
+ *      - direct `getRawAmount(X_ADDRESS, ...)` first arguments
+ *      - conservatively, every token reference in payloads that call common
+ *        USD helpers (`setVaultLimits`, `setDexLimits`,
+ *        `setSupplyProtocolLimits`, `setBorrowProtocolLimits`)
+ *   4. Anything price-relevant that is not in the registry is returned as
+ *      `unknown` so the caller can surface an actionable error pointing to the
+ *      add-token skill. Raw token references are intentionally not unknowns.
  *
  * This regex-first approach is deliberate: parsing Solidity fully would need
  * solc + an AST walk, which is overkill given the payload convention is a
@@ -56,7 +57,7 @@ export interface TokenUsageResult {
   used: TokenEntry[];
   /** `*_ADDRESS` identifiers that have no registry entry. */
   unknown: string[];
-  /** Debug: raw set of `*_ADDRESS` identifiers found in the payload. */
+  /** Debug: raw set of every `*_ADDRESS` identifier found in the payload. */
   allReferences: string[];
 }
 
@@ -107,11 +108,13 @@ export function detectTokensUsedFromSource(src: string): TokenUsageResult {
   const stripped = stripCommentsStringsAndMarkerBlock(src);
 
   const ADDRESS_IDENT = /\b([A-Za-z_][A-Za-z0-9_]*_ADDRESS)\b/g;
-  const seen = new Set<string>();
+  const allReferences = new Set<string>();
   let match: RegExpExecArray | null;
   while ((match = ADDRESS_IDENT.exec(stripped)) !== null) {
-    seen.add(match[1]!);
+    allReferences.add(match[1]!);
   }
+
+  const seen = detectPriceRelevantTokenConstants(stripped, allReferences);
 
   const used: TokenEntry[] = [];
   const unknown: string[] = [];
@@ -127,8 +130,35 @@ export function detectTokensUsedFromSource(src: string): TokenUsageResult {
   return {
     used,
     unknown,
-    allReferences: [...seen].sort(),
+    allReferences: [...allReferences].sort(),
   };
+}
+
+function detectPriceRelevantTokenConstants(
+  src: string,
+  allReferences: ReadonlySet<string>
+): Set<string> {
+  const seen = new Set<string>();
+
+  // Direct price conversion: getRawAmount(TOKEN_ADDRESS, ...).
+  const DIRECT_RAW_AMOUNT =
+    /\bgetRawAmount\s*\(\s*([A-Za-z_][A-Za-z0-9_]*_ADDRESS)\b/g;
+  let match: RegExpExecArray | null;
+  while ((match = DIRECT_RAW_AMOUNT.exec(src)) !== null) {
+    seen.add(match[1]!);
+  }
+
+  // Common helpers convert USD-denominated fields through getRawAmount()
+  // internally. Their token inputs are sometimes constants in struct fields,
+  // but sometimes arrays / variables (`tokens[i]`), so keep this path
+  // conservative once those helpers are used.
+  const USES_USD_HELPER =
+    /\b(?:setSupplyProtocolLimits|setBorrowProtocolLimits|setDexLimits|setVaultLimits)\s*\(/;
+  if (USES_USD_HELPER.test(src)) {
+    for (const ident of allReferences) seen.add(ident);
+  }
+
+  return seen;
 }
 
 /**
