@@ -14,6 +14,8 @@ This proposal prepares the following Ethereum actions:
 8. Temporarily raises selected wstUSR vault borrow caps just enough to execute reserve rebalances, then restores max-restricted borrow caps.
 9. Withdraws `750_000 * 1e18` FLUID from Treasury to Team Multisig to fund FLUID rewards.
 10. Reserves a placeholder action for PST-related protocol dust limits.
+11. Reserves a placeholder action to remove DSA connector Chief auths and keep only main multisig auth.
+12. Reserves a placeholder action to remove multisig auth from Lite.
 
 New implementation and auth addresses are configurable by Team Multisig before governance execution. The old Liquidity Layer module addresses are hardcoded, and the treasury withdrawal token address and amount are intentionally not Team Multisig-configurable.
 

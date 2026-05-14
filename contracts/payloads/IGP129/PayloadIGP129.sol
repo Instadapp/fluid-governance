@@ -150,6 +150,12 @@ contract PayloadIGP129 is PayloadIGPPriceHelpers {
 
         // Action 12: Placeholder for PST-related protocol dust limits
         action12();
+
+        // Action 13: Placeholder for removing DSA connector Chief auths
+        action13();
+
+        // Action 14: Placeholder for removing multisig auth from Lite
+        action14();
     }
 
     function verifyProposal() public view override {}
@@ -448,6 +454,16 @@ contract PayloadIGP129 is PayloadIGPPriceHelpers {
     /// @notice Action 12: Placeholder for PST-related protocol dust limits
     function action12() internal isActionSkippable(12) {
         // TODO: Fill PST-related protocol dust limit updates before finalizing IGP129.
+    }
+
+    /// @notice Action 13: Placeholder for DSA connector Chief auth cleanup
+    function action13() internal isActionSkippable(13) {
+        // TODO: Remove all DSA connector Chief auths from mainnet and keep only main multisig auth.
+    }
+
+    /// @notice Action 14: Placeholder for Lite auth cleanup
+    function action14() internal isActionSkippable(14) {
+        // TODO: Remove multisig auth from Lite.
     }
 
     /**
