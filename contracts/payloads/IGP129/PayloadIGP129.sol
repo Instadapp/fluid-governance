@@ -144,6 +144,9 @@ contract PayloadIGP129 is PayloadIGPPriceHelpers {
 
         // Action 10: Rebalance wstUSR vaults and restore borrow restrictions
         action10();
+
+        // Action 11: Withdraw FLUID rewards funding to Team Multisig
+        action11();
     }
 
     function verifyProposal() public view override {}
@@ -419,6 +422,24 @@ contract PayloadIGP129 is PayloadIGPPriceHelpers {
         );
 
         FLUID_RESERVE.updateRebalancer(address(TIMELOCK), false);
+    }
+
+    /// @notice Action 11: Withdraw 750,000 FLUID from Treasury to Team Multisig for rewards
+    function action11() internal isActionSkippable(11) {
+        string[] memory targets_ = new string[](1);
+        bytes[] memory encodedSpells_ = new bytes[](1);
+
+        targets_[0] = "BASIC-A";
+        encodedSpells_[0] = abi.encodeWithSignature(
+            "withdraw(address,uint256,address,uint256,uint256)",
+            FLUID_ADDRESS,
+            750_000 * 1e18,
+            TEAM_MULTISIG,
+            0,
+            0
+        );
+
+        TREASURY.cast(targets_, encodedSpells_, address(this));
     }
 
     /**

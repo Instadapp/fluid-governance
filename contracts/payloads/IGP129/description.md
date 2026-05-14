@@ -12,6 +12,7 @@ This proposal prepares the following Ethereum actions:
 6. Rotates the DexFactory range auth from the hardcoded old auth to the new auth.
 7. Sets vault 142 (wstUSR / USDtb) wstUSR base withdrawal limit to exactly `24 * 1e18` raw units while keeping max-restricted expansion settings.
 8. Temporarily raises selected wstUSR vault borrow caps just enough to execute reserve rebalances, then restores max-restricted borrow caps.
+9. Withdraws `750_000 * 1e18` FLUID from Treasury to Team Multisig to fund FLUID rewards.
 
 New implementation and auth addresses are configurable by Team Multisig before governance execution. The old Liquidity Layer module addresses are hardcoded, and the treasury withdrawal token address and amount are intentionally not Team Multisig-configurable.
 
