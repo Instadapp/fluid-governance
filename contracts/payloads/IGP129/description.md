@@ -23,6 +23,10 @@ The first action transfers the Treasury's iETHv2 holdings to the Team Multisig a
 
 The second action redeems the Treasury's fGHO position to GHO and sends the GHO to the Team Multisig.
 
+## References
+
+- [Post-Mortem, Treasury Actions, and Forward Strategy Following Resolv Incident](https://gov.fluid.io/t/post-mortem-treasury-actions-and-forward-strategy-following-resolv-incident/1774)
+
 ## Conclusion
 
 IGP-129 moves the Treasury's iETHv2 balance to the Team Multisig and redeems the Treasury's fGHO position to GHO for the Team Multisig for clearing the outstanding debt after the Resolv incident.
