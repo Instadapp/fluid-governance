@@ -73,7 +73,4 @@ contract PayloadIGP129 is PayloadIGPPriceHelpers {
      * |     Payload Actions End Here      |
      * |__________________________________
      */
-
-    // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
-    // --- END AUTO-GENERATED PRICES ---
 }

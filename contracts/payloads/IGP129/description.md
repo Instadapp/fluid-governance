@@ -1,8 +1,8 @@
-# Withdraw Treasury iETHv2 and fGHO Balances to Team Multisig
+# Withdraw Treasury iETHv2 and fGHO Balances to Team Multisig to clear outstanding debt accrued after Resolv incident
 
 ## Summary
 
-This proposal performs two Ethereum actions:
+This proposal performs two Ethereum actions to clear the outstanding debt after the Resolv incident:
 
 1. Transfers the Treasury DSA's iETHv2 balance to the Team Multisig as iETHv2.
 2. Redeems the Treasury DSA's fGHO position to GHO and sends the GHO to the Team Multisig.
@@ -25,4 +25,4 @@ The second action redeems the Treasury's fGHO position to GHO and sends the GHO 
 
 ## Conclusion
 
-IGP-129 moves the Treasury's iETHv2 balance to the Team Multisig and redeems the Treasury's fGHO position to GHO for the Team Multisig.
+IGP-129 moves the Treasury's iETHv2 balance to the Team Multisig and redeems the Treasury's fGHO position to GHO for the Team Multisig for clearing the outstanding debt after the Resolv incident.
