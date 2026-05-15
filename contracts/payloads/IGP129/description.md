@@ -1,29 +1,28 @@
-# Treasury Withdrawal to Team Multisig
+# Withdraw Treasury iETHv2 and fGHO Balances to Team Multisig
 
 ## Summary
 
-This proposal performs a single Ethereum action:
+This proposal performs two Ethereum actions:
 
-1. Withdraws funds from the Treasury DSA to Team Multisig. Token and amount are left as in-code placeholders to be filled before finalizing IGP-129.
-
-The treasury withdrawal token address and amount are intentionally **not** Team Multisig-configurable — they are hardcoded in the payload before submission and `action1()` reverts on execution if either is left at its zero placeholder.
+1. Transfers the Treasury DSA's iETHv2 balance to the Team Multisig as iETHv2.
+2. Redeems the Treasury DSA's fGHO position to GHO and sends the GHO to the Team Multisig.
 
 ## Code Changes
 
-### Action 1: Withdraw Funds from Treasury to Team Multisig
+### Action 1: Transfer Full iETHv2 Balance to Team Multisig
 
-- Casts the Treasury DSA with the `BASIC-A` connector and the `withdraw(address,uint256,address,uint256,uint256)` spell.
-- Spell args: `(token_, amount_, TEAM_MULTISIG, 0, 0)`.
-- Reverts with `withdraw-token-not-set` if `token_ == address(0)` and with `withdraw-amount-not-set` if `amount_ == 0`.
+- Uses the `BASIC-A` connector's `withdraw` spell with `type(uint256).max` as the amount, so the Treasury's entire iETHv2 balance is transferred to the Team Multisig as iETHv2.
+
+### Action 2: Redeem Full fGHO Position to GHO and Send to Team Multisig
+
+- Uses the `BASIC-D-V2` connector's `redeem` spell with `type(uint256).max` as the share amount, redeeming all fGHO shares held by the Treasury and sending the resulting GHO to the Team Multisig.
 
 ## Description
 
-IGP-129 carries a single on-chain action that withdraws a hardcoded token and amount from the Treasury DSA into the Team Multisig via the `BASIC-A` connector. Both values are inlined in `action1()` of `PayloadIGP129.sol` and must be filled in before the proposal is submitted; the in-code `require` guards ensure that the proposal cannot execute with the zero placeholders.
+The first action transfers the Treasury's iETHv2 holdings to the Team Multisig as iETHv2.
 
-This payload is intentionally split out from the broader maintenance batch (covered separately in IGP-130) so that the treasury withdrawal can be reviewed, voted on, and executed on its own.
-
-> Note: No values on this payload are Team Multisig-configurable. The token and amount are fixed in source before submission.
+The second action redeems the Treasury's fGHO position to GHO and sends the GHO to the Team Multisig.
 
 ## Conclusion
 
-IGP-129 executes a single Treasury → Team Multisig withdrawal via the `BASIC-A` connector, with the token and amount hardcoded in the payload prior to submission. It is delivered separately from the broader maintenance batch in IGP-130.
+IGP-129 moves the Treasury's iETHv2 balance to the Team Multisig and redeems the Treasury's fGHO position to GHO for the Team Multisig.
