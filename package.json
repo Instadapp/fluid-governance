@@ -7,7 +7,10 @@
     "deploy:payload": "npx hardhat ignition deploy ignition/modules/Payload.ts --network mainnet --verify",
     "simulate:payload": "npx hardhat ignition deploy ignition/modules/Payload.ts --network simulation --deployment-id simulation-1 && npx hardhat ignition wipe simulation-1 PayloadModule#PayloadIGP${IGP_ID}",
     "simulate": "ts-node scripts/simulate.ts",
-    "compile": "npx hardhat compile"
+    "compile": "npx hardhat compile",
+    "verify:prices": "node --loader ts-node/esm --no-warnings scripts/verify/prepare-prices.ts",
+    "verify:deployment": "node --loader ts-node/esm --no-warnings scripts/verify/verify-deployment.ts",
+    "verify:action-index": "node --loader ts-node/esm --no-warnings scripts/verify/build-action-index.ts"
   },
   "keywords": [],
   "author": "",
