@@ -15,13 +15,13 @@ import {
 } from "../common/interfaces/IFluidLiquidityRollback.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
-/// @notice IGP130: Liquidity Layer module upgrades with rollback registration,
+/// @notice IGP131: Liquidity Layer module upgrades with rollback registration,
 ///         pause auth registration, rates/ranges auth rotation, wstUSR vault
 ///         rebalancing prep, FLUID rewards funding, and placeholders for
 ///         PST-related dust limits and DSA/Lite connector auth cleanups.
 ///         Module and auth values are configurable by Team Multisig before execution.
-contract PayloadIGP130 is PayloadIGPPriceHelpers {
-    uint256 public constant PROPOSAL_ID = 130;
+contract PayloadIGP131 is PayloadIGPPriceHelpers {
+    uint256 public constant PROPOSAL_ID = 131;
 
     address public constant OLD_USER_MODULE =
         0x4bDC8816F2f56914B66EbF3786D78872D3a73Ab7;
@@ -171,7 +171,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
 
     /// @notice Action 1: Register UserModule LL upgrade on RollbackModule
     function action1() internal isActionSkippable(1) {
-        address newUserModule_ = PayloadIGP130(ADDRESS_THIS)
+        address newUserModule_ = PayloadIGP131(ADDRESS_THIS)
             .newUserModuleAddress();
         require(newUserModule_ != address(0), "new-user-module-not-set");
 
@@ -181,7 +181,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
 
     /// @notice Action 2: Upgrade UserModule LL on InfiniteProxy
     function action2() internal isActionSkippable(2) {
-        address newUserModule_ = PayloadIGP130(ADDRESS_THIS)
+        address newUserModule_ = PayloadIGP131(ADDRESS_THIS)
             .newUserModuleAddress();
         require(newUserModule_ != address(0), "new-user-module-not-set");
 
@@ -200,7 +200,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
 
     /// @notice Action 3: Register AdminModule LL upgrade on RollbackModule
     function action3() internal isActionSkippable(3) {
-        address newAdminModule_ = PayloadIGP130(ADDRESS_THIS)
+        address newAdminModule_ = PayloadIGP131(ADDRESS_THIS)
             .newAdminModuleAddress();
         require(newAdminModule_ != address(0), "new-admin-module-not-set");
 
@@ -210,7 +210,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
 
     /// @notice Action 4: Upgrade AdminModule LL on InfiniteProxy
     function action4() internal isActionSkippable(4) {
-        address newAdminModule_ = PayloadIGP130(ADDRESS_THIS)
+        address newAdminModule_ = PayloadIGP131(ADDRESS_THIS)
             .newAdminModuleAddress();
         require(newAdminModule_ != address(0), "new-admin-module-not-set");
 
@@ -229,9 +229,9 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
 
     /// @notice Action 5: Set new pause auth contracts
     function action5() internal isActionSkippable(5) {
-        address liquidityPauseAuth_ = PayloadIGP130(ADDRESS_THIS)
+        address liquidityPauseAuth_ = PayloadIGP131(ADDRESS_THIS)
             .liquidityPauseAuth();
-        address dexPauseAuth_ = PayloadIGP130(ADDRESS_THIS).dexPauseAuth();
+        address dexPauseAuth_ = PayloadIGP131(ADDRESS_THIS).dexPauseAuth();
         require(liquidityPauseAuth_ != address(0), "ll-pause-auth-not-set");
         require(dexPauseAuth_ != address(0), "dex-pause-auth-not-set");
 
@@ -255,7 +255,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
 
     /// @notice Action 6: Update Rates Auth on Liquidity Layer
     function action6() internal isActionSkippable(6) {
-        address newRatesAuth_ = PayloadIGP130(ADDRESS_THIS).newRatesAuth();
+        address newRatesAuth_ = PayloadIGP131(ADDRESS_THIS).newRatesAuth();
         require(newRatesAuth_ != address(0), "new-rates-auth-not-set");
 
         FluidLiquidityAdminStructs.AddressBool[]
@@ -277,7 +277,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
 
     /// @notice Action 7: Update Ranges Auth on DexFactory
     function action7() internal isActionSkippable(7) {
-        address newRangeAuth_ = PayloadIGP130(ADDRESS_THIS).newRangeAuth();
+        address newRangeAuth_ = PayloadIGP131(ADDRESS_THIS).newRangeAuth();
         require(newRangeAuth_ != address(0), "new-range-auth-not-set");
 
         DEX_FACTORY.setGlobalAuth(OLD_RANGE_AUTH, false);
@@ -428,7 +428,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
 
     /// @notice Action 11: Placeholder for PST-related protocol dust limits
     function action11() internal isActionSkippable(11) {
-        // TODO: Fill PST-related protocol dust limit updates before finalizing IGP130.
+        // TODO: Fill PST-related protocol dust limit updates before finalizing IGP131.
     }
 
     /// @notice Action 12: Placeholder for DSA connector Chief auth cleanup

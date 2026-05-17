@@ -108,7 +108,7 @@ Temporarily raises borrow caps just enough to execute reserve rebalances on six 
 
 ### Action 11: PST-Related Protocol Dust Limits (Placeholder)
 
-- No-op in this draft. To be filled in with PST-related protocol dust limit updates before finalizing IGP-130.
+- No-op in this draft. To be filled in with PST-related protocol dust limit updates before finalizing IGP-131.
 
 ### Action 12: Remove DSA Connector Chief Auths (Placeholder)
 
@@ -137,7 +137,7 @@ This proposal covers four areas of protocol maintenance and infrastructure upgra
 
 4. **FLUID Rewards Funding and Auth Cleanups**
    - Withdraws `750_000 * 1e18` FLUID from the Treasury DSA to Team Multisig via the `BASIC-A` connector to fund upcoming FLUID rewards.
-   - Reserves three placeholder actions (PST-related protocol dust limits, removal of DSA connector Chief auths on mainnet, removal of the multisig auth from Lite) that are no-ops in this draft and will be filled in before finalizing IGP-130.
+   - Reserves three placeholder actions (PST-related protocol dust limits, removal of DSA connector Chief auths on mainnet, removal of the multisig auth from Lite) that are no-ops in this draft and will be filled in before finalizing IGP-131.
 
 ### Configurable Addresses (Team Multisig sets before execution)
 
@@ -154,4 +154,4 @@ Each configurable group has a Team Multisig-only `lock…()` function to freeze 
 
 ## Conclusion
 
-IGP-130 upgrades the Liquidity Layer UserModule and AdminModule via the InfiniteProxy with pre-upgrade rollback registrations, rotates the Liquidity Layer guardian, rates auth, and the DexFactory pause and range auths, sets vault 142 wstUSR base withdrawal limit to `24 * 1e18`, executes a buffered reserve rebalance across wstUSR vaults 110, 111, 112, 133, 134, and 135 before restoring max-restricted borrow limits, withdraws `750_000` FLUID from Treasury to Team Multisig for upcoming rewards, and reserves three placeholder actions for PST dust limits, DSA connector Chief auth cleanup, and Lite multisig auth cleanup that will be filled in before submission.
+IGP-131 upgrades the Liquidity Layer UserModule and AdminModule via the InfiniteProxy with pre-upgrade rollback registrations, rotates the Liquidity Layer guardian, rates auth, and the DexFactory pause and range auths, sets vault 142 wstUSR base withdrawal limit to `24 * 1e18`, executes a buffered reserve rebalance across wstUSR vaults 110, 111, 112, 133, 134, and 135 before restoring max-restricted borrow limits, withdraws `750_000` FLUID from Treasury to Team Multisig for upcoming rewards, and reserves three placeholder actions for PST dust limits, DSA connector Chief auth cleanup, and Lite multisig auth cleanup that will be filled in before submission.
