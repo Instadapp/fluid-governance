@@ -2,25 +2,19 @@
 
 ## Summary
 
-This proposal performs two on-chain actions that together replicate IGP-112 action 10, split across two distinct calls:
+This proposal performs a single on-chain action that mirrors IGP-112 action 10:
 
-1. **Action 1 — Revenue collection.** Calls `LIQUIDITY.collectRevenue(tokens_)` with the 22-token list below. Accrued Liquidity Layer revenue for each token is transferred to the configured revenue collector (the Fluid Reserve Contract, `0x264786EF916af64a1DB19F513F24a3681734ce92`).
-2. **Action 2 — Reserve → Team Multisig sweep.** Calls `IFluidReserveContractV2(FLUID_RESERVE).withdrawFunds(tokens_, amounts_, TEAM_MULTISIG, "revenue for buybacks")` with the same token list, where each `amounts_[i]` is the current Reserve balance of `tokens_[i]` minus a small dust amount sized to the token's decimals (and `address(reserve).balance - 0.1 ether` for native ETH).
+1. Calls `LIQUIDITY.collectRevenue(tokens_)` with the 22-token list below. Accrued Liquidity Layer revenue for each token is transferred to the configured revenue collector (the Fluid Reserve Contract, `0x264786EF916af64a1DB19F513F24a3681734ce92`).
+2. Calls `IFluidReserveContractV2(FLUID_RESERVE).withdrawFunds(tokens_, amounts_, TEAM_MULTISIG, "revenue for buybacks")` with the same token list, where each `amounts_[i]` is the current Reserve balance of `tokens_[i]` minus a small dust amount sized to the token's decimals (and `address(reserve).balance - 0.1 ether` for native ETH).
 
 No values on this payload are Team Multisig-configurable. Token addresses, the recipient (`TEAM_MULTISIG`), and the on-chain reason string (`"revenue for buybacks"`) are fixed in source before submission. Withdrawal amounts are computed at execution time as `IERC20(token).balanceOf(reserve) - dust` (or `address(reserve).balance - 0.1 ether` for native ETH).
 
 ## Code Changes
 
-### Action 1: Collect Liquidity Layer Revenue (22 tokens) into the Reserve Contract
+### Action 1: Collect LL Revenue Across 22 Tokens → Reserve Contract → Team Multisig
 
-- Calls `LIQUIDITY.collectRevenue(tokens_)` with the 22-token array below.
-- Accrued revenue for each token is transferred from the Liquidity Layer to the Fluid Reserve Contract.
-- This call can revert if any token's Liquidity Layer balance is insufficient to cover its accrued revenue (utilization > 100%).
-
-### Action 2: Forward Full Reserve Balance (22 tokens) to Team Multisig
-
-- Calls `IFluidReserveContractV2(FLUID_RESERVE).withdrawFunds(tokens_, amounts_, TEAM_MULTISIG, "revenue for buybacks")`.
-- For each token, `amounts_[i]` is the current Reserve balance of `tokens_[i]` minus a small dust amount.
+- **Step 1 (Liquidity Layer revenue collection)**: Calls `LIQUIDITY.collectRevenue(tokens_)` with the 22-token array below. Accrued revenue for each token is transferred from the Liquidity Layer to the Fluid Reserve Contract. This call can revert if any token's Liquidity Layer balance is insufficient to cover its accrued revenue (utilization > 100%).
+- **Step 2 (Reserve Contract → Team Multisig)**: Calls `IFluidReserveContractV2(FLUID_RESERVE).withdrawFunds(tokens_, amounts_, TEAM_MULTISIG, "revenue for buybacks")`. For each token, `amounts_[i]` is the current Reserve balance of `tokens_[i]` minus a small dust amount.
 - Dust convention (matches IGP-112 action 10):
   - 6-decimal tokens (USDC, USDT, syrupUSDC, XAUt): leave `10` wei
   - 8-decimal tokens (cbBTC, WBTC, eBTC, LBTC): leave `10` wei
@@ -62,15 +56,15 @@ Total snapshot revenue value across the 22 tokens: **~$714,321.26**. Actual on-c
 
 ## Description
 
-IGP-130 follows the same revenue-collection flow used in IGP-112 action 10 (and earlier in IGP-94 / IGP-102): accrued Liquidity Layer revenue is first collected into the Fluid Reserve Contract, and the Reserve Contract then forwards the full balance of each revenue token (minus minimal dust) to the Team Multisig. Splitting the flow into two on-chain actions (collect, then sweep) keeps each step independently inspectable and makes the on-chain trail explicit:
+IGP-130 follows the same revenue-collection flow used in IGP-112 action 10 (and earlier in IGP-94 / IGP-102): accrued Liquidity Layer revenue is first collected into the Fluid Reserve Contract, and the Reserve Contract then forwards the full balance of each revenue token (minus minimal dust) to the Team Multisig. Both steps run as a single atomic action so the on-chain trail is:
 
-1. Action 1 records a `collectRevenue` event per token on the Liquidity Layer.
-2. Action 2 records the consolidated `withdrawFunds` event with the on-chain reason `"revenue for buybacks"` on the Fluid Reserve Contract.
+1. `LIQUIDITY.collectRevenue` emits one `Collect` event per token on the Liquidity Layer.
+2. `IFluidReserveContractV2.withdrawFunds` emits the consolidated transfer event with the on-chain reason `"revenue for buybacks"` on the Fluid Reserve Contract.
 
-The 22-token list matches the latest revenue snapshot (above-$10k tokens first, then below-$10k tokens, in the order shown by the off-chain revenue dashboard at the time of drafting). The full balance of each token sitting on the Reserve Contract at execution time — including any prior accumulation plus the revenue freshly collected in action 1 — is forwarded to the Team Multisig.
+The 22-token list matches the latest revenue snapshot (above-$10k tokens first, then below-$10k tokens, in the order shown by the off-chain revenue dashboard at the time of drafting). The full balance of each token sitting on the Reserve Contract at execution time — including any prior accumulation plus the revenue freshly collected in this action — is forwarded to the Team Multisig.
 
 > Note: No values on this payload are Team Multisig-configurable. Token addresses, recipient, and reason string are fixed in source before submission. Buyback amounts are computed at execution time as `IERC20(token).balanceOf(reserve) − dust` (or `address(reserve).balance − 0.1 ether` for native ETH).
 
 ## Conclusion
 
-IGP-130 collects accrued Liquidity Layer revenue across 22 tokens into the Fluid Reserve Contract (action 1) and then forwards the full Reserve balance of each (minus minimal dust) to the Team Multisig with the on-chain reason `"revenue for buybacks"` (action 2). The broader maintenance batch previously drafted as IGP-130 (Liquidity Layer module upgrades, auth rotations, wstUSR rebalance, FLUID rewards funding, and Lite/DSA placeholders) has been moved to IGP-131.
+IGP-130 collects accrued Liquidity Layer revenue across 22 tokens into the Fluid Reserve Contract and forwards the full Reserve balance of each (minus minimal dust) to the Team Multisig with the on-chain reason `"revenue for buybacks"`, all in a single action. The broader maintenance batch previously drafted as IGP-130 (Liquidity Layer module upgrades, auth rotations, wstUSR rebalance, FLUID rewards funding, and Lite/DSA placeholders) has been moved to IGP-131.
