@@ -1,39 +1,33 @@
-# Collect Liquidity Layer Revenue into the Reserve Contract and Forward to Team Multisig: Fluid Lite (iETHv2) Loss Coverage + Monthly Buyback Revenue Sweep
+# Collect Liquidity Layer Revenue Across 22 Tokens into the Reserve Contract and Forward the Full Reserve Balance to Team Multisig
 
 ## Summary
 
-This proposal performs two on-chain actions, both routing accrued Liquidity Layer revenue through the Fluid Reserve Contract to the Team Multisig, but with distinct carve-outs and recipients off-chain:
+This proposal performs two on-chain actions that together replicate IGP-112 action 10, split across two distinct calls:
 
-1. **Action 1 — Lite (iETHv2) loss coverage.** Collects accrued **wstETH** revenue from the Liquidity Layer into the Fluid Reserve Contract via `LIQUIDITY.collectRevenue([wstETH])`, then forwards `230 * 1e18` wstETH from the Reserve Contract to the Team Multisig via `FLUID_RESERVE.withdrawFunds`. The Team Multisig will then convert the wstETH to ETH off-chain and forward it to the iETHv2 loss-coverage recipient at `0x9a403fc58CC6Efe56965Fa6baC0F01bAa11169aD` (Thrilok) for distribution to affected Fluid Lite ETH (iETHv2) users.
-2. **Action 2 — Monthly buyback revenue sweep.** Collects accrued Liquidity Layer revenue across **22 tokens** into the Fluid Reserve Contract via `LIQUIDITY.collectRevenue(tokens)`, then forwards the full Reserve balance of each of those tokens (minus minimal dust) to the Team Multisig via `IFluidReserveContractV2.withdrawFunds(tokens, amounts, TEAM_MULTISIG, "revenue for buybacks")`. This mirrors IGP-112's action 10.
+1. **Action 1 — Revenue collection.** Calls `LIQUIDITY.collectRevenue(tokens_)` with the 22-token list below. Accrued Liquidity Layer revenue for each token is transferred to the configured revenue collector (the Fluid Reserve Contract, `0x264786EF916af64a1DB19F513F24a3681734ce92`).
+2. **Action 2 — Reserve → Team Multisig sweep.** Calls `IFluidReserveContractV2(FLUID_RESERVE).withdrawFunds(tokens_, amounts_, TEAM_MULTISIG, "revenue for buybacks")` with the same token list, where each `amounts_[i]` is the current Reserve balance of `tokens_[i]` minus a small dust amount sized to the token's decimals (and `address(reserve).balance - 0.1 ether` for native ETH).
 
-No values on this payload are Team Multisig-configurable. Token addresses, recipient (`TEAM_MULTISIG`), the wstETH carve-out amount (`230 * 1e18`), the buyback amounts (`balance − dust` at execution time), and the on-chain reason strings are all fixed in source before submission.
+No values on this payload are Team Multisig-configurable. Token addresses, the recipient (`TEAM_MULTISIG`), and the on-chain reason string (`"revenue for buybacks"`) are fixed in source before submission. Withdrawal amounts are computed at execution time as `IERC20(token).balanceOf(reserve) - dust` (or `address(reserve).balance - 0.1 ether` for native ETH).
 
 ## Code Changes
 
-### Action 1: Collect wstETH Revenue from LL → Reserve Contract → Team Multisig (Lite loss coverage)
+### Action 1: Collect Liquidity Layer Revenue (22 tokens) into the Reserve Contract
 
-- **Step 1 (Liquidity Layer revenue collection)**: Calls `LIQUIDITY.collectRevenue(tokens_)` with `tokens_ = [wstETH_ADDRESS]`. Transfers accrued wstETH revenue from the Liquidity Layer to the configured revenue collector (the Fluid Reserve Contract, `0x264786EF916af64a1DB19F513F24a3681734ce92`).
-- **Step 2 (Reserve Contract → Team Multisig)**: Calls `FLUID_RESERVE.withdrawFunds(tokens_, amounts_, TEAM_MULTISIG)` with `tokens_ = [wstETH_ADDRESS]` and `amounts_ = [230 * 1e18]`.
-- Any wstETH revenue accrued in excess of `230 * 1e18` remains on the Reserve Contract and is swept to the Team Multisig as part of action 2 below.
+- Calls `LIQUIDITY.collectRevenue(tokens_)` with the 22-token array below.
+- Accrued revenue for each token is transferred from the Liquidity Layer to the Fluid Reserve Contract.
+- This call can revert if any token's Liquidity Layer balance is insufficient to cover its accrued revenue (utilization > 100%).
 
-| Field | Value |
-|---|---|
-| Token | wstETH (`0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0`) |
-| Amount | `230 * 1e18` |
-| On-chain recipient | Team Multisig (`TEAM_MULTISIG`, `0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`) |
-| On-chain flow | Liquidity Layer → Fluid Reserve Contract → Team Multisig |
-| Off-chain follow-up (multisig) | Team Multisig converts wstETH → ETH and forwards to `0x9a403fc58CC6Efe56965Fa6baC0F01bAa11169aD` (Thrilok) for iETHv2 user loss coverage |
+### Action 2: Forward Full Reserve Balance (22 tokens) to Team Multisig
 
-### Action 2: Collect LL Revenue Across 22 Tokens → Reserve Contract → Team Multisig (monthly buybacks)
-
-- **Step 1 (Liquidity Layer revenue collection)**: Calls `LIQUIDITY.collectRevenue(tokens_)` with the 22-token array below. Accrued revenue for each token is transferred from the Liquidity Layer to the Fluid Reserve Contract.
-- **Step 2 (Reserve Contract → Team Multisig)**: Calls `IFluidReserveContractV2(FLUID_RESERVE).withdrawFunds(tokens_, amounts_, TEAM_MULTISIG, "revenue for buybacks")` where each `amounts_[i]` is the current Reserve balance of `tokens_[i]` (or `address(reserve).balance` for native ETH) minus a small dust amount sized to the token's decimals.
-- Dust convention (matches IGP-112):
+- Calls `IFluidReserveContractV2(FLUID_RESERVE).withdrawFunds(tokens_, amounts_, TEAM_MULTISIG, "revenue for buybacks")`.
+- For each token, `amounts_[i]` is the current Reserve balance of `tokens_[i]` minus a small dust amount.
+- Dust convention (matches IGP-112 action 10):
   - 6-decimal tokens (USDC, USDT, syrupUSDC, XAUt): leave `10` wei
   - 8-decimal tokens (cbBTC, WBTC, eBTC, LBTC): leave `10` wei
   - 18-decimal tokens (everything else listed below): leave `0.1 ether` (= `1e17`)
   - Native ETH: leave `0.1 ether`
+- Recipient: Team Multisig (`TEAM_MULTISIG`, `0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`).
+- On-chain reason: `"revenue for buybacks"`.
 
 **Token list (22), ordered by approximate revenue value at the time of drafting:**
 
@@ -68,16 +62,15 @@ Total snapshot revenue value across the 22 tokens: **~$714,321.26**. Actual on-c
 
 ## Description
 
-During recent market volatility, ETH borrow rates spiked across the lending protocols used by Fluid Lite. The elevated borrow rates exceeded stETH staking yield, resulting in losses for Lite ETH (iETHv2) vault depositors.
+IGP-130 follows the same revenue-collection flow used in IGP-112 action 10 (and earlier in IGP-94 / IGP-102): accrued Liquidity Layer revenue is first collected into the Fluid Reserve Contract, and the Reserve Contract then forwards the full balance of each revenue token (minus minimal dust) to the Team Multisig. Splitting the flow into two on-chain actions (collect, then sweep) keeps each step independently inspectable and makes the on-chain trail explicit:
 
-To fund the Lite refund without drawing on the broader Treasury, **Action 1** first collects accrued wstETH revenue at the Liquidity Layer into the Fluid Reserve Contract (same `LIQUIDITY.collectRevenue` mechanism used in IGP-94 / IGP-102 / IGP-112), and then forwards a targeted `230 * 1e18` wstETH from the Reserve Contract to the Team Multisig via `FLUID_RESERVE.withdrawFunds`. After execution, the Team Multisig will run a separately-prepared Avocado multisig transaction that (i) converts the 230 wstETH to ETH and (ii) transfers the resulting ETH to `0x9a403fc58CC6Efe56965Fa6baC0F01bAa11169aD` (Thrilok), who applies it to the iETHv2 user loss coverage.
+1. Action 1 records a `collectRevenue` event per token on the Liquidity Layer.
+2. Action 2 records the consolidated `withdrawFunds` event with the on-chain reason `"revenue for buybacks"` on the Fluid Reserve Contract.
 
-**Action 2** then performs the monthly buyback revenue sweep: it collects accrued revenue for the 22 tokens listed above from the Liquidity Layer into the Fluid Reserve Contract, and forwards the full Reserve balance of each (minus minimal dust) onward to the Team Multisig with the on-chain reason `"revenue for buybacks"`. This is the same flow used in IGP-112 action 10, just expanded to cover the broader token universe that Fluid has accrued revenue on since.
+The 22-token list matches the latest revenue snapshot (above-$10k tokens first, then below-$10k tokens, in the order shown by the off-chain revenue dashboard at the time of drafting). The full balance of each token sitting on the Reserve Contract at execution time — including any prior accumulation plus the revenue freshly collected in action 1 — is forwarded to the Team Multisig.
 
-Routing both the Lite loss carve-out and the buyback sweep through the Reserve Contract keeps the protocol-revenue path consistent with the existing buyback flow, makes both transfers visible on-chain with explicit reasons, and avoids touching the main Treasury DSA for either leg.
-
-> Note: No values on this payload are Team Multisig-configurable. Token addresses, the wstETH carve-out amount, recipient, and reason strings are fixed in source before submission. Buyback amounts are computed at execution time as `IERC20(token).balanceOf(reserve) − dust` (or `address(reserve).balance − 0.1 ether` for native ETH).
+> Note: No values on this payload are Team Multisig-configurable. Token addresses, recipient, and reason string are fixed in source before submission. Buyback amounts are computed at execution time as `IERC20(token).balanceOf(reserve) − dust` (or `address(reserve).balance − 0.1 ether` for native ETH).
 
 ## Conclusion
 
-IGP-130 routes Liquidity Layer revenue through the Fluid Reserve Contract to the Team Multisig in two carved-out flows: (1) `230 * 1e18` wstETH for Fluid Lite (iETHv2) ETH user loss coverage (the Team Multisig converts to ETH and forwards off-chain to `0x9a403fc58CC6Efe56965Fa6baC0F01bAa11169aD`), and (2) a full revenue sweep across 22 tokens for the monthly buyback program with the on-chain reason `"revenue for buybacks"`. The broader maintenance batch previously drafted as IGP-130 (Liquidity Layer module upgrades, auth rotations, wstUSR rebalance, FLUID rewards funding, and Lite/DSA placeholders) has been moved to IGP-131.
+IGP-130 collects accrued Liquidity Layer revenue across 22 tokens into the Fluid Reserve Contract (action 1) and then forwards the full Reserve balance of each (minus minimal dust) to the Team Multisig with the on-chain reason `"revenue for buybacks"` (action 2). The broader maintenance batch previously drafted as IGP-130 (Liquidity Layer module upgrades, auth rotations, wstUSR rebalance, FLUID rewards funding, and Lite/DSA placeholders) has been moved to IGP-131.

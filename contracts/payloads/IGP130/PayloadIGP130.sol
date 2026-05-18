@@ -8,34 +8,22 @@ import {
 import {IERC20} from "../common/interfaces/IERC20.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
-/// @notice IGP130: Collect revenue from the Liquidity Layer into the Reserve
-///         Contract and forward to Team Multisig in two carved-out flows:
-///         (1) `WSTETH_TRANSFER_AMOUNT` wstETH for Fluid Lite (iETHv2) ETH
-///             user loss coverage (multisig converts to ETH and forwards
-///             off-chain to Thrilok, 0x9a403fc58CC6Efe56965Fa6baC0F01bAa11169aD);
-///         (2) full Liquidity Layer revenue across 22 tokens for the monthly
-///             buyback program (same flow as IGP-112 action 10).
+/// @notice IGP130: Collect Liquidity Layer revenue across 22 tokens into the
+///         Fluid Reserve Contract, then forward the full Reserve balance of
+///         each token (minus minimal dust) to the Team Multisig. Same flow
+///         as IGP-112 action 10, just split across two actions.
 contract PayloadIGP130 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 130;
-
-    /// @notice Amount of wstETH to forward from the Reserve Contract to the
-    ///         Team Multisig (to be converted to ETH and sent to the iETHv2
-    ///         loss-coverage recipient off-chain at the multisig).
-    uint256 public constant WSTETH_TRANSFER_AMOUNT = 230 * 1e18;
 
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Collect wstETH revenue from LL into the Reserve Contract,
-        //           then forward 230 wstETH to Team Multisig. The Team Multisig
-        //           will convert to ETH and forward to the iETHv2 loss-coverage
-        //           recipient off-chain (Thrilok, 0x9a40…69aD).
+        // Action 1: Collect Liquidity Layer revenue across 22 tokens into the
+        //           Fluid Reserve Contract.
         action1();
 
-        // Action 2: Collect Liquidity Layer revenue across 22 tokens into the
-        //           Reserve Contract, then forward the full reserve balance
-        //           (minus minimal dust) to Team Multisig for the monthly
-        //           buyback program.
+        // Action 2: Forward the full Reserve balance of each of those 22
+        //           tokens (minus minimal dust) to the Team Multisig.
         action2();
     }
 
@@ -51,75 +39,25 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
      * |__________________________________
      */
 
-    /// @notice Action 1: Collect wstETH revenue from the Liquidity Layer into
-    ///         the Reserve Contract, then forward `WSTETH_TRANSFER_AMOUNT`
-    ///         wstETH from the Reserve Contract to Team Multisig. The Team
-    ///         Multisig will then convert the wstETH to ETH and forward it to
-    ///         the iETHv2 loss-coverage recipient (Thrilok,
-    ///         0x9a403fc58CC6Efe56965Fa6baC0F01bAa11169aD) to cover Fluid Lite
-    ///         ETH (iETHv2) user losses.
+    /// @notice Action 1: Collect Liquidity Layer revenue across 22 tokens into
+    ///         the Fluid Reserve Contract (the configured revenue collector).
     function action1() internal isActionSkippable(1) {
-        // Step 1: Collect wstETH revenue from the Liquidity Layer.
-        //         Revenue is sent to the configured revenue collector
-        //         (the Fluid Reserve Contract).
-        address[] memory tokens_ = new address[](1);
-        tokens_[0] = wstETH_ADDRESS;
-        LIQUIDITY.collectRevenue(tokens_);
-
-        // Step 2: Forward 230 wstETH from the Reserve Contract to Team
-        //         Multisig. Any wstETH revenue accrued in excess of
-        //         WSTETH_TRANSFER_AMOUNT remains on the Reserve Contract and
-        //         is swept to Team Multisig as part of action 2 below.
-        uint256[] memory amounts_ = new uint256[](1);
-        amounts_[0] = WSTETH_TRANSFER_AMOUNT;
-        FLUID_RESERVE.withdrawFunds(tokens_, amounts_, TEAM_MULTISIG);
+        LIQUIDITY.collectRevenue(_revenueTokens());
     }
 
-    /// @notice Action 2: Collect Liquidity Layer revenue across 22 tokens into
-    ///         the Reserve Contract, then forward the full Reserve balance of
-    ///         each token (minus minimal dust) to the Team Multisig for the
-    ///         monthly buyback program. Mirrors IGP-112 action 10.
+    /// @notice Action 2: Forward the full Reserve balance of each of the 22
+    ///         revenue tokens (minus minimal dust) to the Team Multisig.
+    ///         Mirrors IGP-112 action 10 withdrawal step.
     function action2() internal isActionSkippable(2) {
-        // Step 1: Collect Liquidity Layer revenue for all 22 tokens. Revenue
-        //         is routed to the configured revenue collector (the Fluid
-        //         Reserve Contract).
-        address[] memory tokens_ = new address[](22);
+        address[] memory tokens_ = _revenueTokens();
 
-        // Above $10k revenue (per the latest snapshot)
-        tokens_[0] = USDC_ADDRESS;
-        tokens_[1] = ETH_ADDRESS;
-        tokens_[2] = USDT_ADDRESS;
-        tokens_[3] = wstETH_ADDRESS;
-        tokens_[4] = cbBTC_ADDRESS;
-        tokens_[5] = GHO_ADDRESS;
-        tokens_[6] = USDe_ADDRESS;
-        tokens_[7] = WBTC_ADDRESS;
-        tokens_[8] = weETH_ADDRESS;
-        tokens_[9] = syrupUSDC_ADDRESS;
-        tokens_[10] = sUSDe_ADDRESS;
-
-        // Below $10k revenue (per the latest snapshot)
-        tokens_[11] = XAUT_ADDRESS;
-        tokens_[12] = USDTb_ADDRESS;
-        tokens_[13] = PAXG_ADDRESS;
-        tokens_[14] = rsETH_ADDRESS;
-        tokens_[15] = ezETH_ADDRESS;
-        tokens_[16] = RLP_ADDRESS;
-        tokens_[17] = REUSD_ADDRESS;
-        tokens_[18] = USD0_ADDRESS;
-        tokens_[19] = eBTC_ADDRESS;
-        tokens_[20] = lBTC_ADDRESS;
-        tokens_[21] = fxUSD_ADDRESS;
-
-        LIQUIDITY.collectRevenue(tokens_);
-
-        // Step 2: Withdraw the full Reserve balance of each token (minus
-        //         minimal dust) to the Team Multisig. Dust is sized per
-        //         token decimals to match IGP-112's convention:
-        //           - 6-decimal stables / XAUt:  `- 10`
-        //           - 8-decimal BTC variants:    `- 10`
-        //           - 18-decimal tokens:         `- 0.1 ether`
-        //           - native ETH:                `address(reserve).balance - 0.1 ether`
+        // Withdraw the full Reserve balance of each token (minus minimal
+        // dust) to the Team Multisig. Dust is sized per token decimals to
+        // match IGP-112's convention:
+        //   - 6-decimal stables / XAUt:  `- 10`
+        //   - 8-decimal BTC variants:    `- 10`
+        //   - 18-decimal tokens:         `- 0.1 ether`
+        //   - native ETH:                `address(reserve).balance - 0.1 ether`
         address reserve_ = address(FLUID_RESERVE);
 
         uint256[] memory amounts_ = new uint256[](22);
@@ -161,6 +99,40 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
      * |     Payload Actions End Here      |
      * |__________________________________
      */
+
+    /// @dev The 22-token list (ordered to match the latest revenue snapshot:
+    ///      above-$10k tokens first, then below-$10k tokens). Shared between
+    ///      action 1 (collectRevenue) and action 2 (withdrawFunds) so the
+    ///      indices stay aligned with the `amounts_` array in action 2.
+    function _revenueTokens() internal pure returns (address[] memory tokens_) {
+        tokens_ = new address[](22);
+
+        // Above $10k revenue (per the latest snapshot)
+        tokens_[0] = USDC_ADDRESS;
+        tokens_[1] = ETH_ADDRESS;
+        tokens_[2] = USDT_ADDRESS;
+        tokens_[3] = wstETH_ADDRESS;
+        tokens_[4] = cbBTC_ADDRESS;
+        tokens_[5] = GHO_ADDRESS;
+        tokens_[6] = USDe_ADDRESS;
+        tokens_[7] = WBTC_ADDRESS;
+        tokens_[8] = weETH_ADDRESS;
+        tokens_[9] = syrupUSDC_ADDRESS;
+        tokens_[10] = sUSDe_ADDRESS;
+
+        // Below $10k revenue (per the latest snapshot)
+        tokens_[11] = XAUT_ADDRESS;
+        tokens_[12] = USDTb_ADDRESS;
+        tokens_[13] = PAXG_ADDRESS;
+        tokens_[14] = rsETH_ADDRESS;
+        tokens_[15] = ezETH_ADDRESS;
+        tokens_[16] = RLP_ADDRESS;
+        tokens_[17] = REUSD_ADDRESS;
+        tokens_[18] = USD0_ADDRESS;
+        tokens_[19] = eBTC_ADDRESS;
+        tokens_[20] = lBTC_ADDRESS;
+        tokens_[21] = fxUSD_ADDRESS;
+    }
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
     // --- END AUTO-GENERATED PRICES ---
