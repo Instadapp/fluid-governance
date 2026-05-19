@@ -26,12 +26,10 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Collect Liquidity Layer revenue across 22 tokens into the
-        //           Reserve Contract and forward to Team Multisig.
+        // Action 1: Collect Liquidity Layer revenue across 22 tokens into the Reserve Contract and forward to Team Multisig.
         action1();
 
-        // Action 2: Dust limits + Team Multisig auth for the new PST ecosystem
-        //           (PST-USDC DEX, plus five PST vaults).
+        // Action 2: Dust limits + Team Multisig auth for the new PST ecosystem (PST-USDC DEX, plus five PST vaults).
         action2();
     }
 
