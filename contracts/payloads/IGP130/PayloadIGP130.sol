@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 pragma experimental ABIEncoderV2;
 
 import {IERC20} from "../common/interfaces/IERC20.sol";
+import {IFluidReserveContractV2} from "../common/interfaces/IFluidReserveContract.sol";
 import {
     AdminModuleStructs as FluidLiquidityAdminStructs
 } from "../common/interfaces/IFluidLiquidity.sol";
@@ -23,10 +24,10 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
     uint256 public constant PST_USDC_DEX_ID = 45;
 
     // Vault ids for the five PST vaults.
-    uint256 public constant VAULT_PST_USDC_ID = 165;            // T1: PST / USDC
-    uint256 public constant VAULT_PST_USDT_ID = 166;            // T1: PST / USDT
-    uint256 public constant VAULT_PST_USDC__USDC_ID = 167;      // T2: PST-USDC / USDC
-    uint256 public constant VAULT_PST__USDC_USDT_ID = 168;      // T3: PST / USDC-USDT
+    uint256 public constant VAULT_PST_USDC_ID = 165; // T1: PST / USDC
+    uint256 public constant VAULT_PST_USDT_ID = 166; // T1: PST / USDT
+    uint256 public constant VAULT_PST_USDC__USDC_ID = 167; // T2: PST-USDC / USDC
+    uint256 public constant VAULT_PST__USDC_USDT_ID = 168; // T3: PST / USDC-USDT
     uint256 public constant VAULT_PST_USDC__USDC_USDT_ID = 169; // T4: PST-USDC / USDC-USDT
 
     function execute() public virtual override {
@@ -121,26 +122,16 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
         amounts_[20] = IERC20(lBTC_ADDRESS).balanceOf(reserve_) - 10;
         amounts_[21] = IERC20(fxUSD_ADDRESS).balanceOf(reserve_) - 0.1 ether;
 
-        FLUID_RESERVE.withdrawFunds(tokens_, amounts_, TEAM_MULTISIG);
+        IFluidReserveContractV2(address(FLUID_RESERVE)).withdrawFunds(
+            tokens_,
+            amounts_,
+            TEAM_MULTISIG,
+            "RESOLV CLEANUP"
+        );
     }
 
     /// @notice Action 2: Dust limits + Team MS auth for the PST ecosystem (PST-USDC DEX + 5 PST vaults).
     function action2() internal isActionSkippable(2) {
-        // Guard: every TODO placeholder MUST be filled before submission.
-        require(PST_ADDRESS != address(0), "PST_ADDRESS unset");
-        require(PST_USDC_DEX_ID != 0, "PST_USDC_DEX_ID unset");
-        require(VAULT_PST_USDC_ID != 0, "VAULT_PST_USDC_ID unset");
-        require(VAULT_PST_USDT_ID != 0, "VAULT_PST_USDT_ID unset");
-        require(VAULT_PST_USDC__USDC_ID != 0, "VAULT_PST_USDC__USDC_ID unset");
-        require(
-            VAULT_PST__USDC_USDT_ID != 0,
-            "VAULT_PST__USDC_USDT_ID unset"
-        );
-        require(
-            VAULT_PST_USDC__USDC_USDT_ID != 0,
-            "VAULT_PST_USDC__USDC_USDT_ID unset"
-        );
-
         address USDC_USDT_DEX = getDexAddress(2);
 
         // Vault 1: PST / USDC (TYPE_1)
@@ -325,14 +316,21 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
      * |__________________________________
      */
 
-    // Manual PST price override — PST is not yet in tokens.ts (no mainnet
-    // address / CoinGecko entry yet). Once the address is finalized, register
-    // PST in scripts/verify/lib/tokens.ts and let prepare-prices.ts manage
-    // this override from the auto-generated block below.
-    function PST_USD_PRICE() public pure override returns (uint256) {
-        return 1.10 * 1e2; // $1.10
-    }
-
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
+    // fetched: 2026-05-20T20:04:31.189Z, source: coingecko
+    function BTC_USD_PRICE()       public pure override returns (uint256) { return 78_000 * 1e2; }
+    function ETH_USD_PRICE()       public pure override returns (uint256) { return 2_130 * 1e2; }
+    function ezETH_USD_PRICE()     public pure override returns (uint256) { return 2_300 * 1e2; }
+    function STABLE_USD_PRICE()    public pure override returns (uint256) { return 1 * 1e2; }
+    function PAXG_USD_PRICE()      public pure override returns (uint256) { return 4_540 * 1e2; }
+    function PST_USD_PRICE()       public pure override returns (uint256) { return 1.10 * 1e2; }
+    function REUSD_USD_PRICE()     public pure override returns (uint256) { return 1.08 * 1e2; }
+    function RLP_USD_PRICE()       public pure override returns (uint256) { return 0.41 * 1e2; }
+    function rsETH_USD_PRICE()     public pure override returns (uint256) { return 2_280 * 1e2; }
+    function sUSDe_USD_PRICE()     public pure override returns (uint256) { return 1.23 * 1e2; }
+    function syrupUSDC_USD_PRICE() public pure override returns (uint256) { return 1.16 * 1e2; }
+    function weETH_USD_PRICE()     public pure override returns (uint256) { return 2_340 * 1e2; }
+    function wstETH_USD_PRICE()    public pure override returns (uint256) { return 2_640 * 1e2; }
+    function XAUT_USD_PRICE()      public pure override returns (uint256) { return 4_540 * 1e2; }
     // --- END AUTO-GENERATED PRICES ---
 }
