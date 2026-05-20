@@ -147,7 +147,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
                 maxBorrowLimitInUSD: 9_000 // $9k
             });
             setVaultLimits(VAULT_PST_USDC);
-            VAULT_FACTORY_OWNER.setVaultAuth(
+            FLUID_VAULT_FACTORY_OWNER.setVaultAuth(
                 PST_USDC_VAULT,
                 TEAM_MULTISIG,
                 true
@@ -167,7 +167,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
                 maxBorrowLimitInUSD: 9_000 // $9k
             });
             setVaultLimits(VAULT_PST_USDT);
-            VAULT_FACTORY_OWNER.setVaultAuth(
+            FLUID_VAULT_FACTORY_OWNER.setVaultAuth(
                 PST_USDT_VAULT,
                 TEAM_MULTISIG,
                 true
@@ -189,7 +189,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
                 maxBorrowLimitInUSD: 9_000 // $9k
             });
             setVaultLimits(VAULT_PST_USDC__USDC);
-            VAULT_FACTORY_OWNER.setVaultAuth(
+            FLUID_VAULT_FACTORY_OWNER.setVaultAuth(
                 PST_USDC__USDC_VAULT,
                 TEAM_MULTISIG,
                 true
@@ -211,7 +211,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
                 maxBorrowLimitInUSD: 0
             });
             setVaultLimits(VAULT_PST__USDC_USDT);
-            VAULT_FACTORY_OWNER.setVaultAuth(
+            FLUID_VAULT_FACTORY_OWNER.setVaultAuth(
                 PST__USDC_USDT_VAULT,
                 TEAM_MULTISIG,
                 true
@@ -235,7 +235,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
                 VAULT_PST_USDC__USDC_USDT_ID
             );
 
-            VAULT_FACTORY_OWNER.setVaultAuth(
+            FLUID_VAULT_FACTORY_OWNER.setVaultAuth(
                 PST_USDC__USDC_USDT_VAULT,
                 TEAM_MULTISIG,
                 true

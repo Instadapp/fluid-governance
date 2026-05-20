@@ -81,7 +81,7 @@ contract PayloadIGPConstants {
     // Fluid Factory Addresses
     IFluidVaultFactory public constant VAULT_FACTORY =
         IFluidVaultFactory(0x324c5Dc1fC42c7a4D43d92df1eBA58a54d13Bf2d);
-    IFluidVaultFactory public constant VAULT_FACTORY_OWNER =
+    IFluidVaultFactory public constant FLUID_VAULT_FACTORY_OWNER =
         IFluidVaultFactory(0xB031913cB7AD81b8A4Ba412B471c2dA69BEA410B);
     IFluidDexFactory public constant DEX_FACTORY =
         IFluidDexFactory(0x91716C4EDA1Fb55e84Bf8b4c7085f84285c19085);
