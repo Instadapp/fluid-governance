@@ -147,7 +147,11 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
                 maxBorrowLimitInUSD: 9_000 // $9k
             });
             setVaultLimits(VAULT_PST_USDC);
-            VAULT_FACTORY.setVaultAuth(PST_USDC_VAULT, TEAM_MULTISIG, true);
+            VAULT_FACTORY_OWNER.setVaultAuth(
+                PST_USDC_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
         }
 
         // Vault 2: PST / USDT (TYPE_1)
@@ -163,7 +167,11 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
                 maxBorrowLimitInUSD: 9_000 // $9k
             });
             setVaultLimits(VAULT_PST_USDT);
-            VAULT_FACTORY.setVaultAuth(PST_USDT_VAULT, TEAM_MULTISIG, true);
+            VAULT_FACTORY_OWNER.setVaultAuth(
+                PST_USDT_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
         }
 
         // Vault 3: PST-USDC / USDC (TYPE_2) - USDC debt at LL, smart col at DEX
@@ -181,7 +189,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
                 maxBorrowLimitInUSD: 9_000 // $9k
             });
             setVaultLimits(VAULT_PST_USDC__USDC);
-            VAULT_FACTORY.setVaultAuth(
+            VAULT_FACTORY_OWNER.setVaultAuth(
                 PST_USDC__USDC_VAULT,
                 TEAM_MULTISIG,
                 true
@@ -203,7 +211,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
                 maxBorrowLimitInUSD: 0
             });
             setVaultLimits(VAULT_PST__USDC_USDT);
-            VAULT_FACTORY.setVaultAuth(
+            VAULT_FACTORY_OWNER.setVaultAuth(
                 PST__USDC_USDT_VAULT,
                 TEAM_MULTISIG,
                 true
@@ -227,7 +235,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
                 VAULT_PST_USDC__USDC_USDT_ID
             );
 
-            VAULT_FACTORY.setVaultAuth(
+            VAULT_FACTORY_OWNER.setVaultAuth(
                 PST_USDC__USDC_USDT_VAULT,
                 TEAM_MULTISIG,
                 true
@@ -284,7 +292,12 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
         // Step 1: Raise ETH borrow limit to 20,000 ETH on the Liquidity Layer.
 
         {
-            uint256 amount_ = getRawAmount(ETH_ADDRESS, 20_000, 0, false);
+            uint256 amount_ = getRawAmount(
+                ETH_ADDRESS,
+                20_000 ether,
+                0,
+                false
+            );
 
             FluidLiquidityAdminStructs.UserBorrowConfig[]
                 memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](
