@@ -3,12 +3,18 @@ pragma solidity ^0.8.21;
 pragma experimental ABIEncoderV2;
 
 import {IERC20} from "../common/interfaces/IERC20.sol";
+import {
+    AdminModuleStructs as FluidLiquidityAdminStructs
+} from "../common/interfaces/IFluidLiquidity.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
 /// @notice IGP130: (1) Collect Liquidity Layer revenue into the Reserve
 ///         Contract and forward to Team Multisig to cover Fluid Lite ETH
 ///         (iETHv2) user losses; (2) Set dust limits + Team Multisig auth on
-///         the new PST ecosystem (PST-USDC DEX + five PST vaults).
+///         the new PST ecosystem (PST-USDC DEX + five PST vaults);
+///         (3) Raise Fluid Lite ETH (iETHv2) max risk ratio of Aave V3 to 94%
+///         and Spark to 92%; (4) Raise stETH redemption protocol ETH borrow
+///         limit to 20,000 ETH and max LTV to 97%.
 contract PayloadIGP130 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 130;
 
@@ -31,6 +37,12 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
 
         // Action 2: Dust limits + Team Multisig auth for the new PST ecosystem (PST-USDC DEX, plus five PST vaults).
         action2();
+
+        // Action 3: Raise Lite ETH (iETHv2) max risk ratio of Aave V3 to 94% and Spark to 92%.
+        action3();
+
+        // Action 4: Raise stETH redemption protocol ETH borrow limit to 20,000 ETH and max LTV to 97%.
+        action4();
     }
 
     function verifyProposal() public view override {}
@@ -45,8 +57,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
      * |__________________________________
      */
 
-    /// @notice Action 1: Collect Liquidity Layer revenue across 22 tokens into
-    ///         the Reserve Contract and forward to Team Multisig
+    /// @notice Action 1: Collect Liquidity Layer revenue across 22 tokens into the Reserve Contract and forward to Team Multisig
     function action1() internal isActionSkippable(1) {
         // Step 1: Build the 22-token revenue list
         address[] memory tokens_ = new address[](22);
@@ -113,9 +124,7 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
         FLUID_RESERVE.withdrawFunds(tokens_, amounts_, TEAM_MULTISIG);
     }
 
-    /// @notice Action 2: Dust limits + Team MS auth for the PST ecosystem
-    ///         (PST-USDC DEX + 5 PST vaults). Mirrors the dust-launch pattern
-    ///         from IGP-121 (REUSD vaults / REUSD-USDT DEX).
+    /// @notice Action 2: Dust limits + Team MS auth for the PST ecosystem (PST-USDC DEX + 5 PST vaults).
     function action2() internal isActionSkippable(2) {
         // Guard: every TODO placeholder MUST be filled before submission.
         require(PST_ADDRESS != address(0), "PST_ADDRESS unset");
@@ -260,6 +269,53 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
             });
             setDexLimits(DEX_PST_USDC);
             DEX_FACTORY.setDexAuth(PST_USDC_DEX, TEAM_MULTISIG, true);
+        }
+    }
+
+    /// @notice Action 3: Raise Fluid Lite ETH (iETHv2) max risk ratio of Aave V3 and Spark.
+    function action3() internal isActionSkippable(3) {
+        uint8[] memory protocolIds_ = new uint8[](2);
+        uint256[] memory newRiskRatios_ = new uint256[](2);
+
+        // Aave V3: 94%. Protocol Id: 2
+        protocolIds_[0] = 2;
+        newRiskRatios_[0] = 94 * 1e4;
+
+        // Spark: 92%. Protocol Id: 7
+        protocolIds_[1] = 7;
+        newRiskRatios_[1] = 92 * 1e4;
+
+        IETHV2.updateMaxRiskRatio(protocolIds_, newRiskRatios_);
+    }
+
+    /// @notice Action 4: Raise stETH redemption protocol ETH borrow limit to 20,000 ETH and max LTV to 97%.
+    function action4() internal isActionSkippable(4) {
+        // Step 1: Raise ETH borrow limit to 20,000 ETH on the Liquidity Layer.
+
+        {
+            uint256 amount_ = getRawAmount(ETH_ADDRESS, 20_000, 0, false);
+
+            FluidLiquidityAdminStructs.UserBorrowConfig[]
+                memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](
+                    1
+                );
+
+            configs_[0] = FluidLiquidityAdminStructs.UserBorrowConfig({
+                user: address(STETH_REDEMPTION_PROTOCOL),
+                token: ETH_ADDRESS,
+                mode: 1,
+                expandPercent: 0,
+                expandDuration: 1,
+                baseDebtCeiling: amount_,
+                maxDebtCeiling: (amount_ * 1001) / 1000
+            });
+
+            LIQUIDITY.updateUserBorrowConfigs(configs_);
+        }
+
+        // Step 2: Raise max LTV to 97%.
+        {
+            STETH_REDEMPTION_PROTOCOL.setMaxLTV(97 * 1e2);
         }
     }
 
