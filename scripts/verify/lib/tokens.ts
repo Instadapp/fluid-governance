@@ -316,7 +316,7 @@ export const TOKENS: readonly TokenEntry[] = [
     symbol: "PST",
     address: "0x22aE3D9a738471f405169Af055d31c687087d4c7",
     constantName: "PST_ADDRESS",
-    decimals: 18,
+    decimals: 6,
     coingeckoId: "manual-pst",
     priceVarName: "PST_USD_PRICE",
     rounding: "fixedOneDollarTen",

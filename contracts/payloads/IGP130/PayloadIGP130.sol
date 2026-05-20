@@ -330,10 +330,10 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
      */
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
-    // fetched: 2026-05-20T20:04:31.189Z, source: coingecko
-    function BTC_USD_PRICE()       public pure override returns (uint256) { return 78_000 * 1e2; }
+    // fetched: 2026-05-20T20:25:12.307Z, source: coingecko
+    function BTC_USD_PRICE()       public pure override returns (uint256) { return 77_000 * 1e2; }
     function ETH_USD_PRICE()       public pure override returns (uint256) { return 2_130 * 1e2; }
-    function ezETH_USD_PRICE()     public pure override returns (uint256) { return 2_300 * 1e2; }
+    function ezETH_USD_PRICE()     public pure override returns (uint256) { return 2_290 * 1e2; }
     function STABLE_USD_PRICE()    public pure override returns (uint256) { return 1 * 1e2; }
     function PAXG_USD_PRICE()      public pure override returns (uint256) { return 4_540 * 1e2; }
     function PST_USD_PRICE()       public pure override returns (uint256) { return 1.10 * 1e2; }
@@ -342,8 +342,8 @@ contract PayloadIGP130 is PayloadIGPPriceHelpers {
     function rsETH_USD_PRICE()     public pure override returns (uint256) { return 2_280 * 1e2; }
     function sUSDe_USD_PRICE()     public pure override returns (uint256) { return 1.23 * 1e2; }
     function syrupUSDC_USD_PRICE() public pure override returns (uint256) { return 1.16 * 1e2; }
-    function weETH_USD_PRICE()     public pure override returns (uint256) { return 2_340 * 1e2; }
+    function weETH_USD_PRICE()     public pure override returns (uint256) { return 2_330 * 1e2; }
     function wstETH_USD_PRICE()    public pure override returns (uint256) { return 2_640 * 1e2; }
-    function XAUT_USD_PRICE()      public pure override returns (uint256) { return 4_540 * 1e2; }
+    function XAUT_USD_PRICE()      public pure override returns (uint256) { return 4_530 * 1e2; }
     // --- END AUTO-GENERATED PRICES ---
 }

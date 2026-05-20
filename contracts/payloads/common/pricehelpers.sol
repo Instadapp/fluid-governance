@@ -156,7 +156,7 @@ abstract contract PayloadIGPPriceHelpers is PayloadIGPMain {
             decimals = 18;
         } else if (token == PST_ADDRESS) {
             usdPrice = PST_USD_PRICE();
-            decimals = 18;
+            decimals = 6;
         } else if (token == csUSDL_ADDRESS) {
             usdPrice = csUSDL_USD_PRICE();
             decimals = 18;
