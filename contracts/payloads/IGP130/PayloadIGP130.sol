@@ -12,16 +12,16 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 contract PayloadIGP130 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 130;
 
-    // --- PST ecosystem placeholders (TODO: fill before submission) -----
+    // --- PST ecosystem ids ---------------------------------------------
     // PST-USDC DEX id used by vaults 3 and 5 below for smart collateral.
-    uint256 public constant PST_USDC_DEX_ID = 0;
+    uint256 public constant PST_USDC_DEX_ID = 45;
 
     // Vault ids for the five PST vaults.
-    uint256 public constant VAULT_PST_USDC_ID = 0;            // T1: PST / USDC
-    uint256 public constant VAULT_PST_USDT_ID = 0;            // T1: PST / USDT
-    uint256 public constant VAULT_PST_USDC__USDC_ID = 0;      // T2: PST-USDC / USDC
-    uint256 public constant VAULT_PST__USDC_USDT_ID = 0;      // T3: PST / USDC-USDT
-    uint256 public constant VAULT_PST_USDC__USDC_USDT_ID = 0; // T4: PST-USDC / USDC-USDT
+    uint256 public constant VAULT_PST_USDC_ID = 165;            // T1: PST / USDC
+    uint256 public constant VAULT_PST_USDT_ID = 166;            // T1: PST / USDT
+    uint256 public constant VAULT_PST_USDC__USDC_ID = 167;      // T2: PST-USDC / USDC
+    uint256 public constant VAULT_PST__USDC_USDT_ID = 168;      // T3: PST / USDC-USDT
+    uint256 public constant VAULT_PST_USDC__USDC_USDT_ID = 169; // T4: PST-USDC / USDC-USDT
 
     function execute() public virtual override {
         super.execute();
