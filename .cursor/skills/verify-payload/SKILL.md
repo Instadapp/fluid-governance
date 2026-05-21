@@ -12,6 +12,11 @@ re-reading every historical payload line by line.
 **You never modify any file while running this skill.** Output is the
 report only.
 
+**Past IGP payloads are immutable.** Never edit any existing
+`contracts/payloads/IGP<N>/PayloadIGP<N>.sol` where `N` is lower than the
+payload under review, unless the user explicitly asks for that exact past
+IGP to be changed. Historical payloads may be read for precedent only.
+
 ## 1. Scope & invariants
 
 - Input: one payload file + the human's proposal intent (paragraph or

@@ -31,6 +31,10 @@ import {IDSAV2} from "./interfaces/IDSA.sol";
 
 import {ILite} from "./interfaces/ILite.sol";
 
+import {
+    IStETHRedemptionProtocol
+} from "./interfaces/IStETHRedemptionProtocol.sol";
+
 import {IDSAConnectorsV2} from "./interfaces/IDSA.sol";
 
 contract PayloadIGPConstants {
@@ -77,6 +81,8 @@ contract PayloadIGPConstants {
     // Fluid Factory Addresses
     IFluidVaultFactory public constant VAULT_FACTORY =
         IFluidVaultFactory(0x324c5Dc1fC42c7a4D43d92df1eBA58a54d13Bf2d);
+    IFluidVaultFactory public constant FLUID_VAULT_FACTORY_OWNER =
+        IFluidVaultFactory(0xB031913cB7AD81b8A4Ba412B471c2dA69BEA410B);
     IFluidDexFactory public constant DEX_FACTORY =
         IFluidDexFactory(0x91716C4EDA1Fb55e84Bf8b4c7085f84285c19085);
     IFluidSmartLendingFactory public constant SMART_LENDING_FACTORY =
@@ -86,6 +92,10 @@ contract PayloadIGPConstants {
 
     ILite public constant IETHV2 =
         ILite(0xA0D3707c569ff8C87FA923d3823eC5D81c98Be78);
+
+    // stETH redemption protocol (Liquidity Layer borrower).
+    IStETHRedemptionProtocol public constant STETH_REDEMPTION_PROTOCOL =
+        IStETHRedemptionProtocol(0x1F6B2bFDd5D1e6AdE7B17027ff5300419a56Ad6b);
 
     // Dex V2 & Money Market Proxies (Liquidity Layer users)
     address internal constant DEX_V2_PROXY =
@@ -153,6 +163,8 @@ contract PayloadIGPConstants {
         0x3d7d6fdf07EE548B939A80edbc9B2256d0cdc003;
     address internal constant REUSD_ADDRESS =
         0x5086bf358635B81D8C47C66d1C8b9E567Db70c72;
+    address internal constant PST_ADDRESS =
+        0x22aE3D9a738471f405169Af055d31c687087d4c7;
 
     address internal constant WBTC_ADDRESS =
         0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;

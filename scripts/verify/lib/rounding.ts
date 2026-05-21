@@ -24,6 +24,7 @@
 
 export type RoundingRule =
   | "exactOneDollar"
+  | "fixedOneDollarTen"
   | "nearestCent"
   | "nearestTenDollars"
   | "nearestThousandDollars";
@@ -42,6 +43,9 @@ export function round(rawUsd: number, rule: RoundingRule): RoundedPrice {
   switch (rule) {
     case "exactOneDollar":
       return makePrice(1);
+
+    case "fixedOneDollarTen":
+      return makePrice(1.1);
 
     case "nearestCent": {
       const dollars = Math.round(rawUsd * 100) / 100;
@@ -62,7 +66,7 @@ export function round(rawUsd: number, rule: RoundingRule): RoundedPrice {
 
 /** Rounding rules that don't actually need a live price (saves a fetch). */
 export function isDeterministic(rule: RoundingRule): boolean {
-  return rule === "exactOneDollar";
+  return rule === "exactOneDollar" || rule === "fixedOneDollarTen";
 }
 
 function makePrice(dollars: number): RoundedPrice {
