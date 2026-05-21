@@ -1,8 +1,8 @@
-# Collect Liquidity Layer Revenue to Cover Fluid Lite ETH User Losses, Set PST Ecosystem Dust Limits, Raise Lite ETH Risk Ratios on Aave V3 & Spark, and Raise stETH Redemption Protocol Limits
+# Clear Outstanding Debt Accrued After Resolv Incident via Liquidity Layer Revenue Collection, Set PST Ecosystem Dust Limits, Raise Lite ETH Risk Ratios on Aave V3 & Spark, and Raise stETH Redemption Protocol Limits
 
 ## Summary
 
-This proposal performs four Ethereum actions: (1) collects accrued protocol revenue across 22 tokens from the Liquidity Layer into the Reserve Contract and withdraws nearly all of those balances to Team Multisig via Reserve V2 `withdrawFunds` (leaving minimal per-token dust); (2) sets dust limits and Team Multisig auth on the new PST ecosystem (PST-USDC DEX id **45** and vaults **165–169**); (3) raises Fluid Lite ETH (iETHv2) max risk ratio on Aave V3 to **94%** and Spark to **92%**; (4) raises the stETH redemption protocol ETH borrow limit on the Liquidity Layer to **20,000 ETH** and max LTV to **97%**.
+This proposal performs four Ethereum actions: (1) collects accrued protocol revenue across 22 tokens from the Liquidity Layer into the Reserve Contract and withdraws nearly all of those balances to Team Multisig via Reserve `withdrawFunds` to clear outstanding debt accrued after the Resolv incident; (2) sets dust limits and Team Multisig auth on the new PST ecosystem (PST-USDC DEX id **45** and vaults **165–169**); (3) raises Fluid Lite ETH (iETHv2) max risk ratio on Aave V3 to **94%** and Spark to **92%**; (4) raises the stETH redemption protocol ETH borrow limit on the Liquidity Layer to **20,000 ETH** and max LTV to **97%**.
 
 ## Code Changes
 
@@ -13,7 +13,7 @@ This proposal performs four Ethereum actions: (1) collects accrued protocol reve
 - **Withdraw**: `IFluidReserveContractV2.withdrawFunds` on the Reserve (`0x264786EF916af64a1DB19F513F24a3681734ce92`) — nearly full balance per token minus operational dust (`-10` for 6/8-decimal tokens, `-0.1 ether` for 18-decimal tokens and native ETH).
 - **Recipient**: Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`)
 - **Reason tag**: `"RESOLV CLEANUP"` (Reserve V2 audit string)
-- **Purpose**: Apply proceeds toward Fluid Lite ETH (iETHv2) user loss coverage from recent ETH borrow rate spikes.
+- **Purpose**: Apply proceeds toward clearing outstanding debt accrued after the Resolv incident.
 
 ### Action 2: PST Ecosystem Dust Limits + Team Multisig Auth
 
@@ -45,9 +45,9 @@ All five vaults and DEX 45 grant Team Multisig auth.
 
 ## Description
 
-During recent market volatility, ETH borrow rates spiked across the lending protocols used by Fluid Lite. The elevated borrow rates exceeded stETH staking yield, resulting in losses for Lite ETH (iETHv2) vault depositors.
+Following the recent Resolv incident, Fluid was left with outstanding debt that needs to be cleared. This proposal sources the cleanup funds from accrued Liquidity Layer revenue.
 
-**Action 1** collects accumulated protocol revenue across 22 tokens into the Reserve Contract and withdraws nearly all balances to Team Multisig (minimal dust retained), tagged `"RESOLV CLEANUP"` on the Reserve V2 withdraw, for use toward iETHv2 user loss coverage.
+**Action 1** collects accumulated protocol revenue across 22 tokens into the Reserve Contract and withdraws nearly all balances to Team Multisig (minimal dust retained), tagged `"RESOLV CLEANUP"` on the Reserve V2 withdraw, to clear outstanding debt accrued after the Resolv incident.
 
 **Action 2** launches the PST ecosystem at dust scale: limits on vaults 165–169 and PST-USDC DEX 45, with Team Multisig auth on each (vault auth through VaultFactoryOwner; DEX auth through DexFactory).
 
@@ -57,4 +57,4 @@ During recent market volatility, ETH borrow rates spiked across the lending prot
 
 ## Conclusion
 
-IGP-130 (1) collects Liquidity Layer revenue across 22 tokens and forwards it to Team Multisig for iETHv2 user loss coverage, (2) launches the PST ecosystem (DEX 45, vaults 165–169) with conservative dust limits and Team Multisig auth, (3) raises Lite ETH max risk ratios on Aave V3 (94%) and Spark (92%), and (4) expands stETH redemption to 20,000 ETH borrow and 97% max LTV.
+IGP-130 (1) collects Liquidity Layer revenue across 22 tokens and forwards it to Team Multisig to clear outstanding debt accrued after the Resolv incident, (2) launches the PST ecosystem (DEX 45, vaults 165–169) with conservative dust limits and Team Multisig auth, (3) raises Lite ETH max risk ratios on Aave V3 (94%) and Spark (92%), and (4) expands stETH redemption to 20,000 ETH borrow and 97% max LTV.

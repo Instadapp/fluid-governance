@@ -10,12 +10,12 @@ import {
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
 /// @notice IGP130: (1) Collect Liquidity Layer revenue into the Reserve
-///         Contract and forward to Team Multisig to cover Fluid Lite ETH
-///         (iETHv2) user losses; (2) Set dust limits + Team Multisig auth on
-///         the new PST ecosystem (PST-USDC DEX + five PST vaults);
-///         (3) Raise Fluid Lite ETH (iETHv2) max risk ratio of Aave V3 to 94%
-///         and Spark to 92%; (4) Raise stETH redemption protocol ETH borrow
-///         limit to 20,000 ETH and max LTV to 97%.
+///         Contract and forward to Team Multisig to clear outstanding debt
+///         accrued after the Resolv incident; (2) Set dust limits + Team
+///         Multisig auth on the new PST ecosystem (PST-USDC DEX + five PST
+///         vaults); (3) Raise Fluid Lite ETH (iETHv2) max risk ratio of
+///         Aave V3 to 94% and Spark to 92%; (4) Raise stETH redemption
+///         protocol ETH borrow limit to 20,000 ETH and max LTV to 97%.
 contract PayloadIGP130 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 130;
 
