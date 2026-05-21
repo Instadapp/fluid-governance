@@ -40,7 +40,7 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         // Action 4: Set PST ecosystem launch limits (PST-USDC DEX + five PST vaults)
         action4();
 
-        // Action 5: Remove all DSA connector Chief auths on InstaConnectorsV2
+        // Action 5: Remove DSA connector Chief auths except Team Multisig
         action5();
     }
 
@@ -343,7 +343,7 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         }
     }
 
-    /// @notice Action 5: Remove all DSA connector Chief auths on InstaConnectorsV2
+    /// @notice Action 5: Remove DSA connector Chief auths except Team Multisig
     function action5() internal isActionSkippable(5) {
         DSA_CONNECTORS_V2.toggleChief(
             0xb3e586BCE929312e8B0685E2c12c1d6dbbcdc370
@@ -354,7 +354,6 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         DSA_CONNECTORS_V2.toggleChief(
             0xCe40798c731Ce4F90EB239E4894D9c643eB1ddE7
         );
-        DSA_CONNECTORS_V2.toggleChief(TEAM_MULTISIG);
     }
 
     /**
