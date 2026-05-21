@@ -105,7 +105,6 @@ async function main(): Promise<void> {
 
   // ---- 1. detect tokens used ----------------------------------------
   const usage = detectTokensUsed(payloadPath);
-  const src = readFileSync(payloadPath, "utf8");
 
   if (usage.unknown.length > 0) {
     const lines = [
@@ -119,30 +118,11 @@ async function main(): Promise<void> {
   }
 
   if (usage.used.length === 0) {
-    const emptyBlock = [
-      "    // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---",
-      "    // --- END AUTO-GENERATED PRICES ---",
-    ].join("\n");
-    const next = spliceIntoSource(src, emptyBlock);
-
-    if (!args.dryRun && src !== next) {
-      writeFileSync(payloadPath, next, "utf8");
-      process.stdout.write(
-        `${args.payload}: no price-relevant token references found; cleared price block.\n`
-      );
-      return;
-    }
-
-    process.stdout.write(
-      `${args.payload}: no price-relevant token references found. ` +
-        `${args.dryRun ? "Price block would be empty." : "Price block unchanged."}\n`
+    process.stderr.write(
+      `No known token references found in ${args.payload}. ` +
+        `Nothing to write.\n`
     );
-    if (args.dryRun) {
-      process.stdout.write(
-        `\n--- proposed block (--dry-run, ${args.payload}) ---\n${emptyBlock}\n`
-      );
-    }
-    return;
+    process.exit(0);
   }
 
   // ---- 1a. verify pricehelpers.sol dispatches every used token ------
@@ -223,6 +203,7 @@ async function main(): Promise<void> {
   });
 
   // ---- 4. write or print --------------------------------------------
+  const src = readFileSync(payloadPath, "utf8");
   const next = spliceIntoSource(src, block);
 
   // Print summary table regardless of dry-run / write.

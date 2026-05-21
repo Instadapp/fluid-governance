@@ -8,33 +8,12 @@ interface IFluidReserveContract {
 
     function rebalanceVault(address protocol_) external;
 
-    function rebalanceVaults(
-        address[] calldata protocols_,
-        uint256[] calldata values_
-    ) external payable;
-
-    function rebalanceDexVaults(
-        address[] calldata protocols_,
-        uint256[] calldata values_,
-        int256[] calldata colToken0MinMaxs_,
-        int256[] calldata colToken1MinMaxs_,
-        int256[] calldata debtToken0MinMaxs_,
-        int256[] calldata debtToken1MinMaxs_
-    ) external payable;
-
     function transferFunds(address token_) external;
 
     function withdrawFunds(
         address[] memory tokens_,
         uint256[] memory amounts_,
         address to_
-    ) external;
-
-    function withdrawFunds(
-        address[] memory tokens_,
-        uint256[] memory amounts_,
-        address to_,
-        string memory reason_
     ) external;
 
     function getProtocolTokens(address protocol_) external;
