@@ -1,4 +1,4 @@
-# Collect Liquidity Layer Revenue and Clear Outstanding Debt Accrued After Resolv Incident, Set PST Ecosystem Dust Limits, Raise Lite ETH Risk Ratios on Aave V3 & Spark, and Raise stETH Redemption Protocol Limits
+# Collect Liquidity Layer Revenue to Clear Outstanding Debt Accrued After Resolv Incident, Set PST Ecosystem Dust Limits, Raise Lite ETH Risk Ratios on Aave V3 & Spark, and Raise stETH Redemption Protocol Limits
 
 ## Summary
 
