@@ -12,7 +12,7 @@ import {
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
 /// @notice IGP131: wstUSR vault maintenance, FLUID rewards funding, PST
-///         ecosystem launch limits, and placeholders for DSA/Lite auth cleanups.
+///         ecosystem launch limits, and DSA connector Chief auth cleanup.
 contract PayloadIGP131 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 131;
 
@@ -40,11 +40,8 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         // Action 4: Set PST ecosystem launch limits (PST-USDC DEX + five PST vaults)
         action4();
 
-        // Action 5: Placeholder for removing DSA connector Chief auths
+        // Action 5: Remove all DSA connector Chief auths on InstaConnectorsV2
         action5();
-
-        // Action 6: Placeholder for removing multisig auth from Lite
-        action6();
     }
 
     function verifyProposal() public view override {}
@@ -346,14 +343,18 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         }
     }
 
-    /// @notice Action 5: Placeholder for DSA connector Chief auth cleanup
+    /// @notice Action 5: Remove all DSA connector Chief auths on InstaConnectorsV2
     function action5() internal isActionSkippable(5) {
-        // TODO: Remove all DSA connector Chief auths from mainnet and keep only main multisig auth.
-    }
-
-    /// @notice Action 6: Placeholder for Lite auth cleanup
-    function action6() internal isActionSkippable(6) {
-        // TODO: Remove multisig auth from Lite.
+        DSA_CONNECTORS_V2.toggleChief(
+            0xb3e586BCE929312e8B0685E2c12c1d6dbbcdc370
+        );
+        DSA_CONNECTORS_V2.toggleChief(
+            0xa6AEC494Aa19Dc910944E2374e9EA159dc919c59
+        );
+        DSA_CONNECTORS_V2.toggleChief(
+            0xCe40798c731Ce4F90EB239E4894D9c643eB1ddE7
+        );
+        DSA_CONNECTORS_V2.toggleChief(TEAM_MULTISIG);
     }
 
     /**

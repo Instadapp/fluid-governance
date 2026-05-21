@@ -1,8 +1,8 @@
-# wstUSR Vault Maintenance, FLUID Rewards Funding, PST Launch Limits, and Auth Cleanups
+# wstUSR Vault Maintenance, FLUID Rewards Funding, PST Launch Limits, and DSA Chief Cleanup
 
 ## Summary
 
-This proposal implements protocol maintenance and market launch updates across four areas: (1) adjusts wstUSR vault limits and executes a reserve rebalance across active wstUSR vaults, (2) withdraws FLUID from the Treasury to Team Multisig to fund upcoming rewards, (3) scales the PST ecosystem from conservative dust limits to operational launch limits on DEX Pool 45 and vaults 165–169, and (4) reserves placeholder actions for DSA connector and Lite auth cleanups. Together, these changes support wstUSR market housekeeping, reward distribution funding, and the public launch of PST protocols under governance-controlled caps.
+This proposal implements protocol maintenance and market launch updates across four areas: (1) adjusts wstUSR vault limits and executes a reserve rebalance across active wstUSR vaults, (2) withdraws FLUID from the Treasury to Team Multisig to fund upcoming rewards, (3) scales the PST ecosystem from conservative dust limits to operational launch limits on DEX Pool 45 and vaults 165–169, and (4) removes all InstaConnectorsV2 Chief auths including Team Multisig. Together, these changes support wstUSR market housekeeping, reward distribution funding, the public launch of PST protocols under governance-controlled caps, and removal of DSA connector Chief privileges on mainnet.
 
 ## Code Changes
 
@@ -90,19 +90,20 @@ Scales the five PST vaults and PST-USDC DEX from conservative dust limits to ope
   - **Smart Collateral**: Enabled
   - **Authorization**: Remove Team Multisig auth
 
-### Action 5: Remove DSA Connector Chief Auths (Placeholder)
+### Action 5: Remove All DSA Connector Chief Auths
 
-- **Purpose**: Reserved for removing DSA connector Chief auths on mainnet and keeping only the main multisig auth
-- **Status**: No-op in this draft; may be completed via Team Multisig operations instead
-
-### Action 6: Remove Multisig Auth from Lite (Placeholder)
-
-- **Purpose**: Reserved for removing multisig auth from Lite
-- **Status**: No-op in this draft; may be completed via Team Multisig operations instead
+- **Contract**: InstaConnectorsV2 (`0x97b0B3A8bDeFE8cB9563a3c610019Ad10DB8aD11`)
+- **Method**: `toggleChief(address)` on each chief to remove
+- **Chiefs removed**:
+  - `0xb3e586BCE929312e8B0685E2c12c1d6dbbcdc370`
+  - `0xa6AEC494Aa19Dc910944E2374e9EA159dc919c59`
+  - `0xCe40798c731Ce4F90EB239E4894D9c643eB1ddE7`
+  - Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`)
+- **Purpose**: Remove all Chief status from InstaConnectorsV2 on mainnet
 
 ## Description
 
-This proposal covers four areas of protocol maintenance, treasury operations, and market launch configuration:
+This proposal covers four areas of protocol maintenance, treasury operations, and auth cleanup:
 
 1. **wstUSR Vault Maintenance**
    - Sets vault 142 (wstUSR / USDtb) wstUSR base withdrawal limit to the intended operational value while keeping expansion settings max-restricted
@@ -123,10 +124,9 @@ This proposal covers four areas of protocol maintenance, treasury operations, an
    - PST-USDC DEX: $5M per-token Liquidity Layer withdrawal limits and $12M max supply shares
    - Removes Team Multisig authorization from all five vaults and the PST-USDC DEX once launch limits are in place, enabling broader access under governance-controlled caps
 
-4. **Auth Cleanup Placeholders**
-   - Reserves two placeholder actions for removing DSA connector Chief auths on mainnet and removing multisig auth from Lite
-   - Both actions are no-ops in this draft and may be completed via Team Multisig operations instead
+4. **DSA Connector Chief Cleanup**
+   - Calls `toggleChief` on InstaConnectorsV2 to remove Chief status from all four mainnet chiefs, including Team Multisig
 
 ## Conclusion
 
-IGP-131 performs wstUSR vault housekeeping by setting vault 142's wstUSR withdrawal limit and executing a buffered reserve rebalance across active wstUSR vaults before restoring max-restricted borrow limits, withdraws 750,000 FLUID from Treasury to Team Multisig for upcoming rewards, and launches the PST ecosystem on DEX Pool 45 and vaults 165–169 with operational limits and Team Multisig auth removed. Two placeholder actions are reserved for DSA connector and Lite auth cleanups that may be handled separately. These changes support ongoing wstUSR market maintenance, reward distribution funding, and the public launch of PST protocols under appropriate risk parameters.
+IGP-131 performs wstUSR vault housekeeping by setting vault 142's wstUSR withdrawal limit and executing a buffered reserve rebalance across active wstUSR vaults before restoring max-restricted borrow limits, withdraws 750,000 FLUID from Treasury to Team Multisig for upcoming rewards, launches the PST ecosystem on DEX Pool 45 and vaults 165–169 with operational limits and Team Multisig auth removed, and removes all InstaConnectorsV2 Chief auths including Team Multisig. These changes support ongoing wstUSR market maintenance, reward distribution funding, PST protocol launch under appropriate risk parameters, and full removal of DSA connector Chief privileges on mainnet.
