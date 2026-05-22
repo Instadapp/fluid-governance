@@ -64,9 +64,8 @@ Scales the five PST vaults and PST-USDC DEX from conservative dust limits to ope
 
 - **Vault ID 167**<br>
   **PST-USDC / USDC (TYPE 2)**:
-  - **Base Borrow Limit**: $5M
-  - **Max Borrow Limit**: $10M
-  - **Smart Collateral**: Limits at PST-USDC DEX (Pool 45)
+  - **Launch limits**: Not set in this proposal (may be added later if needed)
+  - **Smart Collateral**: Limits at PST-USDC DEX (Pool 45) deferred with vault limits
   - **Authorization**: Remove Team Multisig auth
 
 - **Vault ID 168**<br>

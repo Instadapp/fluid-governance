@@ -242,21 +242,12 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
             );
         }
 
-        // Vault 3: PST-USDC / USDC (TYPE_2) - USDC debt at LL, smart col at DEX
+        // Vault 3: PST-USDC / USDC (TYPE_2) — remove Team MS auth only; launch limits
+        // (LL borrow + smart-col withdrawal at PST-USDC DEX) to be added in a follow-up if needed.
         {
             address PST_USDC__USDC_VAULT = getVaultAddress(
                 VAULT_PST_USDC__USDC_ID
             );
-            VaultConfig memory VAULT_PST_USDC__USDC = VaultConfig({
-                vault: PST_USDC__USDC_VAULT,
-                vaultType: VAULT_TYPE.TYPE_2,
-                supplyToken: address(0),
-                borrowToken: USDC_ADDRESS,
-                baseWithdrawalLimitInUSD: 0,
-                baseBorrowLimitInUSD: 5_000_000, // $5M
-                maxBorrowLimitInUSD: 10_000_000 // $10M
-            });
-            setVaultLimits(VAULT_PST_USDC__USDC);
             FLUID_VAULT_FACTORY_OWNER.setVaultAuth(
                 PST_USDC__USDC_VAULT,
                 TEAM_MULTISIG,
