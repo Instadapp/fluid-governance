@@ -78,7 +78,7 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
     /// @notice Action 2: Rebalance wstUSR vaults and restore borrow restrictions
     function action2() internal isActionSkippable(2) {
         // Base and max are equal so the vaults can only rebalance the
-        // screenshot dust plus a small buffer.
+        // screenshot dust plus a 10% buffer on every temporary borrow cap.
         FluidLiquidityAdminStructs.UserBorrowConfig[]
             memory liquidityConfigs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](
                 4
@@ -87,22 +87,22 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         liquidityConfigs_[0] = _liquidityBorrowConfig(
             getVaultAddress(110), // wstUSR / USDC
             USDC_ADDRESS,
-            4 * 1e6
+            4.4 * 1e6
         );
         liquidityConfigs_[1] = _liquidityBorrowConfig(
             getVaultAddress(111), // wstUSR / USDT
             USDT_ADDRESS,
-            3 * 1e6
+            3.3 * 1e6
         );
         liquidityConfigs_[2] = _liquidityBorrowConfig(
             getVaultAddress(112), // wstUSR / GHO
             GHO_ADDRESS,
-            0.25 * 1e18
+            0.275 * 1e18
         );
         liquidityConfigs_[3] = _liquidityBorrowConfig(
             getVaultAddress(133), // wstUSR-USDC <> USDC
             USDC_ADDRESS,
-            0.7 * 1e6
+            0.77 * 1e6
         );
         LIQUIDITY.updateUserBorrowConfigs(liquidityConfigs_);
 
@@ -114,13 +114,13 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
 
         dexConfigs_[0] = _dexBorrowConfig(
             getVaultAddress(134), // wstUSR-USDC <> USDC-USDT
-            0.35 * 1e18
+            0.385 * 1e18
         );
         IFluidDex(USDC_USDT_DEX).updateUserBorrowConfigs(dexConfigs_);
 
         dexConfigs_[0] = _dexBorrowConfig(
             getVaultAddress(135), // wstUSR-USDC <> USDC-USDT concentrated
-            0.03 * 1e18
+            0.033 * 1e18
         );
         IFluidDex(USDC_USDT_CONCENTRATED_DEX).updateUserBorrowConfigs(
             dexConfigs_
@@ -151,10 +151,10 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
             vaults_[2] = getVaultAddress(135);
 
             // Direct-borrow T2 vault 133 does not use smart-debt min/max values.
-            debtToken0MinMaxs_[1] = int256(0.4 * 1e6); // USDC
-            debtToken1MinMaxs_[1] = int256(0.4 * 1e6); // USDT
-            debtToken0MinMaxs_[2] = int256(0.04 * 1e6); // USDC
-            debtToken1MinMaxs_[2] = int256(0.03 * 1e6); // USDT
+            debtToken0MinMaxs_[1] = int256(0.44 * 1e6); // USDC
+            debtToken1MinMaxs_[1] = int256(0.44 * 1e6); // USDT
+            debtToken0MinMaxs_[2] = int256(0.044 * 1e6); // USDC
+            debtToken1MinMaxs_[2] = int256(0.033 * 1e6); // USDT
 
             FLUID_RESERVE.rebalanceDexVaults(
                 vaults_,
