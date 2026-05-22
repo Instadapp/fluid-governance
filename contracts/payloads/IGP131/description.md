@@ -18,19 +18,19 @@ This proposal implements protocol maintenance and market launch updates across f
 
 Temporarily raises borrow caps just enough to execute reserve rebalances, then restores max-restricted (paused) borrow limits. Timelock is granted the FLUID reserve rebalancer role for the duration of the rebalance and revoked at the end.
 
-**Temporary borrow caps at Liquidity Layer** (base values + 10% buffer):
-- **Vault 110** — wstUSR / USDC → USDC: `4.4 * 1e6`
-- **Vault 111** — wstUSR / USDT → USDT: `3.3 * 1e6`
-- **Vault 112** — wstUSR / GHO → GHO: `0.275 * 1e18`
-- **Vault 133** — wstUSR-USDC <> USDC → USDC: `0.77 * 1e6`
+**Temporary borrow caps at Liquidity Layer** (2× dust snapshot, rounded up):
+- **Vault 110** — wstUSR / USDC → USDC: `9 * 1e6`
+- **Vault 111** — wstUSR / USDT → USDT: `7 * 1e6`
+- **Vault 112** — wstUSR / GHO → GHO: `1 * 1e18`
+- **Vault 133** — wstUSR-USDC <> USDC → USDC: `2 * 1e6`
 
-**Temporary borrow caps at DEX level** (+ 10% buffer):
-- **Vault 134** — wstUSR-USDC <> USDC-USDT on USDC-USDT DEX (Pool 2): `0.385 * 1e18`
-- **Vault 135** — wstUSR-USDC <> USDC-USDT concentrated on USDC-USDT concentrated DEX (Pool 34): `0.033 * 1e18`
+**Temporary borrow caps at DEX level** (2× dust snapshot, rounded up):
+- **Vault 134** — wstUSR-USDC <> USDC-USDT on USDC-USDT DEX (Pool 2): `1 * 1e18`
+- **Vault 135** — wstUSR-USDC <> USDC-USDT concentrated on USDC-USDT concentrated DEX (Pool 34): `1 * 1e18`
 
 **Reserve rebalance**:
 - Rebalances vaults 110, 111, and 112 via `rebalanceVaults`
-- Rebalances vaults 133, 134, and 135 via `rebalanceDexVaults` with smart-debt min/max buffers on vaults 134 and 135 (`0.44` / `0.44` and `0.044` / `0.033` USDC/USDT, +10%)
+- Rebalances vaults 133, 134, and 135 via `rebalanceDexVaults` with smart-debt min/max buffers on vaults 134 and 135 (`1 * 1e6` USDC/USDT each)
 
 **Restore paused borrow limits** on vaults 110, 111, 112, 133 (Liquidity Layer) and 134, 135 (DEX level).
 
