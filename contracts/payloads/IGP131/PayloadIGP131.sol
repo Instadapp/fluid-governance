@@ -99,7 +99,7 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         liquidityConfigs_[3] = _liquidityBorrowConfig(
             getVaultAddress(133), // wstUSR-USDC <> USDC
             USDC_ADDRESS,
-            2 * 1e6
+            10 * 1e6
         );
         LIQUIDITY.updateUserBorrowConfigs(liquidityConfigs_);
 
