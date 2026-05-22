@@ -103,26 +103,6 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         );
         LIQUIDITY.updateUserBorrowConfigs(liquidityConfigs_);
 
-        address USDC_USDT_DEX = getDexAddress(2);
-        address USDC_USDT_CONCENTRATED_DEX = getDexAddress(34);
-
-        IFluidAdminDex.UserBorrowConfig[]
-            memory dexConfigs_ = new IFluidAdminDex.UserBorrowConfig[](1);
-
-        dexConfigs_[0] = _dexBorrowConfig(
-            getVaultAddress(134), // wstUSR-USDC <> USDC-USDT
-            1 * 1e18
-        );
-        IFluidDex(USDC_USDT_DEX).updateUserBorrowConfigs(dexConfigs_);
-
-        dexConfigs_[0] = _dexBorrowConfig(
-            getVaultAddress(135), // wstUSR-USDC <> USDC-USDT concentrated
-            1 * 1e18
-        );
-        IFluidDex(USDC_USDT_CONCENTRATED_DEX).updateUserBorrowConfigs(
-            dexConfigs_
-        );
-
         FLUID_RESERVE.updateRebalancer(address(TIMELOCK), true);
 
         {
@@ -135,31 +115,22 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
 
             FLUID_RESERVE.rebalanceVaults(vaults_, values_);
         }
-
         {
-            address[] memory vaults_ = new address[](3);
-            uint256[] memory values_ = new uint256[](3);
-            int256[] memory emptyMinMaxs_ = new int256[](3);
-            int256[] memory debtToken0MinMaxs_ = new int256[](3);
-            int256[] memory debtToken1MinMaxs_ = new int256[](3);
+            // T2 vault 133 only; 134/135 skipped (borrow below minimum).
+            address[] memory vaults_ = new address[](1);
+            uint256[] memory values_ = new uint256[](1);
+            int256[] memory emptyMinMaxs_ = new int256[](1);
+            int256[] memory emptyDebtMinMaxs_ = new int256[](1);
 
             vaults_[0] = getVaultAddress(133);
-            vaults_[1] = getVaultAddress(134);
-            vaults_[2] = getVaultAddress(135);
-
-            // Direct-borrow T2 vault 133 does not use smart-debt min/max values.
-            debtToken0MinMaxs_[1] = int256(1 * 1e6); // USDC
-            debtToken1MinMaxs_[1] = int256(1 * 1e6); // USDT
-            debtToken0MinMaxs_[2] = int256(1 * 1e6); // USDC
-            debtToken1MinMaxs_[2] = int256(1 * 1e6); // USDT
 
             FLUID_RESERVE.rebalanceDexVaults(
                 vaults_,
                 values_,
                 emptyMinMaxs_,
                 emptyMinMaxs_,
-                debtToken0MinMaxs_,
-                debtToken1MinMaxs_
+                emptyDebtMinMaxs_,
+                emptyDebtMinMaxs_
             );
         }
 
@@ -167,12 +138,6 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         setBorrowProtocolLimitsPaused(getVaultAddress(111), USDT_ADDRESS);
         setBorrowProtocolLimitsPaused(getVaultAddress(112), GHO_ADDRESS);
         setBorrowProtocolLimitsPaused(getVaultAddress(133), USDC_ADDRESS);
-
-        setBorrowProtocolLimitsPausedDex(USDC_USDT_DEX, getVaultAddress(134));
-        setBorrowProtocolLimitsPausedDex(
-            USDC_USDT_CONCENTRATED_DEX,
-            getVaultAddress(135)
-        );
 
         FLUID_RESERVE.updateRebalancer(address(TIMELOCK), false);
     }

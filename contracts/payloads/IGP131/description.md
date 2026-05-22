@@ -21,20 +21,14 @@ Temporarily raises borrow caps just enough to execute reserve rebalances, then r
 **Temporary borrow caps at Liquidity Layer** (2× dust snapshot, rounded up):
 - **Vault 110** — wstUSR / USDC → USDC: `9 * 1e6`
 - **Vault 111** — wstUSR / USDT → USDT: `7 * 1e6`
-- **Vault 112** — wstUSR / GHO → GHO: `1 * 1e18`
-- **Vault 133** — wstUSR-USDC <> USDC → USDC: `2 * 1e6`
-
-**Temporary borrow caps at DEX level** (2× dust snapshot, rounded up):
-- **Vault 134** — wstUSR-USDC <> USDC-USDT on USDC-USDT DEX (Pool 2): `1 * 1e18`
-- **Vault 135** — wstUSR-USDC <> USDC-USDT concentrated on USDC-USDT concentrated DEX (Pool 34): `1 * 1e18`
+- **Vault 112** — wstUSR / GHO → GHO: `10 * 1e18`
+- **Vault 133** — wstUSR-USDC <> USDC → USDC: `10 * 1e6`
 
 **Reserve rebalance**:
 - Rebalances vaults 110, 111, and 112 via `rebalanceVaults`
-- Rebalances vaults 133, 134, and 135 via `rebalanceDexVaults` with smart-debt min/max buffers on vaults 134 and 135 (`1 * 1e6` USDC/USDT each)
+- Rebalances vault 133 via `rebalanceDexVaults`
 
-**Restore paused borrow limits** on vaults 110, 111, 112, 133 (Liquidity Layer) and 134, 135 (DEX level).
-
-> Skipped: Vaults 142, 143, and 144 — intentionally excluded from this rebalance. No wstUSR revenue collection is included because no wstUSR revenue is expected.
+**Restore paused borrow limits** on vaults 110, 111, 112, and 133 (Liquidity Layer).
 
 ### Action 3: Withdraw 750,000 FLUID from Treasury for Rewards
 
@@ -106,9 +100,8 @@ This proposal covers four areas of protocol maintenance, treasury operations, an
 
 1. **wstUSR Vault Maintenance**
    - Sets vault 142 (wstUSR / USDtb) wstUSR base withdrawal limit to the intended operational value while keeping expansion settings max-restricted
-   - Temporarily raises borrow caps on active wstUSR vaults just enough to execute reserve rebalances, then restores max-restricted borrow limits
+   - Temporarily raises borrow caps on wstUSR vaults 110, 111, 112, and 133 to execute reserve rebalances, then restores max-restricted borrow limits
    - Timelock is granted the FLUID reserve rebalancer role for the duration of the rebalance and revoked at the end
-   - Vaults 142, 143, and 144 are intentionally excluded from the rebalance
 
 2. **FLUID Rewards Funding**
    - Withdraws 750,000 FLUID from the Treasury DSA to Team Multisig via the `BASIC-A` connector
@@ -129,4 +122,4 @@ This proposal covers four areas of protocol maintenance, treasury operations, an
 
 ## Conclusion
 
-IGP-131 performs wstUSR vault housekeeping by setting vault 142's wstUSR withdrawal limit and executing a buffered reserve rebalance across active wstUSR vaults before restoring max-restricted borrow limits, withdraws 750,000 FLUID from Treasury to Team Multisig for upcoming rewards, launches the PST ecosystem on DEX Pool 45 and vaults 165–169 with operational limits and Team Multisig auth removed, and removes InstaConnectorsV2 Chief auths except Team Multisig. These changes support ongoing wstUSR market maintenance, reward distribution funding, PST protocol launch under appropriate risk parameters, and simplified DSA connector governance with Team Multisig as the sole remaining Chief.
+IGP-131 performs wstUSR vault housekeeping by setting vault 142's wstUSR withdrawal limit and executing a reserve rebalance on wstUSR vaults 110–112 and 133 before restoring max-restricted borrow limits, withdraws 750,000 FLUID from Treasury to Team Multisig for upcoming rewards, launches the PST ecosystem on DEX Pool 45 and vaults 165–169 with operational limits and Team Multisig auth removed, and removes InstaConnectorsV2 Chief auths except Team Multisig. These changes support ongoing wstUSR market maintenance, reward distribution funding, PST protocol launch under appropriate risk parameters, and simplified DSA connector governance with Team Multisig as the sole remaining Chief.
