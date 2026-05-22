@@ -347,11 +347,8 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
     }
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
-    function PST_USD_PRICE() public pure override returns (uint256) {
-        return 1.10 * 1e2;
-    }
-    function STABLE_USD_PRICE() public pure override returns (uint256) {
-        return 1 * 1e2;
-    }
+    // fetched: 2026-05-22T21:14:16.163Z, source: coingecko
+    function PST_USD_PRICE()    public pure override returns (uint256) { return 1.10 * 1e2; }
+    function STABLE_USD_PRICE() public pure override returns (uint256) { return 1 * 1e2; }
     // --- END AUTO-GENERATED PRICES ---
 }
