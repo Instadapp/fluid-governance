@@ -5,10 +5,7 @@ pragma experimental ABIEncoderV2;
 import {
     AdminModuleStructs as FluidLiquidityAdminStructs
 } from "../common/interfaces/IFluidLiquidity.sol";
-import {
-    IFluidDex,
-    IFluidAdminDex
-} from "../common/interfaces/IFluidDex.sol";
+import {IFluidDex, IFluidAdminDex} from "../common/interfaces/IFluidDex.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
 /// @notice IGP131: wstUSR vault maintenance, FLUID rewards funding, PST
@@ -97,7 +94,7 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         liquidityConfigs_[2] = _liquidityBorrowConfig(
             getVaultAddress(112), // wstUSR / GHO
             GHO_ADDRESS,
-            1 * 1e18
+            10 * 1e18
         );
         liquidityConfigs_[3] = _liquidityBorrowConfig(
             getVaultAddress(133), // wstUSR-USDC <> USDC
@@ -357,7 +354,11 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         address user_,
         address token_,
         uint256 debtCeiling_
-    ) internal pure returns (FluidLiquidityAdminStructs.UserBorrowConfig memory) {
+    )
+        internal
+        pure
+        returns (FluidLiquidityAdminStructs.UserBorrowConfig memory)
+    {
         return
             FluidLiquidityAdminStructs.UserBorrowConfig({
                 user: user_,
