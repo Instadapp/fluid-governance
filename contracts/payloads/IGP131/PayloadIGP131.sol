@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 import {
     AdminModuleStructs as FluidLiquidityAdminStructs
 } from "../common/interfaces/IFluidLiquidity.sol";
-import {IFluidDex, IFluidAdminDex} from "../common/interfaces/IFluidDex.sol";
+import {IFluidAdminDex} from "../common/interfaces/IFluidDex.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
 /// @notice IGP131: wstUSR vault maintenance, FLUID rewards funding, PST
@@ -289,10 +289,6 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
             });
             setDexLimits(DEX_PST_USDC);
             DEX_FACTORY.setDexAuth(PST_USDC_DEX, TEAM_MULTISIG, false);
-
-            IFluidDex(PST_USDC_DEX).updateMaxSupplyShares(
-                6_000_000 * 1e18 // $12M
-            );
         }
     }
 

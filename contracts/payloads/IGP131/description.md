@@ -19,12 +19,14 @@ This proposal implements protocol maintenance and market launch updates across f
 Temporarily raises borrow caps just enough to execute reserve rebalances, then restores max-restricted (paused) borrow limits. Timelock is granted the FLUID reserve rebalancer role for the duration of the rebalance and revoked at the end.
 
 **Temporary borrow caps at Liquidity Layer** (2× dust snapshot, rounded up):
+
 - **Vault 110** — wstUSR / USDC → USDC: `9 * 1e6`
 - **Vault 111** — wstUSR / USDT → USDT: `7 * 1e6`
 - **Vault 112** — wstUSR / GHO → GHO: `10 * 1e18`
 - **Vault 133** — wstUSR-USDC <> USDC → USDC: `10 * 1e6`
 
 **Reserve rebalance**:
+
 - Rebalances vaults 110, 111, and 112 via `rebalanceVaults`
 - Rebalances vault 133 via `rebalanceDexVaults`
 
@@ -79,7 +81,7 @@ Scales the five PST vaults and PST-USDC DEX from conservative dust limits to ope
 - **DEX Pool 45**<br>
   **PST-USDC DEX**:
   - **Base Withdrawal Limit**: $5M per token (Liquidity Layer limits)
-  - **Max Supply Shares**: $12M
+  - **Max Supply Shares**: $12M (Not set in this proposal)
   - **Smart Collateral**: Enabled
   - **Authorization**: Remove Team Multisig auth
 
@@ -113,7 +115,7 @@ This proposal covers four areas of protocol maintenance, treasury operations, an
    - T2 vault (167): $5M base borrow, $10M max borrow; smart collateral limits at the PST-USDC DEX
    - T3 vault (168): $8M base withdrawal; smart-debt borrow at the USDC-USDT DEX (~$5M / ~$10M in shares)
    - T4 vault (169): smart-debt borrow at the USDC-USDT DEX (~$5M / ~$10M in shares)
-   - PST-USDC DEX: $5M per-token Liquidity Layer withdrawal limits and $12M max supply shares
+   - PST-USDC DEX: $5M per-token Liquidity Layer withdrawal limits (max supply shares deferred until after DEX init)
    - Removes Team Multisig authorization from all five vaults and the PST-USDC DEX once launch limits are in place, enabling broader access under governance-controlled caps
 
 4. **DSA Connector Chief Cleanup**
