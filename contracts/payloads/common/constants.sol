@@ -225,6 +225,9 @@ contract PayloadIGPConstants {
 
     uint256 internal constant ONE_MILLION = 1_000_000;
 
+    uint256 internal constant MAX_RESTRICTED_EXPAND_PERCENT = 1; // 0.01%
+    uint256 internal constant MAX_RESTRICTED_EXPAND_DURATION = 16777215; // max time
+
     uint256 internal constant DEFAULT_EXPONENT_SIZE = 8;
     uint256 internal constant DEFAULT_EXPONENT_MASK = 0xff;
 

@@ -317,9 +317,9 @@ export const TOKENS: readonly TokenEntry[] = [
     address: "0x22aE3D9a738471f405169Af055d31c687087d4c7",
     constantName: "PST_ADDRESS",
     decimals: 6,
-    coingeckoId: "manual-pst",
+    coingeckoId: "payfi-strategy-token-usdc",
     priceVarName: "PST_USD_PRICE",
-    rounding: "fixedOneDollarTen",
+    rounding: "nearestCent",
   },
   {
     symbol: "csUSDL",
@@ -353,9 +353,9 @@ export const TOKENS: readonly TokenEntry[] = [
     address: "0x1202F5C7b4B9E47a1A484E8B270be34dbbC75055",
     constantName: "wstUSR_ADDRESS",
     decimals: 18,
-    coingeckoId: "wrapped-staked-usr",
+    coingeckoId: "manual-wstusr",
     priceVarName: "wstUSR_USD_PRICE",
-    rounding: "nearestCent",
+    rounding: "fixedOneDollarTen",
   },
   {
     symbol: "RLP",
