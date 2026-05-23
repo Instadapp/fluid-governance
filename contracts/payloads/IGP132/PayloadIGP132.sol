@@ -12,7 +12,8 @@ import {
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
 /// @notice IGP132: Liquidity Layer UserModule and AdminModule upgrades with
-///         rollback registration, plus pause / rates / range auth rotations.
+///         rollback registration, pause / rates / range auth rotations, and
+///         tightened base withdrawal limits on legacy vaults 1–10.
 ///         Module and auth values are configurable by Team Multisig before execution.
 contract PayloadIGP132 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 132;
@@ -131,6 +132,9 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
 
         // Action 7: Update Ranges Auth
         action7();
+
+        // Action 8: Reduce base withdrawal limits on legacy vaults 1–10
+        action8();
     }
 
     function verifyProposal() public view override {}
@@ -258,6 +262,89 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
 
         DEX_FACTORY.setGlobalAuth(OLD_RANGE_AUTH, false);
         DEX_FACTORY.setGlobalAuth(newRangeAuth_, true);
+    }
+
+    /// @notice Action 8: Set legacy vault 1–10 base withdrawal limits to total supply + 5%
+    function action8() internal isActionSkippable(8) {
+        FluidLiquidityAdminStructs.UserSupplyConfig[]
+            memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
+                10
+            );
+
+        // ETH / USDC — 0.628187 ETH (0.598274 supplied + 5%)
+        configs_[0] = _legacyVaultSupplyConfig(1, ETH_ADDRESS, 628187 * 1e12);
+        // ETH / USDT — 0.945974 ETH
+        configs_[1] = _legacyVaultSupplyConfig(2, ETH_ADDRESS, 945974 * 1e12);
+        // wstETH / ETH — 0.646899 wstETH
+        configs_[2] = _legacyVaultSupplyConfig(
+            3,
+            wstETH_ADDRESS,
+            646899 * 1e12
+        );
+        // wstETH / USDC — 0.544134 wstETH
+        configs_[3] = _legacyVaultSupplyConfig(
+            4,
+            wstETH_ADDRESS,
+            544134 * 1e12
+        );
+        // wstETH / USDT — 0.549870 wstETH
+        configs_[4] = _legacyVaultSupplyConfig(
+            5,
+            wstETH_ADDRESS,
+            549870 * 1e12
+        );
+        // weETH / wstETH — 695.132095 weETH
+        configs_[5] = _legacyVaultSupplyConfig(
+            6,
+            weETH_ADDRESS,
+            695132095 * 1e12
+        );
+        // sUSDe / USDC — 3298.946018 sUSDe
+        configs_[6] = _legacyVaultSupplyConfig(
+            7,
+            sUSDe_ADDRESS,
+            3298946018 * 1e12
+        );
+        // sUSDe / USDT — 413.657754 sUSDe
+        configs_[7] = _legacyVaultSupplyConfig(
+            8,
+            sUSDe_ADDRESS,
+            413657754 * 1e12
+        );
+        // weETH / USDC — 0.240487 weETH
+        configs_[8] = _legacyVaultSupplyConfig(
+            9,
+            weETH_ADDRESS,
+            240487 * 1e12
+        );
+        // weETH / USDT — 0.213728 weETH
+        configs_[9] = _legacyVaultSupplyConfig(
+            10,
+            weETH_ADDRESS,
+            213728 * 1e12
+        );
+
+        LIQUIDITY.updateUserSupplyConfigs(configs_);
+    }
+
+    function _legacyVaultSupplyConfig(
+        uint256 vaultId_,
+        address supplyToken_,
+        uint256 baseWithdrawalLimit_
+    )
+        internal
+        view
+        returns (FluidLiquidityAdminStructs.UserSupplyConfig memory)
+    {
+        return
+            FluidLiquidityAdminStructs.UserSupplyConfig({
+                user: getVaultAddress(vaultId_),
+                token: supplyToken_,
+                mode: 1,
+                expandPercent: MAX_RESTRICTED_EXPAND_PERCENT,
+                expandDuration: MAX_RESTRICTED_EXPAND_DURATION,
+                baseWithdrawalLimit: baseWithdrawalLimit_
+            });
     }
 
     /**

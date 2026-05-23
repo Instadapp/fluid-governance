@@ -1,10 +1,8 @@
-# Upgrade Liquidity Layer UserModule & AdminModule and Rotate Pause, Rates, and Range Auths
+# Upgrade Liquidity Layer Modules, Rotate Pause/Rates/Range Auths, and Tighten Legacy Vault Withdrawal Limits
 
 ## Summary
 
-This proposal implements protocol infrastructure updates across three areas: (1) upgrades the Liquidity Layer UserModule and AdminModule on the InfiniteProxy with rollback safety registrations, (2) rotates pause authorization on the Liquidity Layer and DexFactory to new operational contracts, and (3) rotates the Liquidity Layer rates auth and DexFactory range auth to new authorized operators. Together, these changes keep core Liquidity Layer logic current, maintain emergency pause capability, and ensure rate and range management remain under the correct authorized contracts.
-
-All new implementation and auth addresses are configurable by Team Multisig before governance execution.
+This proposal performs eight Ethereum actions: (1–2) register and upgrade the Liquidity Layer **UserModule** on the InfiniteProxy with RollbackModule safety; (3–4) register and upgrade the **AdminModule** the same way; (5) rotate Liquidity Layer guardian and DexFactory pause auths; (6) rotate Liquidity Layer rates auth; (7) rotate DexFactory range auth; (8) reduce base withdrawal limits on legacy mainnet vaults **1–10** to **total supply + 5%** (raw supply-token units, max-restricted expansion). New module and auth addresses are configurable by Team Multisig before execution.
 
 ## Code Changes
 
@@ -37,47 +35,45 @@ All new implementation and auth addresses are configurable by Team Multisig befo
 - **Liquidity Layer Guardian**
   - **Old Auth**: `0xE9332F2d45e3216B7634cA4C7ab88945CD84ab76` (removed)
   - **New Auth**: Configurable via `setPauseAuths()` by Team Multisig
-  - **Purpose**: Hand off Liquidity Layer emergency pause capability to the new guardian contract
-
 - **DexFactory Pause Auth**
   - **Old Auth**: `0x735BA3772c2cCC0b92Ff6993bd71da88236C1495` (removed)
   - **New Auth**: Configurable via `setPauseAuths()` by Team Multisig
-  - **Purpose**: Hand off DexFactory pause capability to the new global auth contract
 
 ### Action 6: Rotate Liquidity Layer Rates Auth
 
 - **Old Auth**: `0x1e6B029284dc2779F8FfBD83a3a5aA00EdCE6ba4` (removed)
 - **New Auth**: Configurable via `setNewRatesAuth()` by Team Multisig
-- **Purpose**: Transfer Liquidity Layer rate management to the new authorized contract
 
 ### Action 7: Rotate DexFactory Range Auth
 
 - **Old Auth**: `0x827089c01E9f761ff1A6D7041a9388bDdae74cc4` (removed)
 - **New Auth**: Configurable via `setNewRangeAuth()` by Team Multisig
-- **Purpose**: Transfer DexFactory range management to the new global auth contract
+
+### Action 8: Reduce Base Withdrawal Limits on Legacy Vaults 1–10
+
+Sets each vault’s Liquidity Layer base withdrawal limit to **current total supply + 5%** in raw supply-token units, with max-restricted expansion (`0.01%`, max duration). Borrow limits are unchanged.
+
+| Vault | Pair | Supply token | New base withdrawal limit |
+| --- | --- | --- | --- |
+| 1 | ETH / USDC | ETH | `0.628187` ETH |
+| 2 | ETH / USDT | ETH | `0.945974` ETH |
+| 3 | wstETH / ETH | wstETH | `0.646899` wstETH |
+| 4 | wstETH / USDC | wstETH | `0.544134` wstETH |
+| 5 | wstETH / USDT | wstETH | `0.549870` wstETH |
+| 6 | weETH / wstETH | weETH | `695.132095` weETH |
+| 7 | sUSDe / USDC | sUSDe | `3298.946018` sUSDe |
+| 8 | sUSDe / USDT | sUSDe | `413.657754` sUSDe |
+| 9 | weETH / USDC | weETH | `0.240487` weETH |
+| 10 | weETH / USDT | weETH | `0.213728` weETH |
 
 ## Description
 
-This proposal covers three areas of Liquidity Layer maintenance and operational auth management:
-
-1. **Liquidity Layer Module Upgrades via RollbackModule**
-   - Upgrades the UserModule and AdminModule on the Liquidity Layer InfiniteProxy to new implementations supplied by Team Multisig before execution
-   - Registers both current implementations on the RollbackModule before replacement, enabling rollback within the safety period if issues are discovered post-deployment
-   - Preserves the existing set of function selectors during each upgrade so downstream integrations remain compatible
-
-2. **Pause Auth Rotations**
-   - Replaces the Liquidity Layer guardian and DexFactory pause auth with new contracts supplied by Team Multisig
-   - Disables the old pause operators and enables the new ones in the same governance action, maintaining continuous emergency pause capability across both the Liquidity Layer and DexFactory
-
-3. **Rates and Range Auth Rotations**
-   - Replaces the Liquidity Layer rates auth with a new authorized contract for managing borrow/supply rate updates
-   - Replaces the DexFactory range auth with a new global auth contract for managing DEX trading range parameters
-   - Each rotation disables the old auth and enables the new auth atomically, ensuring a clean handoff with no gap in authorized operators
+**Actions 1–4** upgrade the Liquidity Layer UserModule and AdminModule via RollbackModule registration followed by InfiniteProxy replacement, preserving function selectors. **Action 5** rotates pause guardians on the Liquidity Layer and DexFactory. **Actions 6–7** rotate rates and range auths. **Action 8** aligns legacy vault withdrawal headroom with on-chain supply so existing depositors can exit without leaving oversized withdrawal buffers from earlier limit settings.
 
 ### Configurable Addresses (Team Multisig sets before execution)
 
 | Variable | Purpose |
-|---|---|
+| --- | --- |
 | `newUserModuleAddress` | New UserModule implementation for the Liquidity Layer InfiniteProxy |
 | `newAdminModuleAddress` | New AdminModule implementation for the Liquidity Layer InfiniteProxy |
 | `liquidityPauseAuth` | New guardian on the Liquidity Layer |
@@ -89,4 +85,4 @@ Each configurable group has a Team Multisig-only `lock…()` function to freeze 
 
 ## Conclusion
 
-IGP-132 upgrades the Liquidity Layer UserModule and AdminModule with rollback safety registrations, and rotates pause, rates, and range authorization to new operational contracts on the Liquidity Layer and DexFactory. Module and auth addresses are supplied by Team Multisig before execution, giving the team flexibility to finalize implementations while keeping the on-chain upgrade path governed and auditable. These changes maintain core Liquidity Layer functionality, preserve emergency response capability, and keep rate and range management under the correct authorized operators.
+IGP-132 upgrades Liquidity Layer UserModule and AdminModule with rollback safety, rotates pause/rates/range authorization on the Liquidity Layer and DexFactory, and tightens base withdrawal limits on legacy vaults 1–10 to total supply plus a 5% buffer. Module and auth addresses are supplied by Team Multisig before execution.
