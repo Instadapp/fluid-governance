@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal performs nine Ethereum actions: (1–2) register and upgrade the Liquidity Layer **UserModule** on the InfiniteProxy with RollbackModule safety; (3–4) register and upgrade the **AdminModule** the same way; (5) rotate Liquidity Layer guardian and DexFactory pause auths; (6) rotate Liquidity Layer rates auth; (7) rotate DexFactory range auth; (8) reduce base withdrawal limits on legacy mainnet vaults **1–10** to **total supply + 5%**; (9) set conservative dust limits and Team Multisig auth on the USDai ecosystem (**DEXes 46–48**, **vaults 170–177**). New module and auth addresses are configurable by Team Multisig before execution.
+This proposal performs ten Ethereum actions: (1–2) register and upgrade the Liquidity Layer **UserModule** on the InfiniteProxy with RollbackModule safety; (3–4) register and upgrade the **AdminModule** the same way; (5) rotate Liquidity Layer guardian and DexFactory pause auths; (6) rotate Liquidity Layer rates auth; (7) rotate DexFactory range auth; (8) reduce base withdrawal limits on legacy mainnet vaults **1–10** to **total supply + 5%**; (9) set conservative dust limits and Team Multisig auth on the USDai ecosystem (**DEXes 46–48**, **vaults 170–177**); (10) set max supply shares to **0** on the USR-USDC DEX (**Pool 20**) and RLP-USDC DEX (**Pool 28**). New module and auth addresses are configurable by Team Multisig before execution.
 
 **Tokens**: USDai (`0x0A1a1A107E45b7Ced86833863f482BC5f4ed82EF`), sUSDai (`0x0B2b2B2076d95dda7817e785989fE353fe955ef9`).
 
@@ -49,9 +49,15 @@ Assumes deployments receive **DEX ids 46–48** and **vault ids 170–177** when
 
 Team Multisig auth is granted on all three DEXes and eight vaults.
 
+### Action 10: Set USR and RLP DEX Max Supply Shares to 0
+
+- **DEX Pool 20** — USR-USDC: `updateMaxSupplyShares(0)`
+- **DEX Pool 28** — RLP-USDC: `updateMaxSupplyShares(0)`
+- **Purpose**: Prevent new supply on these DEXes while existing LPs retain withdrawal access
+
 ## Description
 
-**Actions 1–7** upgrade Liquidity Layer modules and rotate operational auths (configurable addresses from Team Multisig). **Action 8** tightens withdrawal headroom on the oldest vaults to on-chain supply plus 5%. **Action 9** launches the USDai ecosystem at dust scale—three smart-collateral DEXes and eight vaults spanning TYPE_1, TYPE_2, TYPE_3, and TYPE_4 structures—with Team Multisig auth on each market for a follow-up launch-limits proposal.
+**Actions 1–7** upgrade Liquidity Layer modules and rotate operational auths (configurable addresses from Team Multisig). **Action 8** tightens withdrawal headroom on the oldest vaults to on-chain supply plus 5%. **Action 9** launches the USDai ecosystem at dust scale—three smart-collateral DEXes and eight vaults spanning TYPE_1, TYPE_2, TYPE_3, and TYPE_4 structures—with Team Multisig auth on each market for a follow-up launch-limits proposal. **Action 10** sets max supply shares to zero on the USR-USDC and RLP-USDC DEXes to block new deposits.
 
 ### Configurable Addresses (Team Multisig sets before execution)
 
@@ -68,4 +74,4 @@ Each group has a Team Multisig-only `lock…()` function. Unset addresses cause 
 
 ## Conclusion
 
-IGP-132 upgrades Liquidity Layer UserModule and AdminModule with rollback safety, rotates pause/rates/range authorization, aligns legacy vault 1–10 withdrawal limits with current supply, and introduces the USDai ecosystem at conservative dust limits on DEXes 46–48 and vaults 170–177 with Team Multisig auth for subsequent launch configuration.
+IGP-132 upgrades Liquidity Layer UserModule and AdminModule with rollback safety, rotates pause/rates/range authorization, aligns legacy vault 1–10 withdrawal limits with current supply, introduces the USDai ecosystem at conservative dust limits on DEXes 46–48 and vaults 170–177 with Team Multisig auth for subsequent launch configuration, and caps max supply shares at zero on the USR-USDC (Pool 20) and RLP-USDC (Pool 28) DEXes.

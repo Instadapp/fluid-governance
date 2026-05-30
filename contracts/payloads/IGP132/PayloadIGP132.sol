@@ -9,15 +9,19 @@ import {IInfiniteProxy} from "../common/interfaces/IInfiniteProxy.sol";
 import {
     IFluidLiquidityRollback
 } from "../common/interfaces/IFluidLiquidityRollback.sol";
+import {IFluidDex} from "../common/interfaces/IFluidDex.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
 /// @notice IGP132: Liquidity Layer UserModule and AdminModule upgrades with
 ///         rollback registration, pause / rates / range auth rotations,
-///         tightened base withdrawal limits on legacy vaults 1–10, and USDai
-///         ecosystem dust limits. Module and auth values are configurable by
-///         Team Multisig before execution.
+///         tightened base withdrawal limits on legacy vaults 1–10, USDai
+///         ecosystem dust limits, and max supply share caps on USR/RLP DEXes.
+///         Module and auth values are configurable by Team Multisig before execution.
 contract PayloadIGP132 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 132;
+
+    uint256 public constant USR_USDC_DEX_ID = 20;
+    uint256 public constant RLP_USDC_DEX_ID = 28;
 
     // --- USDai ecosystem ids (deployments receive these ids when batched) ---
     uint256 public constant USDAI_USDC_DEX_ID = 46;
@@ -153,6 +157,9 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
 
         // Action 9: USDai ecosystem dust limits (DEXes 46–48, vaults 170–177)
         action9();
+
+        // Action 10: Set USR-USDC and RLP-USDC DEX max supply shares to 0
+        action10();
     }
 
     function verifyProposal() public view override {}
@@ -582,6 +589,12 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
                 true
             );
         }
+    }
+
+    /// @notice Action 10: Set USR-USDC (DEX 20) and RLP-USDC (DEX 28) max supply shares to 0
+    function action10() internal isActionSkippable(10) {
+        IFluidDex(getDexAddress(USR_USDC_DEX_ID)).updateMaxSupplyShares(0);
+        IFluidDex(getDexAddress(RLP_USDC_DEX_ID)).updateMaxSupplyShares(0);
     }
 
     function _legacyVaultSupplyConfig(
