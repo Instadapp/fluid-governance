@@ -15,8 +15,10 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 /// @notice IGP132: Liquidity Layer UserModule and AdminModule upgrades with
 ///         rollback registration, pause / rates / range auth rotations,
 ///         tightened base withdrawal limits on legacy vaults 1–10, USDai
-///         ecosystem dust limits, and max supply share caps on USR/RLP DEXes.
-///         Module and auth values are configurable by Team Multisig before execution.
+///         ecosystem dust limits, max supply share caps on USR/RLP DEXes, and
+///         USDC/USDT rate curve updates, iETHv2 revenue claim, and a placeholder
+///         for Ethereum vault limit updates. Module and auth values are
+///         configurable by Team Multisig before execution.
 contract PayloadIGP132 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 132;
 
@@ -61,6 +63,8 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
     address public newRatesAuth = address(0);
 
     address public newRangeAuth = address(0);
+
+    uint256 public liteStethRevenueAmount;
 
     // --- Lock flags (once true, the corresponding values can no longer be changed) ---
     bool public newUserModuleAddressLocked;
@@ -128,6 +132,11 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
         newRangeAuth = newRangeAuth_;
     }
 
+    function setLiteStethRevenueAmount(uint256 liteStethRevenueAmount_) external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        liteStethRevenueAmount = liteStethRevenueAmount_;
+    }
+
     function execute() public virtual override {
         super.execute();
 
@@ -160,6 +169,15 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
 
         // Action 10: Set USR-USDC and RLP-USDC DEX max supply shares to 0
         action10();
+
+        // Action 11: Update USDC and USDT rate curves (max 15% at 100% utilization)
+        action11();
+
+        // Action 12: Claim iETHv2 (Lite) stETH revenue to Team Multisig
+        action12();
+
+        // Action 13: Placeholder for Ethereum vault limit updates
+        action13();
     }
 
     function verifyProposal() public view override {}
@@ -595,6 +613,64 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
     function action10() internal isActionSkippable(10) {
         IFluidDex(getDexAddress(USR_USDC_DEX_ID)).updateMaxSupplyShares(0);
         IFluidDex(getDexAddress(RLP_USDC_DEX_ID)).updateMaxSupplyShares(0);
+    }
+
+    /// @notice Action 11: Update USDC and USDT rate curves — max 15% at 100% utilization
+    function action11() internal isActionSkippable(11) {
+        FluidLiquidityAdminStructs.RateDataV2Params[]
+            memory params_ = new FluidLiquidityAdminStructs.RateDataV2Params[](
+                2
+            );
+
+        params_[0] = FluidLiquidityAdminStructs.RateDataV2Params({
+            token: USDC_ADDRESS,
+            kink1: 85 * 1e2, // 85%
+            kink2: 93 * 1e2, // 93%
+            rateAtUtilizationZero: 0, // 0%
+            rateAtUtilizationKink1: 6 * 1e2, // 6%
+            rateAtUtilizationKink2: 8 * 1e2, // 8%
+            rateAtUtilizationMax: 15 * 1e2 // 15%
+        });
+
+        params_[1] = FluidLiquidityAdminStructs.RateDataV2Params({
+            token: USDT_ADDRESS,
+            kink1: 85 * 1e2, // 85%
+            kink2: 93 * 1e2, // 93%
+            rateAtUtilizationZero: 0, // 0%
+            rateAtUtilizationKink1: 6 * 1e2, // 6%
+            rateAtUtilizationKink2: 8 * 1e2, // 8%
+            rateAtUtilizationMax: 15 * 1e2 // 15%
+        });
+
+        LIQUIDITY.updateRateDataV2s(params_);
+    }
+
+    /// @notice Action 12: Claim iETHv2 (Lite) stETH revenue to Team Multisig
+    function action12() internal isActionSkippable(12) {
+        uint256 stethAmount_ = PayloadIGP132(ADDRESS_THIS).liteStethRevenueAmount();
+        require(stethAmount_ != 0, "lite-revenue-amount-not-set");
+
+        IETHV2.collectRevenue(stethAmount_);
+
+        string[] memory targets_ = new string[](1);
+        bytes[] memory encodedSpells_ = new bytes[](1);
+
+        targets_[0] = "BASIC-A";
+        encodedSpells_[0] = abi.encodeWithSignature(
+            "withdraw(address,uint256,address,uint256,uint256)",
+            stETH_ADDRESS,
+            stethAmount_,
+            TEAM_MULTISIG,
+            0,
+            0
+        );
+
+        TREASURY.cast(targets_, encodedSpells_, address(this));
+    }
+
+    /// @notice Action 13: Placeholder for Ethereum vault limit updates
+    function action13() internal isActionSkippable(13) {
+        // TODO: Fill Ethereum vault limit updates before finalizing IGP132.
     }
 
     function _legacyVaultSupplyConfig(

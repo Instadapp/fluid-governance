@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal performs ten Ethereum actions: (1–2) register and upgrade the Liquidity Layer **UserModule** on the InfiniteProxy with RollbackModule safety; (3–4) register and upgrade the **AdminModule** the same way; (5) rotate Liquidity Layer guardian and DexFactory pause auths; (6) rotate Liquidity Layer rates auth; (7) rotate DexFactory range auth; (8) reduce base withdrawal limits on legacy mainnet vaults **1–10** to **total supply + 5%**; (9) set conservative dust limits and Team Multisig auth on the USDai ecosystem (**DEXes 46–48**, **vaults 170–177**); (10) set max supply shares to **0** on the USR-USDC DEX (**Pool 20**) and RLP-USDC DEX (**Pool 28**). New module and auth addresses are configurable by Team Multisig before execution.
+This proposal performs thirteen Ethereum actions: (1–2) register and upgrade the Liquidity Layer **UserModule** on the InfiniteProxy with RollbackModule safety; (3–4) register and upgrade the **AdminModule** the same way; (5) rotate Liquidity Layer guardian and DexFactory pause auths; (6) rotate Liquidity Layer rates auth; (7) rotate DexFactory range auth; (8) reduce base withdrawal limits on legacy mainnet vaults **1–10** to **total supply + 5%**; (9) set conservative dust limits and Team Multisig auth on the USDai ecosystem (**DEXes 46–48**, **vaults 170–177**); (10) set max supply shares to **0** on the USR-USDC DEX (**Pool 20**) and RLP-USDC DEX (**Pool 28**); (11) update USDC and USDT Liquidity Layer rate curves to **15% max at 100% utilization**; (12) claim accumulated **iETHv2 (Lite) stETH revenue** to Team Multisig; (13) reserve a placeholder for **Ethereum vault limit updates** (no-op in this draft). New module, auth, and Lite revenue amounts are configurable by Team Multisig before execution.
 
 **Tokens**: USDai (`0x0A1a1A107E45b7Ced86833863f482BC5f4ed82EF`), sUSDai (`0x0B2b2B2076d95dda7817e785989fE353fe955ef9`).
 
@@ -55,11 +55,32 @@ Team Multisig auth is granted on all three DEXes and eight vaults.
 - **DEX Pool 28** — RLP-USDC: `updateMaxSupplyShares(0)`
 - **Purpose**: Prevent new supply on these DEXes while existing LPs retain withdrawal access
 
+### Action 11: Update USDC and USDT Rate Curves
+
+Updates both tokens via `updateRateDataV2s` on the Liquidity Layer (V2 rate curve):
+
+| Token | Kink 1 | Kink 2 | Rate @ 0% | Rate @ Kink 1 | Rate @ Kink 2 | Rate @ 100% |
+| --- | --- | --- | --- | --- | --- | --- |
+| USDC | 85% | 93% | 0% | 6% | 8% | **15%** |
+| USDT | 85% | 93% | 0% | 6% | 8% | **15%** |
+
+### Action 12: Claim iETHv2 (Lite) stETH Revenue
+
+- **Lite contract**: iETHv2 (`0xA0D3707c569ff8C87FA923d3823eC5D81c98Be78`)
+- **Amount**: Configurable via `setLiteStethRevenueAmount()` by Team Multisig (stETH wei)
+- **Step 1**: `IETHV2.collectRevenue(amount)` — pull accrued Lite revenue into treasury
+- **Step 2**: Treasury DSA `BASIC-A` `withdraw` — transfer stETH to Team Multisig
+- **Purpose**: Claim accumulated Fluid Lite revenue for operational use
+
+### Action 13: Ethereum Vault Limit Updates (Placeholder)
+
+- No-op in this draft. To be filled in with limit updates across Ethereum vaults before finalizing IGP-132.
+
 ## Description
 
-**Actions 1–7** upgrade Liquidity Layer modules and rotate operational auths (configurable addresses from Team Multisig). **Action 8** tightens withdrawal headroom on the oldest vaults to on-chain supply plus 5%. **Action 9** launches the USDai ecosystem at dust scale—three smart-collateral DEXes and eight vaults spanning TYPE_1, TYPE_2, TYPE_3, and TYPE_4 structures—with Team Multisig auth on each market for a follow-up launch-limits proposal. **Action 10** sets max supply shares to zero on the USR-USDC and RLP-USDC DEXes to block new deposits.
+**Actions 1–7** upgrade Liquidity Layer modules and rotate operational auths (configurable addresses from Team Multisig). **Action 8** tightens withdrawal headroom on the oldest vaults to on-chain supply plus 5%. **Action 9** launches the USDai ecosystem at dust scale. **Action 10** sets max supply shares to zero on the USR-USDC and RLP-USDC DEXes. **Action 11** caps USDC and USDT borrow rates at 15% at full utilization. **Action 12** collects iETHv2 stETH revenue and forwards it to Team Multisig. **Action 13** reserves space for a batch of Ethereum vault limit updates to be added before submission.
 
-### Configurable Addresses (Team Multisig sets before execution)
+### Configurable Values (Team Multisig sets before execution)
 
 | Variable | Purpose |
 | --- | --- |
@@ -69,9 +90,10 @@ Team Multisig auth is granted on all three DEXes and eight vaults.
 | `dexPauseAuth` | New DexFactory pause global auth |
 | `newRatesAuth` | New Liquidity Layer rates auth |
 | `newRangeAuth` | New DexFactory range global auth |
+| `liteStethRevenueAmount` | stETH amount for iETHv2 revenue claim (Action 12) |
 
-Each group has a Team Multisig-only `lock…()` function. Unset addresses cause the dependent action to revert.
+Module and auth groups have Team Multisig-only `lock…()` functions. Unset addresses or a zero revenue amount cause the dependent action to revert.
 
 ## Conclusion
 
-IGP-132 upgrades Liquidity Layer UserModule and AdminModule with rollback safety, rotates pause/rates/range authorization, aligns legacy vault 1–10 withdrawal limits with current supply, introduces the USDai ecosystem at conservative dust limits on DEXes 46–48 and vaults 170–177 with Team Multisig auth for subsequent launch configuration, and caps max supply shares at zero on the USR-USDC (Pool 20) and RLP-USDC (Pool 28) DEXes.
+IGP-132 upgrades Liquidity Layer modules with rollback safety, rotates pause/rates/range authorization, aligns legacy vault withdrawal limits, launches the USDai ecosystem at dust limits, caps USR/RLP DEX supply, updates USDC/USDT rate curves, claims iETHv2 Lite revenue, and reserves a placeholder for Ethereum vault limit updates to be finalized before submission.
