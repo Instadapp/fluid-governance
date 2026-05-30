@@ -153,6 +153,10 @@ contract PayloadIGPConstants {
         0x3d7d6fdf07EE548B939A80edbc9B2256d0cdc003;
     address internal constant REUSD_ADDRESS =
         0x5086bf358635B81D8C47C66d1C8b9E567Db70c72;
+    address internal constant USDAI_ADDRESS =
+        0x0A1a1A107E45b7Ced86833863f482BC5f4ed82EF;
+    address internal constant SUSDAI_ADDRESS =
+        0x0B2b2B2076d95dda7817e785989fE353fe955ef9;
 
     address internal constant WBTC_ADDRESS =
         0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;

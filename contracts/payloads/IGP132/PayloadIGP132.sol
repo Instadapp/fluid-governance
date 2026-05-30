@@ -12,11 +12,26 @@ import {
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
 /// @notice IGP132: Liquidity Layer UserModule and AdminModule upgrades with
-///         rollback registration, pause / rates / range auth rotations, and
-///         tightened base withdrawal limits on legacy vaults 1–10.
-///         Module and auth values are configurable by Team Multisig before execution.
+///         rollback registration, pause / rates / range auth rotations,
+///         tightened base withdrawal limits on legacy vaults 1–10, and USDai
+///         ecosystem dust limits. Module and auth values are configurable by
+///         Team Multisig before execution.
 contract PayloadIGP132 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 132;
+
+    // --- USDai ecosystem ids (deployments receive these ids when batched) ---
+    uint256 public constant USDAI_USDC_DEX_ID = 46;
+    uint256 public constant SUSDAI_USDC_DEX_ID = 47;
+    uint256 public constant SUSDAI_USDT_DEX_ID = 48;
+
+    uint256 public constant VAULT_USDAI_USDC_ID = 170; // T1: USDai / USDC
+    uint256 public constant VAULT_SUSDAI_USDC_ID = 171; // T1: sUSDai / USDC
+    uint256 public constant VAULT_SUSDAI_USDT_ID = 172; // T1: sUSDai / USDT
+    uint256 public constant VAULT_SUSDAI__USDC_USDT_ID = 173; // T3: sUSDai / USDC-USDT
+    uint256 public constant VAULT_SUSDAI_USDC__USDC_USDT_ID = 174; // T4: sUSDai-USDC / USDC-USDT
+    uint256 public constant VAULT_SUSDAI_USDT__USDC_USDT_ID = 175; // T4: sUSDai-USDT / USDC-USDT
+    uint256 public constant VAULT_SUSDAI_USDT__USDT_ID = 176; // T2: sUSDai-USDT / USDT
+    uint256 public constant VAULT_SUSDAI_USDC__USDC_ID = 177; // T2: sUSDai-USDC / USDC
 
     address public constant OLD_USER_MODULE =
         0x4bDC8816F2f56914B66EbF3786D78872D3a73Ab7;
@@ -135,6 +150,9 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
 
         // Action 8: Reduce base withdrawal limits on legacy vaults 1–10
         action8();
+
+        // Action 9: USDai ecosystem dust limits (DEXes 46–48, vaults 170–177)
+        action9();
     }
 
     function verifyProposal() public view override {}
@@ -327,6 +345,245 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
         LIQUIDITY.updateUserSupplyConfigs(configs_);
     }
 
+    /// @notice Action 9: Dust limits for USDai ecosystem (DEXes 46–48, vaults 170–177)
+    function action9() internal isActionSkippable(9) {
+        address USDC_USDT_DEX = getDexAddress(2);
+
+        // DEX 46: USDai-USDC
+        {
+            address USDAI_USDC_DEX = getDexAddress(USDAI_USDC_DEX_ID);
+            DexConfig memory DEX_USDAI_USDC = DexConfig({
+                dex: USDAI_USDC_DEX,
+                tokenA: USDAI_ADDRESS,
+                tokenB: USDC_ADDRESS,
+                smartCollateral: true,
+                smartDebt: false,
+                baseWithdrawalLimitInUSD: 10_000, // $10k
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
+            });
+            setDexLimits(DEX_USDAI_USDC);
+            DEX_FACTORY.setDexAuth(USDAI_USDC_DEX, TEAM_MULTISIG, true);
+        }
+
+        // DEX 47: sUSDai-USDC
+        {
+            address SUSDAI_USDC_DEX = getDexAddress(SUSDAI_USDC_DEX_ID);
+            DexConfig memory DEX_SUSDAI_USDC = DexConfig({
+                dex: SUSDAI_USDC_DEX,
+                tokenA: SUSDAI_ADDRESS,
+                tokenB: USDC_ADDRESS,
+                smartCollateral: true,
+                smartDebt: false,
+                baseWithdrawalLimitInUSD: 10_000, // $10k
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
+            });
+            setDexLimits(DEX_SUSDAI_USDC);
+            DEX_FACTORY.setDexAuth(SUSDAI_USDC_DEX, TEAM_MULTISIG, true);
+        }
+
+        // DEX 48: sUSDai-USDT
+        {
+            address SUSDAI_USDT_DEX = getDexAddress(SUSDAI_USDT_DEX_ID);
+            DexConfig memory DEX_SUSDAI_USDT = DexConfig({
+                dex: SUSDAI_USDT_DEX,
+                tokenA: SUSDAI_ADDRESS,
+                tokenB: USDT_ADDRESS,
+                smartCollateral: true,
+                smartDebt: false,
+                baseWithdrawalLimitInUSD: 10_000, // $10k
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
+            });
+            setDexLimits(DEX_SUSDAI_USDT);
+            DEX_FACTORY.setDexAuth(SUSDAI_USDT_DEX, TEAM_MULTISIG, true);
+        }
+
+        // Vault 170: USDai / USDC (TYPE_1)
+        {
+            address USDAI_USDC_VAULT = getVaultAddress(VAULT_USDAI_USDC_ID);
+            VaultConfig memory VAULT_USDAI_USDC = VaultConfig({
+                vault: USDAI_USDC_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: USDAI_ADDRESS,
+                borrowToken: USDC_ADDRESS,
+                baseWithdrawalLimitInUSD: 7_000, // $7k
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 9_000 // $9k
+            });
+            setVaultLimits(VAULT_USDAI_USDC);
+            VAULT_FACTORY.setVaultAuth(
+                USDAI_USDC_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
+
+        // Vault 171: sUSDai / USDC (TYPE_1)
+        {
+            address SUSDAI_USDC_VAULT = getVaultAddress(VAULT_SUSDAI_USDC_ID);
+            VaultConfig memory VAULT_SUSDAI_USDC = VaultConfig({
+                vault: SUSDAI_USDC_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: SUSDAI_ADDRESS,
+                borrowToken: USDC_ADDRESS,
+                baseWithdrawalLimitInUSD: 7_000, // $7k
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 9_000 // $9k
+            });
+            setVaultLimits(VAULT_SUSDAI_USDC);
+            VAULT_FACTORY.setVaultAuth(
+                SUSDAI_USDC_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
+
+        // Vault 172: sUSDai / USDT (TYPE_1)
+        {
+            address SUSDAI_USDT_VAULT = getVaultAddress(VAULT_SUSDAI_USDT_ID);
+            VaultConfig memory VAULT_SUSDAI_USDT = VaultConfig({
+                vault: SUSDAI_USDT_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: SUSDAI_ADDRESS,
+                borrowToken: USDT_ADDRESS,
+                baseWithdrawalLimitInUSD: 7_000, // $7k
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 9_000 // $9k
+            });
+            setVaultLimits(VAULT_SUSDAI_USDT);
+            VAULT_FACTORY.setVaultAuth(
+                SUSDAI_USDT_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
+
+        // Vault 173: sUSDai / USDC-USDT (TYPE_3)
+        {
+            address SUSDAI__USDC_USDT_VAULT = getVaultAddress(
+                VAULT_SUSDAI__USDC_USDT_ID
+            );
+            VaultConfig memory VAULT_SUSDAI__USDC_USDT = VaultConfig({
+                vault: SUSDAI__USDC_USDT_VAULT,
+                vaultType: VAULT_TYPE.TYPE_3,
+                supplyToken: SUSDAI_ADDRESS,
+                borrowToken: address(0),
+                baseWithdrawalLimitInUSD: 7_000, // $7k
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
+            });
+            setVaultLimits(VAULT_SUSDAI__USDC_USDT);
+            VAULT_FACTORY.setVaultAuth(
+                SUSDAI__USDC_USDT_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+
+            DexBorrowProtocolConfigInShares
+                memory config_ = DexBorrowProtocolConfigInShares({
+                    dex: USDC_USDT_DEX,
+                    protocol: SUSDAI__USDC_USDT_VAULT,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours,
+                    baseBorrowLimit: 3500 * 1e18, // ~$7k shares
+                    maxBorrowLimit: 4500 * 1e18 // ~$9k shares
+                });
+            setDexBorrowProtocolLimitsInShares(config_);
+        }
+
+        // Vault 174: sUSDai-USDC / USDC-USDT (TYPE_4)
+        {
+            address SUSDAI_USDC__USDC_USDT_VAULT = getVaultAddress(
+                VAULT_SUSDAI_USDC__USDC_USDT_ID
+            );
+            VAULT_FACTORY.setVaultAuth(
+                SUSDAI_USDC__USDC_USDT_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+
+            DexBorrowProtocolConfigInShares
+                memory config_ = DexBorrowProtocolConfigInShares({
+                    dex: USDC_USDT_DEX,
+                    protocol: SUSDAI_USDC__USDC_USDT_VAULT,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours,
+                    baseBorrowLimit: 3500 * 1e18, // ~$7k shares
+                    maxBorrowLimit: 4500 * 1e18 // ~$9k shares
+                });
+            setDexBorrowProtocolLimitsInShares(config_);
+        }
+
+        // Vault 175: sUSDai-USDT / USDC-USDT (TYPE_4)
+        {
+            address SUSDAI_USDT__USDC_USDT_VAULT = getVaultAddress(
+                VAULT_SUSDAI_USDT__USDC_USDT_ID
+            );
+            VAULT_FACTORY.setVaultAuth(
+                SUSDAI_USDT__USDC_USDT_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+
+            DexBorrowProtocolConfigInShares
+                memory config_ = DexBorrowProtocolConfigInShares({
+                    dex: USDC_USDT_DEX,
+                    protocol: SUSDAI_USDT__USDC_USDT_VAULT,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours,
+                    baseBorrowLimit: 3500 * 1e18, // ~$7k shares
+                    maxBorrowLimit: 4500 * 1e18 // ~$9k shares
+                });
+            setDexBorrowProtocolLimitsInShares(config_);
+        }
+
+        // Vault 176: sUSDai-USDT / USDT (TYPE_2)
+        {
+            address SUSDAI_USDT__USDT_VAULT = getVaultAddress(
+                VAULT_SUSDAI_USDT__USDT_ID
+            );
+            VaultConfig memory VAULT_SUSDAI_USDT__USDT = VaultConfig({
+                vault: SUSDAI_USDT__USDT_VAULT,
+                vaultType: VAULT_TYPE.TYPE_2,
+                supplyToken: address(0),
+                borrowToken: USDT_ADDRESS,
+                baseWithdrawalLimitInUSD: 0,
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 9_000 // $9k
+            });
+            setVaultLimits(VAULT_SUSDAI_USDT__USDT);
+            VAULT_FACTORY.setVaultAuth(
+                SUSDAI_USDT__USDT_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
+
+        // Vault 177: sUSDai-USDC / USDC (TYPE_2)
+        {
+            address SUSDAI_USDC__USDC_VAULT = getVaultAddress(
+                VAULT_SUSDAI_USDC__USDC_ID
+            );
+            VaultConfig memory VAULT_SUSDAI_USDC__USDC = VaultConfig({
+                vault: SUSDAI_USDC__USDC_VAULT,
+                vaultType: VAULT_TYPE.TYPE_2,
+                supplyToken: address(0),
+                borrowToken: USDC_ADDRESS,
+                baseWithdrawalLimitInUSD: 0,
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 9_000 // $9k
+            });
+            setVaultLimits(VAULT_SUSDAI_USDC__USDC);
+            VAULT_FACTORY.setVaultAuth(
+                SUSDAI_USDC__USDC_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
+    }
+
     function _legacyVaultSupplyConfig(
         uint256 vaultId_,
         address supplyToken_,
@@ -354,5 +611,12 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
      */
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
+    // fetched: 2026-05-30T11:25:35.114Z, source: coingecko
+    function ETH_USD_PRICE()    public pure override returns (uint256) { return 2_010 * 1e2; }
+    function SUSDAI_USD_PRICE() public pure override returns (uint256) { return 1 * 1e2; }
+    function sUSDe_USD_PRICE()  public pure override returns (uint256) { return 1.23 * 1e2; }
+    function STABLE_USD_PRICE() public pure override returns (uint256) { return 1 * 1e2; }
+    function weETH_USD_PRICE()  public pure override returns (uint256) { return 2_200 * 1e2; }
+    function wstETH_USD_PRICE() public pure override returns (uint256) { return 2_480 * 1e2; }
     // --- END AUTO-GENERATED PRICES ---
 }

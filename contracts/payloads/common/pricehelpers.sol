@@ -137,6 +137,9 @@ abstract contract PayloadIGPPriceHelpers is PayloadIGPMain {
         } else if (token == USDTb_ADDRESS) {
             usdPrice = STABLE_USD_PRICE();
             decimals = 18;
+        } else if (token == USDAI_ADDRESS) {
+            usdPrice = STABLE_USD_PRICE();
+            decimals = 18;
 
             // Yield-bearing stables ----------------------------------------
         } else if (token == sUSDe_ADDRESS) {
@@ -153,6 +156,9 @@ abstract contract PayloadIGPPriceHelpers is PayloadIGPMain {
             decimals = 6;
         } else if (token == REUSD_ADDRESS) {
             usdPrice = REUSD_USD_PRICE();
+            decimals = 18;
+        } else if (token == SUSDAI_ADDRESS) {
+            usdPrice = SUSDAI_USD_PRICE();
             decimals = 18;
         } else if (token == csUSDL_ADDRESS) {
             usdPrice = csUSDL_USD_PRICE();
@@ -267,6 +273,9 @@ abstract contract PayloadIGPPriceHelpers is PayloadIGPMain {
     }
     function REUSD_USD_PRICE() public pure virtual returns (uint256) {
         revert("REUSD_USD_PRICE not set");
+    }
+    function SUSDAI_USD_PRICE() public pure virtual returns (uint256) {
+        revert("SUSDAI_USD_PRICE not set");
     }
     function csUSDL_USD_PRICE() public pure virtual returns (uint256) {
         revert("csUSDL_USD_PRICE not set");
