@@ -27,10 +27,10 @@ jobs:
 
       - name: Detect IGP from PR title or branch
         id: detect
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BRANCH: ${{ github.head_ref }}
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_BRANCH="${{ github.head_ref }}"
-
           echo "PR Title: $PR_TITLE"
           echo "PR Branch: $PR_BRANCH"
 
