@@ -10,8 +10,9 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
 /// @notice IGP132: Tightened base withdrawal limits on legacy vaults 1–10, USDai
 ///         ecosystem dust limits, max supply share caps on USR/RLP DEXes, USDC/USDT
-///         rate curve updates, and iETHv2 revenue claim. Lite revenue amount is
-///         configurable by Team Multisig before execution.
+///         rate curve updates, iETHv2 revenue claim, and sUSDS vault sunset
+///         withdrawal caps. Lite revenue amount is configurable by Team Multisig
+///         before execution.
 contract PayloadIGP132 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 132;
 
@@ -56,6 +57,9 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
 
         // Action 5: Claim iETHv2 (Lite) stETH revenue to Team Multisig
         action5();
+
+        // Action 6: Restrict base withdrawal limits on sUSDS sunset vaults 58 and 85
+        action6();
     }
 
     function verifyProposal() public view override {}
@@ -429,6 +433,29 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
         );
 
         TREASURY.cast(targets_, encodedSpells_, address(this));
+    }
+
+    /// @notice Action 6: Restrict base withdrawal limits on sUSDS sunset vaults
+    function action6() internal isActionSkippable(6) {
+        FluidLiquidityAdminStructs.UserSupplyConfig[]
+            memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
+                2
+            );
+
+        // sUSDS / GHO (vault 58) — 650 sUSDS
+        configs_[0] = _legacyVaultSupplyConfig(
+            58,
+            sUSDs_ADDRESS,
+            650 * 1e18
+        );
+        // wstETH / sUSDS (vault 85) — ~0.009372630468 wstETH
+        configs_[1] = _legacyVaultSupplyConfig(
+            85,
+            wstETH_ADDRESS,
+            9372630468 * 1e6
+        );
+
+        LIQUIDITY.updateUserSupplyConfigs(configs_);
     }
 
     function _legacyVaultSupplyConfig(

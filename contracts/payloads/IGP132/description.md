@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal performs five Ethereum actions: (1) reduce base withdrawal limits on legacy mainnet vaults **1–10** to **total supply + 5%**; (2) set conservative dust limits and Team Multisig auth on the USDai ecosystem (**DEXes 46–48**, **vaults 170–177**); (3) set max supply shares to **0** on the USR-USDC DEX (**Pool 20**) and RLP-USDC DEX (**Pool 28**); (4) update USDC and USDT Liquidity Layer rate curves to **15% max at 100% utilization**; (5) claim accumulated **iETHv2 (Lite) stETH revenue** to Team Multisig. The Lite revenue amount is configurable by Team Multisig before execution.
+This proposal performs six Ethereum actions: (1) reduce base withdrawal limits on legacy mainnet vaults **1–10** to **total supply + 5%**; (2) set conservative dust limits and Team Multisig auth on the USDai ecosystem (**DEXes 46–48**, **vaults 170–177**); (3) set max supply shares to **0** on the USR-USDC DEX (**Pool 20**) and RLP-USDC DEX (**Pool 28**); (4) update USDC and USDT Liquidity Layer rate curves to **15% max at 100% utilization**; (5) claim accumulated **iETHv2 (Lite) stETH revenue** to Team Multisig; (6) restrict base withdrawal limits on **sUSDS sunset vaults 58 and 85**. The Lite revenue amount is configurable by Team Multisig before execution.
 
 **Tokens**: USDai (`0x0A1a1A107E45b7Ced86833863f482BC5f4ed82EF`), sUSDai (`0x0B2b2B2076d95dda7817e785989fE353fe955ef9`).
 
@@ -70,9 +70,18 @@ Updates both tokens via `updateRateDataV2s` on the Liquidity Layer (V2 rate curv
 - **Step 2**: Treasury DSA `BASIC-A` `withdraw` — transfer stETH to Team Multisig
 - **Purpose**: Claim accumulated Fluid Lite revenue for operational use
 
+### Action 6: Restrict Base Withdrawal Limits on sUSDS Sunset Vaults
+
+Sets max-restricted expansion on each vault’s Liquidity Layer supply config. Borrow limits are unchanged.
+
+| Vault | Market | Supply token | New base withdrawal limit |
+| --- | --- | --- | --- |
+| 58 | sUSDS / GHO | sUSDS | `650` sUSDS |
+| 85 | wstETH / sUSDS | wstETH | `~0.009372630468` wstETH |
+
 ## Description
 
-**Action 1** tightens withdrawal headroom on the oldest vaults to on-chain supply plus 5%. **Action 2** launches the USDai ecosystem at dust scale. **Action 3** sets max supply shares to zero on the USR-USDC and RLP-USDC DEXes. **Action 4** caps USDC and USDT borrow rates at 15% at full utilization. **Action 5** collects iETHv2 stETH revenue and forwards it to Team Multisig.
+**Action 1** tightens withdrawal headroom on the oldest vaults to on-chain supply plus 5%. **Action 2** launches the USDai ecosystem at dust scale. **Action 3** sets max supply shares to zero on the USR-USDC and RLP-USDC DEXes. **Action 4** caps USDC and USDT borrow rates at 15% at full utilization. **Action 5** collects iETHv2 stETH revenue and forwards it to Team Multisig. **Action 6** caps withdrawals on the sUSDS/GHO and wstETH/sUSDS vaults as part of sunsetting the sUSDS vault set.
 
 ### Configurable Values (Team Multisig sets before execution)
 
@@ -84,4 +93,4 @@ A zero revenue amount causes Action 5 to revert.
 
 ## Conclusion
 
-IGP-132 aligns legacy vault withdrawal limits, launches the USDai ecosystem at dust limits, caps USR/RLP DEX supply, updates USDC/USDT rate curves, and claims iETHv2 Lite revenue.
+IGP-132 aligns legacy vault withdrawal limits, launches the USDai ecosystem at dust limits, caps USR/RLP DEX supply, updates USDC/USDT rate curves, claims iETHv2 Lite revenue, and restricts withdrawals on sUSDS sunset vaults 58 and 85.
