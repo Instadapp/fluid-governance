@@ -5,29 +5,139 @@ pragma experimental ABIEncoderV2;
 import {
     AdminModuleStructs as FluidLiquidityAdminStructs
 } from "../common/interfaces/IFluidLiquidity.sol";
+import {IInfiniteProxy} from "../common/interfaces/IInfiniteProxy.sol";
+import {
+    IFluidLiquidityRollback
+} from "../common/interfaces/IFluidLiquidityRollback.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
-/// @notice IGP133: Risk-tightening of borrow limits across 66 less-trusted
-///         Ethereum vaults. Lowers base/max debt ceilings, reduces borrow
-///         expansion to 25% (10% for the largest pools) and shortens the
-///         expansion window from 6h to 3h on every affected vault.
+/// @notice IGP133: Liquidity Layer UserModule and AdminModule upgrades with
+///         rollback registration and pause / rates / range auth rotations,
+///         then risk-tightening of borrow limits across 66 less-trusted
+///         Ethereum vaults.
 contract PayloadIGP133 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 133;
+
+    address public constant OLD_USER_MODULE =
+        0x4bDC8816F2f56914B66EbF3786D78872D3a73Ab7;
+    address public constant OLD_ADMIN_MODULE =
+        0xea78faBC13D603895FE9efe8BB4A4F2c56e5698E;
+    address public constant OLD_LIQUIDITY_PAUSE_AUTH =
+        0xE9332F2d45e3216B7634cA4C7ab88945CD84ab76;
+    address public constant OLD_DEX_PAUSE_AUTH =
+        0x735BA3772c2cCC0b92Ff6993bd71da88236C1495;
+    address public constant OLD_RATES_AUTH =
+        0x1e6B029284dc2779F8FfBD83a3a5aA00EdCE6ba4;
+    address public constant OLD_RANGE_AUTH =
+        0x827089c01E9f761ff1A6D7041a9388bDdae74cc4;
+
+    address public newUserModuleAddress = address(0);
+    address public newAdminModuleAddress = address(0);
+    address public liquidityPauseAuth = address(0);
+    address public dexPauseAuth = address(0);
+    address public newRatesAuth = address(0);
+    address public newRangeAuth = address(0);
+
+    bool public newUserModuleAddressLocked;
+    bool public newAdminModuleAddressLocked;
+    bool public pauseAuthsLocked;
+    bool public ratesAuthsLocked;
+    bool public rangeAuthsLocked;
+
+    function lockNewUserModuleAddress() external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        newUserModuleAddressLocked = true;
+    }
+
+    function lockNewAdminModuleAddress() external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        newAdminModuleAddressLocked = true;
+    }
+
+    function lockPauseAuths() external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        pauseAuthsLocked = true;
+    }
+
+    function lockRatesAuths() external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        ratesAuthsLocked = true;
+    }
+
+    function lockRangeAuths() external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        rangeAuthsLocked = true;
+    }
+
+    function setNewUserModuleAddress(address newUserModuleAddress_) external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        require(!newUserModuleAddressLocked, "locked");
+        newUserModuleAddress = newUserModuleAddress_;
+    }
+
+    function setNewAdminModuleAddress(address newAdminModuleAddress_) external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        require(!newAdminModuleAddressLocked, "locked");
+        newAdminModuleAddress = newAdminModuleAddress_;
+    }
+
+    function setPauseAuths(
+        address liquidityPauseAuth_,
+        address dexPauseAuth_
+    ) external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        require(!pauseAuthsLocked, "locked");
+        liquidityPauseAuth = liquidityPauseAuth_;
+        dexPauseAuth = dexPauseAuth_;
+    }
+
+    function setNewRatesAuth(address newRatesAuth_) external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        require(!ratesAuthsLocked, "locked");
+        newRatesAuth = newRatesAuth_;
+    }
+
+    function setNewRangeAuth(address newRangeAuth_) external {
+        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
+        require(!rangeAuthsLocked, "locked");
+        newRangeAuth = newRangeAuth_;
+    }
 
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Tighten Liquidity Layer borrow limits on 54 vaults
+        // Action 1: Register UserModule LL upgrade on RollbackModule
         action1();
 
-        // Action 2: Tighten smart-debt limits on the USDC-USDT DEX (id 2)
+        // Action 2: Upgrade UserModule LL on InfiniteProxy
         action2();
 
-        // Action 3: Tighten smart-debt limits on the USDC-USDT DEX (id 34)
+        // Action 3: Register AdminModule LL upgrade on RollbackModule
         action3();
 
-        // Action 4: Tighten smart-debt limits on the GHO-USDC DEX (id 4)
+        // Action 4: Upgrade AdminModule LL on InfiniteProxy
         action4();
+
+        // Action 5: Set new pause auth contracts
+        action5();
+
+        // Action 6: Update Rates Auth on Liquidity Layer
+        action6();
+
+        // Action 7: Update Ranges Auth on DexFactory
+        action7();
+
+        // Action 8: Tighten Liquidity Layer borrow limits on 54 vaults
+        action8();
+
+        // Action 9: Tighten smart-debt limits on the USDC-USDT DEX (id 2)
+        action9();
+
+        // Action 10: Tighten smart-debt limits on the USDC-USDT DEX (id 34)
+        action10();
+
+        // Action 11: Tighten smart-debt limits on the GHO-USDC DEX (id 4)
+        action11();
     }
 
     function verifyProposal() public view override {}
@@ -42,8 +152,114 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
      * |__________________________________
      */
 
-    /// @notice Action 1: Tighten Liquidity Layer borrow limits (expand window 6h -> 3h)
+    /// @notice Action 1: Register UserModule LL upgrade on RollbackModule
     function action1() internal isActionSkippable(1) {
+        address newUserModule_ = PayloadIGP133(ADDRESS_THIS).newUserModuleAddress();
+        require(newUserModule_ != address(0), "new-user-module-not-set");
+
+        IFluidLiquidityRollback(address(LIQUIDITY))
+            .registerRollbackImplementation(OLD_USER_MODULE, newUserModule_);
+    }
+
+    /// @notice Action 2: Upgrade UserModule LL on InfiniteProxy
+    function action2() internal isActionSkippable(2) {
+        address newUserModule_ = PayloadIGP133(ADDRESS_THIS).newUserModuleAddress();
+        require(newUserModule_ != address(0), "new-user-module-not-set");
+
+        bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
+            .getImplementationSigs(OLD_USER_MODULE);
+
+        IInfiniteProxy(address(LIQUIDITY)).removeImplementation(OLD_USER_MODULE);
+
+        IInfiniteProxy(address(LIQUIDITY)).addImplementation(
+            newUserModule_,
+            sigs_
+        );
+    }
+
+    /// @notice Action 3: Register AdminModule LL upgrade on RollbackModule
+    function action3() internal isActionSkippable(3) {
+        address newAdminModule_ = PayloadIGP133(ADDRESS_THIS).newAdminModuleAddress();
+        require(newAdminModule_ != address(0), "new-admin-module-not-set");
+
+        IFluidLiquidityRollback(address(LIQUIDITY))
+            .registerRollbackImplementation(OLD_ADMIN_MODULE, newAdminModule_);
+    }
+
+    /// @notice Action 4: Upgrade AdminModule LL on InfiniteProxy
+    function action4() internal isActionSkippable(4) {
+        address newAdminModule_ = PayloadIGP133(ADDRESS_THIS).newAdminModuleAddress();
+        require(newAdminModule_ != address(0), "new-admin-module-not-set");
+
+        bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
+            .getImplementationSigs(OLD_ADMIN_MODULE);
+
+        IInfiniteProxy(address(LIQUIDITY)).removeImplementation(OLD_ADMIN_MODULE);
+
+        IInfiniteProxy(address(LIQUIDITY)).addImplementation(
+            newAdminModule_,
+            sigs_
+        );
+    }
+
+    /// @notice Action 5: Set new pause auth contracts
+    function action5() internal isActionSkippable(5) {
+        address liquidityPauseAuth_ = PayloadIGP133(ADDRESS_THIS).liquidityPauseAuth();
+        address dexPauseAuth_ = PayloadIGP133(ADDRESS_THIS).dexPauseAuth();
+        require(liquidityPauseAuth_ != address(0), "ll-pause-auth-not-set");
+        require(dexPauseAuth_ != address(0), "dex-pause-auth-not-set");
+
+        FluidLiquidityAdminStructs.AddressBool[]
+            memory guardiansStatus_ = new FluidLiquidityAdminStructs.AddressBool[](
+                2
+            );
+        guardiansStatus_[0] = FluidLiquidityAdminStructs.AddressBool({
+            addr: OLD_LIQUIDITY_PAUSE_AUTH,
+            value: false
+        });
+        guardiansStatus_[1] = FluidLiquidityAdminStructs.AddressBool({
+            addr: liquidityPauseAuth_,
+            value: true
+        });
+        LIQUIDITY.updateGuardians(guardiansStatus_);
+
+        DEX_FACTORY.setGlobalAuth(OLD_DEX_PAUSE_AUTH, false);
+        DEX_FACTORY.setGlobalAuth(dexPauseAuth_, true);
+    }
+
+    /// @notice Action 6: Update Rates Auth on Liquidity Layer
+    function action6() internal isActionSkippable(6) {
+        address newRatesAuth_ = PayloadIGP133(ADDRESS_THIS).newRatesAuth();
+        require(newRatesAuth_ != address(0), "new-rates-auth-not-set");
+
+        FluidLiquidityAdminStructs.AddressBool[]
+            memory authsStatus_ = new FluidLiquidityAdminStructs.AddressBool[](
+                2
+            );
+
+        authsStatus_[0] = FluidLiquidityAdminStructs.AddressBool({
+            addr: OLD_RATES_AUTH,
+            value: false
+        });
+        authsStatus_[1] = FluidLiquidityAdminStructs.AddressBool({
+            addr: newRatesAuth_,
+            value: true
+        });
+
+        LIQUIDITY.updateAuths(authsStatus_);
+    }
+
+    /// @notice Action 7: Update Ranges Auth on DexFactory
+    function action7() internal isActionSkippable(7) {
+        address newRangeAuth_ = PayloadIGP133(ADDRESS_THIS).newRangeAuth();
+        require(newRangeAuth_ != address(0), "new-range-auth-not-set");
+
+        DEX_FACTORY.setGlobalAuth(OLD_RANGE_AUTH, false);
+        DEX_FACTORY.setGlobalAuth(newRangeAuth_, true);
+    }
+
+    /// @notice Action 8: Tighten Liquidity Layer borrow limits (expand window 6h -> 3h)
+    function action8() internal isActionSkippable(8) {
         FluidLiquidityAdminStructs.UserBorrowConfig[]
             memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](
                 54
@@ -485,8 +701,8 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
         LIQUIDITY.updateUserBorrowConfigs(configs_);
     }
 
-    /// @notice Action 2: Tighten smart-debt limits on the USDC-USDT DEX (id 2) (expand window 6h -> 3h, share $2.204907979983792)
-    function action2() internal isActionSkippable(2) {
+    /// @notice Action 9: Tighten smart-debt limits on the USDC-USDT DEX (id 2) (expand window 6h -> 3h, share $2.204907979983792)
+    function action9() internal isActionSkippable(9) {
         address dex_ = getDexAddress(2);
 
         // Vault 47 (weETH / USDC-USDT): $2.5M base / $25M max
@@ -562,8 +778,8 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
         );
     }
 
-    /// @notice Action 3: Tighten smart-debt limits on the USDC-USDT DEX (id 34) (expand window 6h -> 3h, share $2.102974865610295)
-    function action3() internal isActionSkippable(3) {
+    /// @notice Action 10: Tighten smart-debt limits on the USDC-USDT DEX (id 34) (expand window 6h -> 3h, share $2.102974865610295)
+    function action10() internal isActionSkippable(10) {
         address dex_ = getDexAddress(34);
 
         // Vault 126 (sUSDe-USDT / USDC-USDT): $2.5M base / $50M max
@@ -603,8 +819,8 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
         );
     }
 
-    /// @notice Action 4: Tighten smart-debt limits on the GHO-USDC DEX (id 4) (expand window 6h -> 3h, share $2.2159112801948067)
-    function action4() internal isActionSkippable(4) {
+    /// @notice Action 11: Tighten smart-debt limits on the GHO-USDC DEX (id 4) (expand window 6h -> 3h, share $2.2159112801948067)
+    function action11() internal isActionSkippable(11) {
         address dex_ = getDexAddress(4);
 
         // Vault 61 (GHO-USDC / GHO-USDC): $2.5M base / $25M max

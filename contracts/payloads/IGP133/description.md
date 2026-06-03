@@ -1,16 +1,72 @@
-# Risk-Tightening of Borrow Limits Across 66 Ethereum Vaults
+# IGP-133: Liquidity Layer Upgrades and Borrow Limit Risk Tightening
 
 ## Summary
 
-This proposal lowers borrow-side risk on **66 less-trusted Ethereum vaults** in a single batch. For every affected vault it reduces the base and max debt ceilings, cuts the borrow expansion percent to **25%** (or **10%** on the largest pools), and shortens the borrow expansion window from **6h to 3h**. No supply / withdrawal limits, oracles, auths, or other parameters are touched.
+This proposal combines infrastructure upgrades moved from the original IGP-132 draft with borrow-side risk tightening on **66 less-trusted Ethereum vaults**.
 
-The changes are grouped into four actions: **Action 1** updates 54 vaults that borrow directly at the Liquidity Layer (single batched `updateUserBorrowConfigs`), and **Actions 2–4** update the 12 smart-debt vaults that borrow through a DEX (USDC-USDT id 2, USDC-USDT id 34, and GHO-USDC id 4 respectively).
+**Actions 1–7** register and upgrade the Liquidity Layer **UserModule** and **AdminModule** on the InfiniteProxy (with RollbackModule safety), then rotate Liquidity Layer guardian, DexFactory pause, rates, and range auths. All new implementation and auth addresses are configurable by Team Multisig before execution.
 
-All new ceilings are pre-converted from their USD targets to exact token / share amounts using the per-vault override prices listed in the tables below, so the configured limits are independent of any rounding in the shared price getters.
+**Actions 8–11** lower base/max debt ceilings, cut borrow expansion to **25%** (or **10%** on the largest pools), and shorten the borrow expansion window from **6h to 3h** on every affected vault. Action 8 updates 54 vaults at the Liquidity Layer; Actions 9–11 update smart-debt vaults on three DEXes.
+
+## Configurable Values (Team Multisig sets before execution)
+
+| Variable | Purpose |
+| --- | --- |
+| `newUserModuleAddress` | New UserModule implementation |
+| `newAdminModuleAddress` | New AdminModule implementation |
+| `liquidityPauseAuth` | New Liquidity Layer guardian |
+| `dexPauseAuth` | New DexFactory pause global auth |
+| `newRatesAuth` | New Liquidity Layer rates auth |
+| `newRangeAuth` | New DexFactory range global auth |
+
+Module and auth groups have Team Multisig-only `lock…()` functions. Unset addresses cause the dependent action to revert.
+
+### Old addresses (mainnet)
+
+| Role | Address |
+| --- | --- |
+| Old UserModule | `0x4bDC8816F2f56914B66EbF3786D78872D3a73Ab7` |
+| Old AdminModule | `0xea78faBC13D603895FE9efe8BB4A4F2c56e5698E` |
+| Old Liquidity pause auth | `0xE9332F2d45e3216B7634cA4C7ab88945CD84ab76` |
+| Old Dex pause auth | `0x735BA3772c2cCC0b92Ff6993bd71da88236C1495` |
+| Old rates auth | `0x1e6B029284dc2779F8FfBD83a3a5aA00EdCE6ba4` |
+| Old range auth | `0x827089c01E9f761ff1A6D7041a9388bDdae74cc4` |
 
 ## Code Changes
 
-### Action 1: Tighten Liquidity Layer Borrow Limits (54 vaults)
+### Action 1: Register UserModule LL upgrade on RollbackModule
+
+- Read `newUserModuleAddress` from payload (must be non-zero).
+- `IFluidLiquidityRollback(LIQUIDITY).registerRollbackImplementation(OLD_USER_MODULE, newUserModule_)`.
+
+### Action 2: Upgrade UserModule LL on InfiniteProxy
+
+- Read `newUserModuleAddress` from payload.
+- Copy implementation sigs from `OLD_USER_MODULE`, remove old impl, add new impl with same sigs.
+
+### Action 3: Register AdminModule LL upgrade on RollbackModule
+
+- Read `newAdminModuleAddress` from payload (must be non-zero).
+- `registerRollbackImplementation(OLD_ADMIN_MODULE, newAdminModule_)`.
+
+### Action 4: Upgrade AdminModule LL on InfiniteProxy
+
+- Same pattern as Action 2 for AdminModule.
+
+### Action 5: Set new pause auth contracts
+
+- Liquidity: `updateGuardians` — disable `OLD_LIQUIDITY_PAUSE_AUTH`, enable `liquidityPauseAuth`.
+- DexFactory: `setGlobalAuth(OLD_DEX_PAUSE_AUTH, false)`, `setGlobalAuth(dexPauseAuth, true)`.
+
+### Action 6: Update Rates Auth on Liquidity Layer
+
+- `updateAuths` — disable `OLD_RATES_AUTH`, enable `newRatesAuth`.
+
+### Action 7: Update Ranges Auth on DexFactory
+
+- `setGlobalAuth(OLD_RANGE_AUTH, false)`, `setGlobalAuth(newRangeAuth, true)`.
+
+### Action 8: Tighten Liquidity Layer Borrow Limits (54 vaults)
 
 Batched into one `LIQUIDITY.updateUserBorrowConfigs(...)` call. Expansion window for every row goes **6h → 3h**. Base / max columns show **old → new** USD.
 
@@ -71,7 +127,7 @@ Batched into one `LIQUIDITY.updateUserBorrowConfigs(...)` call. Expansion window
 | 162 | reUSD / GHO | T1 | GHO | $9.12M → **$2.50M** | $22.80M → **$20M** | 50% → **25%** | $0.999374 |
 | 164 | reUSD-USDT / USDT | T2 | USDT | $5.99M → **$2.50M** | $11.97M → **$20M** | 30% → **10%** | $0.999409 |
 
-### Action 2: Tighten Smart-Debt Limits on the USDC-USDT (id 2) DEX
+### Action 9: Tighten Smart-Debt Limits on the USDC-USDT (id 2) DEX
 
 DEX id **2**, share price **$2.204907979983792**. Limits are set in DEX shares (1e18) via `setDexBorrowProtocolLimitsInShares`. Expansion window **6h → 3h**.
 
@@ -84,7 +140,7 @@ DEX id **2**, share price **$2.204907979983792**. Limits are set in DEX shares (
 | 156 | osETH / USDC-USDT | T3 | $5.51M → **$100K** | $11.02M → **$1M** | 30% → **25%** |
 | 163 | reUSD / USDC-USDT | T3 | $8.82M → **$2.50M** | $22.03M → **$20M** | 30% → **10%** |
 
-### Action 3: Tighten Smart-Debt Limits on the USDC-USDT (id 34) DEX
+### Action 10: Tighten Smart-Debt Limits on the USDC-USDT (id 34) DEX
 
 DEX id **34**, share price **$2.102974865610295**. Limits are set in DEX shares (1e18) via `setDexBorrowProtocolLimitsInShares`. Expansion window **6h → 3h**.
 
@@ -94,7 +150,7 @@ DEX id **34**, share price **$2.102974865610295**. Limits are set in DEX shares 
 | 127 | USDe-USDT / USDC-USDT | T4 | $15.77M → **$2.50M** | $42.03M → **$50M** | 30% → **25%** |
 | 157 | osETH / USDC-USDT | T3 | $5.25M → **$100K** | $10.51M → **$1M** | 30% → **25%** |
 
-### Action 4: Tighten Smart-Debt Limits on the GHO-USDC (id 4) DEX
+### Action 11: Tighten Smart-Debt Limits on the GHO-USDC (id 4) DEX
 
 DEX id **4**, share price **$2.2159112801948067**. Limits are set in DEX shares (1e18) via `setDexBorrowProtocolLimitsInShares`. Expansion window **6h → 3h**.
 
@@ -106,14 +162,14 @@ DEX id **4**, share price **$2.2159112801948067**. Limits are set in DEX shares 
 
 ## Description
 
-This is a pure risk-management proposal. Following a review of the less-trusted vault set, borrow capacity is being right-sized down to current usage with tighter, slower expansion so that available debt cannot grow as quickly during stress.
+Following a review of the less-trusted vault set, borrow capacity is being right-sized down to current usage with tighter, slower expansion so that available debt cannot grow as quickly during stress. Module upgrades and auth rotations (Actions 1–7) run first so infrastructure is on the new implementations and auth contracts before limit changes take effect.
 
-For each vault the new **base debt ceiling** is the limit available immediately, and the **max debt ceiling** is the cap the base can expand toward over time. Lowering the **expand percent** (50%/30% → 25%, or → 10% on the deepest pools) and the **expand duration** (6h → 3h) means the borrowable amount refills more conservatively after utilization.
+For each borrow-limit vault the new **base debt ceiling** is the limit available immediately, and the **max debt ceiling** is the cap the base can expand toward over time. Lowering the **expand percent** (50%/30% → 25%, or → 10% on the deepest pools) and the **expand duration** (6h → 3h) means the borrowable amount refills more conservatively after utilization.
 
-Liquidity-Layer vaults (Action 1) have their ceilings set in the debt token's own units, converted from the USD targets at the per-vault override price and then normalized by the live borrow exchange price at execution. Smart-debt vaults (Actions 2–4) have their ceilings set directly in DEX shares, converted from USD at each pool's override share price.
+Liquidity-Layer vaults (Action 8) have their ceilings set in the debt token's own units, converted from the USD targets at the per-vault override price and then normalized by the live borrow exchange price at execution. Smart-debt vaults (Actions 9–11) have their ceilings set directly in DEX shares, converted from USD at each pool's override share price.
 
 The 10% expand tier is applied to the largest / most concentrated pools: vaults **61**, **74**, **99**, **159**, **160**, **161**, **163**, and **164**. All other vaults move to the 25% tier.
 
 ## Conclusion
 
-IGP-133 tightens borrow limits on 66 less-trusted Ethereum vaults: 54 at the Liquidity Layer (Action 1) and 12 smart-debt vaults across three DEXes (Actions 2–4). Every affected vault gets lower base/max debt ceilings, a reduced borrow expand percent (25%, or 10% on the deepest pools), and a shortened 3h expansion window, with no changes to supply limits, oracles, or auths.
+IGP-133 upgrades Liquidity Layer UserModule and AdminModule with rollback safety, rotates pause / rates / range auths (Actions 1–7), then tightens borrow limits on 66 less-trusted Ethereum vaults: 54 at the Liquidity Layer (Action 8) and 12 smart-debt vaults across three DEXes (Actions 9–11). Every affected borrow vault gets lower base/max debt ceilings, a reduced borrow expand percent (25%, or 10% on the deepest pools), and a shortened 3h expansion window.
