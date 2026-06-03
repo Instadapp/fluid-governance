@@ -5,19 +5,12 @@ pragma experimental ABIEncoderV2;
 import {
     AdminModuleStructs as FluidLiquidityAdminStructs
 } from "../common/interfaces/IFluidLiquidity.sol";
-import {IInfiniteProxy} from "../common/interfaces/IInfiniteProxy.sol";
-import {
-    IFluidLiquidityRollback
-} from "../common/interfaces/IFluidLiquidityRollback.sol";
 import {IFluidDex} from "../common/interfaces/IFluidDex.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
-/// @notice IGP132: Liquidity Layer UserModule and AdminModule upgrades with
-///         rollback registration, pause / rates / range auth rotations,
-///         tightened base withdrawal limits on legacy vaults 1–10, USDai
-///         ecosystem dust limits, max supply share caps on USR/RLP DEXes, and
-///         USDC/USDT rate curve updates, iETHv2 revenue claim, and a placeholder
-///         for Ethereum vault limit updates. Module and auth values are
+/// @notice IGP132: Tightened base withdrawal limits on legacy vaults 1–10, USDai
+///         ecosystem dust limits, max supply share caps on USR/RLP DEXes, USDC/USDT
+///         rate curve updates, and iETHv2 revenue claim. Lite revenue amount is
 ///         configurable by Team Multisig before execution.
 contract PayloadIGP132 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 132;
@@ -39,98 +32,7 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
     uint256 public constant VAULT_SUSDAI_USDT__USDT_ID = 176; // T2: sUSDai-USDT / USDT
     uint256 public constant VAULT_SUSDAI_USDC__USDC_ID = 177; // T2: sUSDai-USDC / USDC
 
-    address public constant OLD_USER_MODULE =
-        0x4bDC8816F2f56914B66EbF3786D78872D3a73Ab7;
-    address public constant OLD_ADMIN_MODULE =
-        0xea78faBC13D603895FE9efe8BB4A4F2c56e5698E;
-    address public constant OLD_LIQUIDITY_PAUSE_AUTH =
-        0xE9332F2d45e3216B7634cA4C7ab88945CD84ab76;
-    address public constant OLD_DEX_PAUSE_AUTH =
-        0x735BA3772c2cCC0b92Ff6993bd71da88236C1495;
-    address public constant OLD_RATES_AUTH =
-        0x1e6B029284dc2779F8FfBD83a3a5aA00EdCE6ba4;
-    address public constant OLD_RANGE_AUTH =
-        0x827089c01E9f761ff1A6D7041a9388bDdae74cc4;
-
-    // --- Configurable values (Team Multisig can set before execution) ---
-    address public newUserModuleAddress = address(0);
-
-    address public newAdminModuleAddress = address(0);
-
-    address public liquidityPauseAuth = address(0);
-    address public dexPauseAuth = address(0);
-
-    address public newRatesAuth = address(0);
-
-    address public newRangeAuth = address(0);
-
     uint256 public liteStethRevenueAmount;
-
-    // --- Lock flags (once true, the corresponding values can no longer be changed) ---
-    bool public newUserModuleAddressLocked;
-    bool public newAdminModuleAddressLocked;
-    bool public pauseAuthsLocked;
-    bool public ratesAuthsLocked;
-    bool public rangeAuthsLocked;
-
-    function lockNewUserModuleAddress() external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        newUserModuleAddressLocked = true;
-    }
-
-    function lockNewAdminModuleAddress() external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        newAdminModuleAddressLocked = true;
-    }
-
-    function lockPauseAuths() external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        pauseAuthsLocked = true;
-    }
-
-    function lockRatesAuths() external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        ratesAuthsLocked = true;
-    }
-
-    function lockRangeAuths() external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        rangeAuthsLocked = true;
-    }
-
-    function setNewUserModuleAddress(address newUserModuleAddress_) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        require(!newUserModuleAddressLocked, "locked");
-        newUserModuleAddress = newUserModuleAddress_;
-    }
-
-    function setNewAdminModuleAddress(address newAdminModuleAddress_) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        require(!newAdminModuleAddressLocked, "locked");
-        newAdminModuleAddress = newAdminModuleAddress_;
-    }
-
-    function setPauseAuths(
-        address liquidityPauseAuth_,
-        address dexPauseAuth_
-    ) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        require(!pauseAuthsLocked, "locked");
-        liquidityPauseAuth = liquidityPauseAuth_;
-        dexPauseAuth = dexPauseAuth_;
-    }
-
-    function setNewRatesAuth(address newRatesAuth_) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        require(!ratesAuthsLocked, "locked");
-        newRatesAuth = newRatesAuth_;
-    }
-
-    function setNewRangeAuth(address newRangeAuth_) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        require(!rangeAuthsLocked, "locked");
-        newRangeAuth = newRangeAuth_;
-    }
 
     function setLiteStethRevenueAmount(uint256 liteStethRevenueAmount_) external {
         require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
@@ -140,44 +42,20 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Register UserModule LL upgrade on RollbackModule
+        // Action 1: Reduce base withdrawal limits on legacy vaults 1–10
         action1();
 
-        // Action 2: Upgrade UserModule LL on InfiniteProxy
+        // Action 2: USDai ecosystem dust limits (DEXes 46–48, vaults 170–177)
         action2();
 
-        // Action 3: Register AdminModule LL upgrade on RollbackModule
+        // Action 3: Set USR-USDC and RLP-USDC DEX max supply shares to 0
         action3();
 
-        // Action 4: Upgrade AdminModule LL on InfiniteProxy
+        // Action 4: Update USDC and USDT rate curves (max 15% at 100% utilization)
         action4();
 
-        // Action 5: Set new pause auth contracts
+        // Action 5: Claim iETHv2 (Lite) stETH revenue to Team Multisig
         action5();
-
-        // Action 6: Update Rates Auth
-        action6();
-
-        // Action 7: Update Ranges Auth
-        action7();
-
-        // Action 8: Reduce base withdrawal limits on legacy vaults 1–10
-        action8();
-
-        // Action 9: USDai ecosystem dust limits (DEXes 46–48, vaults 170–177)
-        action9();
-
-        // Action 10: Set USR-USDC and RLP-USDC DEX max supply shares to 0
-        action10();
-
-        // Action 11: Update USDC and USDT rate curves (max 15% at 100% utilization)
-        action11();
-
-        // Action 12: Claim iETHv2 (Lite) stETH revenue to Team Multisig
-        action12();
-
-        // Action 13: Placeholder for Ethereum vault limit updates
-        action13();
     }
 
     function verifyProposal() public view override {}
@@ -192,123 +70,8 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
      * |__________________________________
      */
 
-    /// @notice Action 1: Register UserModule LL upgrade on RollbackModule
+    /// @notice Action 1: Set legacy vault 1–10 base withdrawal limits to total supply + 5%
     function action1() internal isActionSkippable(1) {
-        address newUserModule_ = PayloadIGP132(ADDRESS_THIS)
-            .newUserModuleAddress();
-        require(newUserModule_ != address(0), "new-user-module-not-set");
-
-        IFluidLiquidityRollback(address(LIQUIDITY))
-            .registerRollbackImplementation(OLD_USER_MODULE, newUserModule_);
-    }
-
-    /// @notice Action 2: Upgrade UserModule LL on InfiniteProxy
-    function action2() internal isActionSkippable(2) {
-        address newUserModule_ = PayloadIGP132(ADDRESS_THIS)
-            .newUserModuleAddress();
-        require(newUserModule_ != address(0), "new-user-module-not-set");
-
-        bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
-            .getImplementationSigs(OLD_USER_MODULE);
-
-        IInfiniteProxy(address(LIQUIDITY)).removeImplementation(
-            OLD_USER_MODULE
-        );
-
-        IInfiniteProxy(address(LIQUIDITY)).addImplementation(
-            newUserModule_,
-            sigs_
-        );
-    }
-
-    /// @notice Action 3: Register AdminModule LL upgrade on RollbackModule
-    function action3() internal isActionSkippable(3) {
-        address newAdminModule_ = PayloadIGP132(ADDRESS_THIS)
-            .newAdminModuleAddress();
-        require(newAdminModule_ != address(0), "new-admin-module-not-set");
-
-        IFluidLiquidityRollback(address(LIQUIDITY))
-            .registerRollbackImplementation(OLD_ADMIN_MODULE, newAdminModule_);
-    }
-
-    /// @notice Action 4: Upgrade AdminModule LL on InfiniteProxy
-    function action4() internal isActionSkippable(4) {
-        address newAdminModule_ = PayloadIGP132(ADDRESS_THIS)
-            .newAdminModuleAddress();
-        require(newAdminModule_ != address(0), "new-admin-module-not-set");
-
-        bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
-            .getImplementationSigs(OLD_ADMIN_MODULE);
-
-        IInfiniteProxy(address(LIQUIDITY)).removeImplementation(
-            OLD_ADMIN_MODULE
-        );
-
-        IInfiniteProxy(address(LIQUIDITY)).addImplementation(
-            newAdminModule_,
-            sigs_
-        );
-    }
-
-    /// @notice Action 5: Set new pause auth contracts
-    function action5() internal isActionSkippable(5) {
-        address liquidityPauseAuth_ = PayloadIGP132(ADDRESS_THIS)
-            .liquidityPauseAuth();
-        address dexPauseAuth_ = PayloadIGP132(ADDRESS_THIS).dexPauseAuth();
-        require(liquidityPauseAuth_ != address(0), "ll-pause-auth-not-set");
-        require(dexPauseAuth_ != address(0), "dex-pause-auth-not-set");
-
-        FluidLiquidityAdminStructs.AddressBool[]
-            memory guardiansStatus_ = new FluidLiquidityAdminStructs.AddressBool[](
-                2
-            );
-        guardiansStatus_[0] = FluidLiquidityAdminStructs.AddressBool({
-            addr: OLD_LIQUIDITY_PAUSE_AUTH,
-            value: false
-        });
-        guardiansStatus_[1] = FluidLiquidityAdminStructs.AddressBool({
-            addr: liquidityPauseAuth_,
-            value: true
-        });
-        LIQUIDITY.updateGuardians(guardiansStatus_);
-
-        DEX_FACTORY.setGlobalAuth(OLD_DEX_PAUSE_AUTH, false);
-        DEX_FACTORY.setGlobalAuth(dexPauseAuth_, true);
-    }
-
-    /// @notice Action 6: Update Rates Auth on Liquidity Layer
-    function action6() internal isActionSkippable(6) {
-        address newRatesAuth_ = PayloadIGP132(ADDRESS_THIS).newRatesAuth();
-        require(newRatesAuth_ != address(0), "new-rates-auth-not-set");
-
-        FluidLiquidityAdminStructs.AddressBool[]
-            memory authsStatus_ = new FluidLiquidityAdminStructs.AddressBool[](
-                2
-            );
-
-        authsStatus_[0] = FluidLiquidityAdminStructs.AddressBool({
-            addr: OLD_RATES_AUTH,
-            value: false
-        });
-        authsStatus_[1] = FluidLiquidityAdminStructs.AddressBool({
-            addr: newRatesAuth_,
-            value: true
-        });
-
-        LIQUIDITY.updateAuths(authsStatus_);
-    }
-
-    /// @notice Action 7: Update Ranges Auth on DexFactory
-    function action7() internal isActionSkippable(7) {
-        address newRangeAuth_ = PayloadIGP132(ADDRESS_THIS).newRangeAuth();
-        require(newRangeAuth_ != address(0), "new-range-auth-not-set");
-
-        DEX_FACTORY.setGlobalAuth(OLD_RANGE_AUTH, false);
-        DEX_FACTORY.setGlobalAuth(newRangeAuth_, true);
-    }
-
-    /// @notice Action 8: Set legacy vault 1–10 base withdrawal limits to total supply + 5%
-    function action8() internal isActionSkippable(8) {
         FluidLiquidityAdminStructs.UserSupplyConfig[]
             memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
                 10
@@ -370,8 +133,8 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
         LIQUIDITY.updateUserSupplyConfigs(configs_);
     }
 
-    /// @notice Action 9: Dust limits for USDai ecosystem (DEXes 46–48, vaults 170–177)
-    function action9() internal isActionSkippable(9) {
+    /// @notice Action 2: Dust limits for USDai ecosystem (DEXes 46–48, vaults 170–177)
+    function action2() internal isActionSkippable(2) {
         address USDC_USDT_DEX = getDexAddress(2);
 
         // DEX 46: USDai-USDC
@@ -609,14 +372,14 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
         }
     }
 
-    /// @notice Action 10: Set USR-USDC (DEX 20) and RLP-USDC (DEX 28) max supply shares to 0
-    function action10() internal isActionSkippable(10) {
+    /// @notice Action 3: Set USR-USDC (DEX 20) and RLP-USDC (DEX 28) max supply shares to 0
+    function action3() internal isActionSkippable(3) {
         IFluidDex(getDexAddress(USR_USDC_DEX_ID)).updateMaxSupplyShares(0);
         IFluidDex(getDexAddress(RLP_USDC_DEX_ID)).updateMaxSupplyShares(0);
     }
 
-    /// @notice Action 11: Update USDC and USDT rate curves — max 15% at 100% utilization
-    function action11() internal isActionSkippable(11) {
+    /// @notice Action 4: Update USDC and USDT rate curves — max 15% at 100% utilization
+    function action4() internal isActionSkippable(4) {
         FluidLiquidityAdminStructs.RateDataV2Params[]
             memory params_ = new FluidLiquidityAdminStructs.RateDataV2Params[](
                 2
@@ -645,8 +408,8 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
         LIQUIDITY.updateRateDataV2s(params_);
     }
 
-    /// @notice Action 12: Claim iETHv2 (Lite) stETH revenue to Team Multisig
-    function action12() internal isActionSkippable(12) {
+    /// @notice Action 5: Claim iETHv2 (Lite) stETH revenue to Team Multisig
+    function action5() internal isActionSkippable(5) {
         uint256 stethAmount_ = PayloadIGP132(ADDRESS_THIS).liteStethRevenueAmount();
         require(stethAmount_ != 0, "lite-revenue-amount-not-set");
 
@@ -666,11 +429,6 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
         );
 
         TREASURY.cast(targets_, encodedSpells_, address(this));
-    }
-
-    /// @notice Action 13: Placeholder for Ethereum vault limit updates
-    function action13() internal isActionSkippable(13) {
-        // TODO: Fill Ethereum vault limit updates before finalizing IGP132.
     }
 
     function _legacyVaultSupplyConfig(
