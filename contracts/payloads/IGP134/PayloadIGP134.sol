@@ -11,12 +11,12 @@ import {
 } from "../common/interfaces/IFluidLiquidityRollback.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
-/// @notice IGP133: Liquidity Layer UserModule and AdminModule upgrades with
+/// @notice IGP134: Liquidity Layer UserModule and AdminModule upgrades with
 ///         rollback registration and pause / rates / range auth rotations,
 ///         then risk-tightening of borrow limits across 66 less-trusted
 ///         Ethereum vaults.
-contract PayloadIGP133 is PayloadIGPPriceHelpers {
-    uint256 public constant PROPOSAL_ID = 133;
+contract PayloadIGP134 is PayloadIGPPriceHelpers {
+    uint256 public constant PROPOSAL_ID = 134;
 
     address public constant OLD_USER_MODULE =
         0x4bDC8816F2f56914B66EbF3786D78872D3a73Ab7;
@@ -154,7 +154,7 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
 
     /// @notice Action 1: Register UserModule LL upgrade on RollbackModule
     function action1() internal isActionSkippable(1) {
-        address newUserModule_ = PayloadIGP133(ADDRESS_THIS).newUserModuleAddress();
+        address newUserModule_ = PayloadIGP134(ADDRESS_THIS).newUserModuleAddress();
         require(newUserModule_ != address(0), "new-user-module-not-set");
 
         IFluidLiquidityRollback(address(LIQUIDITY))
@@ -163,7 +163,7 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
 
     /// @notice Action 2: Upgrade UserModule LL on InfiniteProxy
     function action2() internal isActionSkippable(2) {
-        address newUserModule_ = PayloadIGP133(ADDRESS_THIS).newUserModuleAddress();
+        address newUserModule_ = PayloadIGP134(ADDRESS_THIS).newUserModuleAddress();
         require(newUserModule_ != address(0), "new-user-module-not-set");
 
         bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
@@ -179,7 +179,7 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
 
     /// @notice Action 3: Register AdminModule LL upgrade on RollbackModule
     function action3() internal isActionSkippable(3) {
-        address newAdminModule_ = PayloadIGP133(ADDRESS_THIS).newAdminModuleAddress();
+        address newAdminModule_ = PayloadIGP134(ADDRESS_THIS).newAdminModuleAddress();
         require(newAdminModule_ != address(0), "new-admin-module-not-set");
 
         IFluidLiquidityRollback(address(LIQUIDITY))
@@ -188,7 +188,7 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
 
     /// @notice Action 4: Upgrade AdminModule LL on InfiniteProxy
     function action4() internal isActionSkippable(4) {
-        address newAdminModule_ = PayloadIGP133(ADDRESS_THIS).newAdminModuleAddress();
+        address newAdminModule_ = PayloadIGP134(ADDRESS_THIS).newAdminModuleAddress();
         require(newAdminModule_ != address(0), "new-admin-module-not-set");
 
         bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
@@ -204,8 +204,8 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
 
     /// @notice Action 5: Set new pause auth contracts
     function action5() internal isActionSkippable(5) {
-        address liquidityPauseAuth_ = PayloadIGP133(ADDRESS_THIS).liquidityPauseAuth();
-        address dexPauseAuth_ = PayloadIGP133(ADDRESS_THIS).dexPauseAuth();
+        address liquidityPauseAuth_ = PayloadIGP134(ADDRESS_THIS).liquidityPauseAuth();
+        address dexPauseAuth_ = PayloadIGP134(ADDRESS_THIS).dexPauseAuth();
         require(liquidityPauseAuth_ != address(0), "ll-pause-auth-not-set");
         require(dexPauseAuth_ != address(0), "dex-pause-auth-not-set");
 
@@ -229,7 +229,7 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
 
     /// @notice Action 6: Update Rates Auth on Liquidity Layer
     function action6() internal isActionSkippable(6) {
-        address newRatesAuth_ = PayloadIGP133(ADDRESS_THIS).newRatesAuth();
+        address newRatesAuth_ = PayloadIGP134(ADDRESS_THIS).newRatesAuth();
         require(newRatesAuth_ != address(0), "new-rates-auth-not-set");
 
         FluidLiquidityAdminStructs.AddressBool[]
@@ -251,7 +251,7 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
 
     /// @notice Action 7: Update Ranges Auth on DexFactory
     function action7() internal isActionSkippable(7) {
-        address newRangeAuth_ = PayloadIGP133(ADDRESS_THIS).newRangeAuth();
+        address newRangeAuth_ = PayloadIGP134(ADDRESS_THIS).newRangeAuth();
         require(newRangeAuth_ != address(0), "new-range-auth-not-set");
 
         DEX_FACTORY.setGlobalAuth(OLD_RANGE_AUTH, false);

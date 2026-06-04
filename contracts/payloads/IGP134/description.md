@@ -1,4 +1,4 @@
-# IGP-133: Liquidity Layer Upgrades and Borrow Limit Risk Tightening
+# IGP-134: Liquidity Layer Upgrades and Borrow Limit Risk Tightening
 
 ## Summary
 
@@ -172,4 +172,4 @@ The 10% expand tier is applied to the largest / most concentrated pools: vaults 
 
 ## Conclusion
 
-IGP-133 upgrades Liquidity Layer UserModule and AdminModule with rollback safety, rotates pause / rates / range auths (Actions 1–7), then tightens borrow limits on 66 less-trusted Ethereum vaults: 54 at the Liquidity Layer (Action 8) and 12 smart-debt vaults across three DEXes (Actions 9–11). Every affected borrow vault gets lower base/max debt ceilings, a reduced borrow expand percent (25%, or 10% on the deepest pools), and a shortened 3h expansion window.
+IGP-134 upgrades Liquidity Layer UserModule and AdminModule with rollback safety, rotates pause / rates / range auths (Actions 1–7), then tightens borrow limits on 66 less-trusted Ethereum vaults: 54 at the Liquidity Layer (Action 8) and 12 smart-debt vaults across three DEXes (Actions 9–11). Every affected borrow vault gets lower base/max debt ceilings, a reduced borrow expand percent (25%, or 10% on the deepest pools), and a shortened 3h expansion window.
