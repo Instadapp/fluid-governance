@@ -87,13 +87,14 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
     }
 
     /// @notice Action 2: Reduce the Team Multisig's USDC & USDT borrow limits on
-    ///         the Liquidity Layer to the minimum (base 10 / max 20 wei).
-    /// @dev The Liquidity AdminModule reverts `LimitZero` on a literal-zero
-    ///      `baseDebtCeiling` / `maxDebtCeiling`, so the established "paused"
-    ///      dust limits are the canonical way to drive borrowing to 0. Mode 1
-    ///      (with interest) matches the Team Multisig's existing config for both
-    ///      tokens, so no mode switch is triggered. Existing debt is unaffected;
-    ///      only further borrowing above the dust ceiling is blocked.
+    ///         the Liquidity Layer to ~0 (base 10 / max 20 wei).
+    /// @dev This lowers the debt ceiling to a dust amount (~0); it is not an
+    ///      operation-level borrow pause. The Liquidity AdminModule reverts
+    ///      `LimitZero` on a literal-zero `baseDebtCeiling` / `maxDebtCeiling`,
+    ///      so base 10 / max 20 wei is the canonical way to express a ~0 limit.
+    ///      Mode 1 (with interest) matches the Team Multisig's existing config
+    ///      for both tokens, so no mode switch is triggered. Existing debt is
+    ///      unaffected; only further borrowing above the dust ceiling is blocked.
     function action2() internal isActionSkippable(2) {
         setBorrowProtocolLimitsPaused(TEAM_MULTISIG, USDC_ADDRESS);
         setBorrowProtocolLimitsPaused(TEAM_MULTISIG, USDT_ADDRESS);

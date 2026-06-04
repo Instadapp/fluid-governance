@@ -22,7 +22,7 @@ This proposal introduces two updates on Ethereum:
 ### Action 2: Reduce Team Multisig USDC & USDT Borrow Limits to Effectively Zero
 
 - Calls `setBorrowProtocolLimitsPaused()` for the Team Multisig with borrow tokens `USDC` and `USDT`.
-- Sets borrow config to minimum/paused values: `mode = 1`, `expandPercent = 1` (`0.01%`), `expandDuration = 16777215` (max), `baseDebtCeiling = 10`, `maxDebtCeiling = 20`.
+- Lowers the borrow limit to ~`0` (`baseDebtCeiling = 10`, `maxDebtCeiling = 20`, in wei). This sets the debt ceiling to a dust amount — it is **not** an operation-level borrow pause; borrowing is simply capped at ~`0`. Other config: `mode = 1`, `expandPercent = 1` (`0.01%`), `expandDuration = 16777215` (max).
 - `mode = 1` (with interest) matches the Team Multisig's existing on-chain borrow config for both tokens, so no mode switch is triggered.
 
 ## Description
