@@ -30,6 +30,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
     uint256 public constant VAULT_SUSDAI_USDT__USDC_USDT_ID = 175; // T4: sUSDai-USDT / USDC-USDT
     uint256 public constant VAULT_SUSDAI_USDT__USDT_ID = 176; // T2: sUSDai-USDT / USDT
     uint256 public constant VAULT_SUSDAI_USDC__USDC_ID = 177; // T2: sUSDai-USDC / USDC
+    uint256 public constant VAULT_SUSDAI_GHO_ID = 178; // T1: sUSDai / GHO
 
     uint256 public liteStethRevenueAmount;
 
@@ -41,7 +42,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: USDai ecosystem dust limits (DEXes 46–48, vaults 170–177)
+        // Action 1: USDai ecosystem dust limits (DEXes 46–48, vaults 170–178)
         action1();
 
         // Action 2: Set USR-USDC and RLP-USDC DEX max supply shares to 0
@@ -63,7 +64,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
      * |__________________________________
      */
 
-    /// @notice Action 1: Dust limits for USDai ecosystem (DEXes 46–48, vaults 170–177)
+    /// @notice Action 1: Dust limits for USDai ecosystem (DEXes 46–48, vaults 170–178)
     function action1() internal isActionSkippable(1) {
         address USDC_USDT_DEX = getDexAddress(2);
 
@@ -296,6 +297,26 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
             setVaultLimits(VAULT_SUSDAI_USDC__USDC);
             VAULT_FACTORY.setVaultAuth(
                 SUSDAI_USDC__USDC_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
+
+        // Vault 178: sUSDai / GHO (TYPE_1)
+        {
+            address SUSDAI_GHO_VAULT = getVaultAddress(VAULT_SUSDAI_GHO_ID);
+            VaultConfig memory VAULT_SUSDAI_GHO = VaultConfig({
+                vault: SUSDAI_GHO_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: SUSDAI_ADDRESS,
+                borrowToken: GHO_ADDRESS,
+                baseWithdrawalLimitInUSD: 7_000, // $7k
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 9_000 // $9k
+            });
+            setVaultLimits(VAULT_SUSDAI_GHO);
+            VAULT_FACTORY.setVaultAuth(
+                SUSDAI_GHO_VAULT,
                 TEAM_MULTISIG,
                 true
             );

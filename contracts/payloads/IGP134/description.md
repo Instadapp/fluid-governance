@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal performs three Ethereum actions: (1) set conservative dust limits and Team Multisig auth on the USDai ecosystem (**DEXes 46–48**, **vaults 170–177**); (2) set max supply shares to **0** on the USR-USDC DEX (**Pool 20**) and RLP-USDC DEX (**Pool 28**); (3) claim accumulated **iETHv2 (Lite) stETH revenue** to Team Multisig. The Lite revenue amount is configurable by Team Multisig before execution.
+This proposal performs three Ethereum actions: (1) set conservative dust limits and Team Multisig auth on the USDai ecosystem (**DEXes 46–48**, **vaults 170–178**); (2) set max supply shares to **0** on the USR-USDC DEX (**Pool 20**) and RLP-USDC DEX (**Pool 28**); (3) claim accumulated **iETHv2 (Lite) stETH revenue** to Team Multisig. The Lite revenue amount is configurable by Team Multisig before execution.
 
 **Tokens**: USDai (`0x0A1a1A107E45b7Ced86833863f482BC5f4ed82EF`), sUSDai (`0x0B2b2B2076d95dda7817e785989fE353fe955ef9`).
 
@@ -14,7 +14,7 @@ Module upgrades and auth rotations (former actions 1–7 of the original IGP-132
 
 ### Action 1: USDai Ecosystem Dust Limits + Team Multisig Auth
 
-Assumes deployments receive **DEX ids 46–48** and **vault ids 170–177** when batched in order.
+Assumes deployments receive **DEX ids 46–48** and **vault ids 170–178** when batched in order.
 
 | Market | Id | Type | Dust limits |
 | --- | --- | --- | --- |
@@ -29,8 +29,9 @@ Assumes deployments receive **DEX ids 46–48** and **vault ids 170–177** when
 | sUSDai-USDT / USDC-USDT | 175 | TYPE_4 | USDC-USDT DEX borrow shares `3500e18` / `4500e18`; smart col at DEX **48** |
 | sUSDai-USDT / USDT | 176 | TYPE_2 | USDT debt `$7k` / `$9k`; smart col at DEX **48** |
 | sUSDai-USDC / USDC | 177 | TYPE_2 | USDC debt `$7k` / `$9k`; smart col at DEX **47** |
+| sUSDai / GHO | 178 | TYPE_1 | `$7k` / `$7k` / `$9k` |
 
-Team Multisig auth is granted on all three DEXes and eight vaults.
+Team Multisig auth is granted on all three DEXes and nine vaults.
 
 ### Action 2: Set USR and RLP DEX Max Supply Shares to 0
 
