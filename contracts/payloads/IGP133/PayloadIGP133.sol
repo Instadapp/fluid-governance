@@ -11,12 +11,12 @@ import {
 } from "../common/interfaces/IFluidLiquidityRollback.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
-/// @notice IGP134: Liquidity Layer UserModule and AdminModule upgrades with
+/// @notice IGP133: Liquidity Layer UserModule and AdminModule upgrades with
 ///         rollback registration and pause / rates / range auth rotations,
-///         then risk-tightening of borrow limits across 66 less-trusted
-///         Ethereum vaults.
-contract PayloadIGP134 is PayloadIGPPriceHelpers {
-    uint256 public constant PROPOSAL_ID = 134;
+///         legacy and sUSDS supply withdrawal tightening, then risk-tightening
+///         of borrow limits across 66 less-trusted Ethereum vaults.
+contract PayloadIGP133 is PayloadIGPPriceHelpers {
+    uint256 public constant PROPOSAL_ID = 133;
 
     address public constant OLD_USER_MODULE =
         0x4bDC8816F2f56914B66EbF3786D78872D3a73Ab7;
@@ -127,17 +127,23 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         // Action 7: Update Ranges Auth on DexFactory
         action7();
 
-        // Action 8: Tighten Liquidity Layer borrow limits on 54 vaults
+        // Action 8: Reduce base withdrawal limits on legacy vaults 1–10
         action8();
 
-        // Action 9: Tighten smart-debt limits on the USDC-USDT DEX (id 2)
+        // Action 9: Restrict base withdrawal limits on sUSDS sunset vaults
         action9();
 
-        // Action 10: Tighten smart-debt limits on the USDC-USDT DEX (id 34)
+        // Action 10: Tighten Liquidity Layer borrow limits on 54 vaults
         action10();
 
-        // Action 11: Tighten smart-debt limits on the GHO-USDC DEX (id 4)
+        // Action 11: Tighten smart-debt limits on the USDC-USDT DEX (id 2)
         action11();
+
+        // Action 12: Tighten smart-debt limits on the USDC-USDT DEX (id 34)
+        action12();
+
+        // Action 13: Tighten smart-debt limits on the GHO-USDC DEX (id 4)
+        action13();
     }
 
     function verifyProposal() public view override {}
@@ -154,7 +160,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
 
     /// @notice Action 1: Register UserModule LL upgrade on RollbackModule
     function action1() internal isActionSkippable(1) {
-        address newUserModule_ = PayloadIGP134(ADDRESS_THIS).newUserModuleAddress();
+        address newUserModule_ = PayloadIGP133(ADDRESS_THIS).newUserModuleAddress();
         require(newUserModule_ != address(0), "new-user-module-not-set");
 
         IFluidLiquidityRollback(address(LIQUIDITY))
@@ -163,7 +169,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
 
     /// @notice Action 2: Upgrade UserModule LL on InfiniteProxy
     function action2() internal isActionSkippable(2) {
-        address newUserModule_ = PayloadIGP134(ADDRESS_THIS).newUserModuleAddress();
+        address newUserModule_ = PayloadIGP133(ADDRESS_THIS).newUserModuleAddress();
         require(newUserModule_ != address(0), "new-user-module-not-set");
 
         bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
@@ -179,7 +185,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
 
     /// @notice Action 3: Register AdminModule LL upgrade on RollbackModule
     function action3() internal isActionSkippable(3) {
-        address newAdminModule_ = PayloadIGP134(ADDRESS_THIS).newAdminModuleAddress();
+        address newAdminModule_ = PayloadIGP133(ADDRESS_THIS).newAdminModuleAddress();
         require(newAdminModule_ != address(0), "new-admin-module-not-set");
 
         IFluidLiquidityRollback(address(LIQUIDITY))
@@ -188,7 +194,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
 
     /// @notice Action 4: Upgrade AdminModule LL on InfiniteProxy
     function action4() internal isActionSkippable(4) {
-        address newAdminModule_ = PayloadIGP134(ADDRESS_THIS).newAdminModuleAddress();
+        address newAdminModule_ = PayloadIGP133(ADDRESS_THIS).newAdminModuleAddress();
         require(newAdminModule_ != address(0), "new-admin-module-not-set");
 
         bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
@@ -204,8 +210,8 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
 
     /// @notice Action 5: Set new pause auth contracts
     function action5() internal isActionSkippable(5) {
-        address liquidityPauseAuth_ = PayloadIGP134(ADDRESS_THIS).liquidityPauseAuth();
-        address dexPauseAuth_ = PayloadIGP134(ADDRESS_THIS).dexPauseAuth();
+        address liquidityPauseAuth_ = PayloadIGP133(ADDRESS_THIS).liquidityPauseAuth();
+        address dexPauseAuth_ = PayloadIGP133(ADDRESS_THIS).dexPauseAuth();
         require(liquidityPauseAuth_ != address(0), "ll-pause-auth-not-set");
         require(dexPauseAuth_ != address(0), "dex-pause-auth-not-set");
 
@@ -229,7 +235,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
 
     /// @notice Action 6: Update Rates Auth on Liquidity Layer
     function action6() internal isActionSkippable(6) {
-        address newRatesAuth_ = PayloadIGP134(ADDRESS_THIS).newRatesAuth();
+        address newRatesAuth_ = PayloadIGP133(ADDRESS_THIS).newRatesAuth();
         require(newRatesAuth_ != address(0), "new-rates-auth-not-set");
 
         FluidLiquidityAdminStructs.AddressBool[]
@@ -251,15 +257,89 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
 
     /// @notice Action 7: Update Ranges Auth on DexFactory
     function action7() internal isActionSkippable(7) {
-        address newRangeAuth_ = PayloadIGP134(ADDRESS_THIS).newRangeAuth();
+        address newRangeAuth_ = PayloadIGP133(ADDRESS_THIS).newRangeAuth();
         require(newRangeAuth_ != address(0), "new-range-auth-not-set");
 
         DEX_FACTORY.setGlobalAuth(OLD_RANGE_AUTH, false);
         DEX_FACTORY.setGlobalAuth(newRangeAuth_, true);
     }
 
-    /// @notice Action 8: Tighten Liquidity Layer borrow limits (expand window 6h -> 3h)
+    /// @notice Action 8: Set legacy vault 1–10 base withdrawal limits to total supply + 5%
     function action8() internal isActionSkippable(8) {
+        FluidLiquidityAdminStructs.UserSupplyConfig[]
+            memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
+                10
+            );
+
+        configs_[0] = _legacyVaultSupplyConfig(1, ETH_ADDRESS, 628187 * 1e12);
+        configs_[1] = _legacyVaultSupplyConfig(2, ETH_ADDRESS, 945974 * 1e12);
+        configs_[2] = _legacyVaultSupplyConfig(
+            3,
+            wstETH_ADDRESS,
+            646899 * 1e12
+        );
+        configs_[3] = _legacyVaultSupplyConfig(
+            4,
+            wstETH_ADDRESS,
+            544134 * 1e12
+        );
+        configs_[4] = _legacyVaultSupplyConfig(
+            5,
+            wstETH_ADDRESS,
+            549870 * 1e12
+        );
+        configs_[5] = _legacyVaultSupplyConfig(
+            6,
+            weETH_ADDRESS,
+            695132095 * 1e12
+        );
+        configs_[6] = _legacyVaultSupplyConfig(
+            7,
+            sUSDe_ADDRESS,
+            3298946018 * 1e12
+        );
+        configs_[7] = _legacyVaultSupplyConfig(
+            8,
+            sUSDe_ADDRESS,
+            413657754 * 1e12
+        );
+        configs_[8] = _legacyVaultSupplyConfig(
+            9,
+            weETH_ADDRESS,
+            240487 * 1e12
+        );
+        configs_[9] = _legacyVaultSupplyConfig(
+            10,
+            weETH_ADDRESS,
+            213728 * 1e12
+        );
+
+        LIQUIDITY.updateUserSupplyConfigs(configs_);
+    }
+
+    /// @notice Action 9: Restrict base withdrawal limits on sUSDS sunset vaults
+    function action9() internal isActionSkippable(9) {
+        FluidLiquidityAdminStructs.UserSupplyConfig[]
+            memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
+                2
+            );
+
+        configs_[0] = _legacyVaultSupplyConfig(
+            58,
+            sUSDs_ADDRESS,
+            650 * 1e18
+        );
+        configs_[1] = _legacyVaultSupplyConfig(
+            85,
+            wstETH_ADDRESS,
+            9372630468 * 1e6
+        );
+
+        LIQUIDITY.updateUserSupplyConfigs(configs_);
+    }
+
+    /// @notice Action 10: Tighten Liquidity Layer borrow limits (expand window 6h -> 3h)
+    function action10() internal isActionSkippable(10) {
         FluidLiquidityAdminStructs.UserBorrowConfig[]
             memory configs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](
                 54
@@ -701,8 +781,8 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         LIQUIDITY.updateUserBorrowConfigs(configs_);
     }
 
-    /// @notice Action 9: Tighten smart-debt limits on the USDC-USDT DEX (id 2) (expand window 6h -> 3h, share $2.204907979983792)
-    function action9() internal isActionSkippable(9) {
+    /// @notice Action 11: Tighten smart-debt limits on the USDC-USDT DEX (id 2) (expand window 6h -> 3h, share $2.204907979983792)
+    function action11() internal isActionSkippable(11) {
         address dex_ = getDexAddress(2);
 
         // Vault 47 (weETH / USDC-USDT): $2.5M base / $25M max
@@ -778,8 +858,8 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         );
     }
 
-    /// @notice Action 10: Tighten smart-debt limits on the USDC-USDT DEX (id 34) (expand window 6h -> 3h, share $2.102974865610295)
-    function action10() internal isActionSkippable(10) {
+    /// @notice Action 12: Tighten smart-debt limits on the USDC-USDT DEX (id 34) (expand window 6h -> 3h, share $2.102974865610295)
+    function action12() internal isActionSkippable(12) {
         address dex_ = getDexAddress(34);
 
         // Vault 126 (sUSDe-USDT / USDC-USDT): $2.5M base / $50M max
@@ -819,8 +899,8 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         );
     }
 
-    /// @notice Action 11: Tighten smart-debt limits on the GHO-USDC DEX (id 4) (expand window 6h -> 3h, share $2.2159112801948067)
-    function action11() internal isActionSkippable(11) {
+    /// @notice Action 13: Tighten smart-debt limits on the GHO-USDC DEX (id 4) (expand window 6h -> 3h, share $2.2159112801948067)
+    function action13() internal isActionSkippable(13) {
         address dex_ = getDexAddress(4);
 
         // Vault 61 (GHO-USDC / GHO-USDC): $2.5M base / $25M max
@@ -893,11 +973,34 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
             });
     }
 
+    function _legacyVaultSupplyConfig(
+        uint256 vaultId_,
+        address supplyToken_,
+        uint256 baseWithdrawalLimit_
+    )
+        internal
+        view
+        returns (FluidLiquidityAdminStructs.UserSupplyConfig memory)
+    {
+        return
+            FluidLiquidityAdminStructs.UserSupplyConfig({
+                user: getVaultAddress(vaultId_),
+                token: supplyToken_,
+                mode: 1,
+                expandPercent: MAX_RESTRICTED_EXPAND_PERCENT,
+                expandDuration: MAX_RESTRICTED_EXPAND_DURATION,
+                baseWithdrawalLimit: baseWithdrawalLimit_
+            });
+    }
+
     // --- Representative override prices (USD * 1e2) -------------------------
     // The borrow limits above are pre-converted to exact token / share amounts
     // using the precise per-vault override prices documented inline, so these
     // getters are only consulted by the inherited `getRawAmount` token dispatch
     // and do not affect the configured ceilings.
+    function ETH_USD_PRICE() public pure override returns (uint256) { return 2_010 * 1e2; }
+    function sUSDe_USD_PRICE() public pure override returns (uint256) { return 1.23 * 1e2; }
+    function weETH_USD_PRICE() public pure override returns (uint256) { return 2_200 * 1e2; }
     function wstETH_USD_PRICE() public pure override returns (uint256) { return 2_620.73 * 1e2; }
     function BTC_USD_PRICE()    public pure override returns (uint256) { return 76_897 * 1e2; }
     function STABLE_USD_PRICE() public pure override returns (uint256) { return 1 * 1e2; }
