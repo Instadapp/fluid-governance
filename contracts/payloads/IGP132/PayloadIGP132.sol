@@ -67,8 +67,8 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
             kink1: 85 * 1e2, // 85%
             kink2: 93 * 1e2, // 93%
             rateAtUtilizationZero: 0, // 0%
-            rateAtUtilizationKink1: 5.4 * 1e2, // 5.4%
-            rateAtUtilizationKink2: 7.5 * 1e2, // 7.5%
+            rateAtUtilizationKink1: 6 * 1e2, // 6%
+            rateAtUtilizationKink2: 8 * 1e2, // 8%
             rateAtUtilizationMax: 15 * 1e2 // 15% (was 40% on-chain)
         });
 
