@@ -50,7 +50,7 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
                 3
             );
 
-        // USDC — live curve: kinks 85% / 93%, rates 0% / 5.4% / 7.5%.
+        // USDC — live curve: kinks 85% / 93%, rates 0% / 6% / 8%.
         params_[0] = FluidLiquidityAdminStructs.RateDataV2Params({
             token: USDC_ADDRESS,
             kink1: 85 * 1e2, // 85%
@@ -61,7 +61,7 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
             rateAtUtilizationMax: 15 * 1e2 // 15% (was 40% on-chain)
         });
 
-        // USDT — live curve identical to USDC: kinks 85% / 93%, rates 0% / 5.4% / 7.5%.
+        // USDT — live curve identical to USDC: kinks 85% / 93%, rates 0% / 6% / 8%.
         params_[1] = FluidLiquidityAdminStructs.RateDataV2Params({
             token: USDT_ADDRESS,
             kink1: 85 * 1e2, // 85%

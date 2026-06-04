@@ -17,7 +17,7 @@ This proposal introduces two updates on Ethereum:
 - Keeps unchanged (matching the current on-chain `getTokenRateData(token)` values):
   - `USDC` / `USDT`: `kink1 = 85%`, `kink2 = 93%`, `rateAtUtilizationZero = 0%`, `rateAtUtilizationKink1 = 6%`, `rateAtUtilizationKink2 = 8%`
   - `GHO`: `kink1 = 85%`, `kink2 = 93%`, `rateAtUtilizationZero = 0%`, `rateAtUtilizationKink1 = 6.5%`, `rateAtUtilizationKink2 = 9.5%`
-- The Liquidity AdminModule requires `rateAtUtilizationKink2 <= rateAtUtilizationMax`; this holds for all three tokens (`7.5% <= 15%`, `9.5% <= 15%`).
+- The Liquidity AdminModule requires `rateAtUtilizationKink2 <= rateAtUtilizationMax`; this holds for all three tokens (`8% <= 15%`, `9.5% <= 15%`).
 
 ### Action 2: Reduce Team Multisig USDC & USDT Borrow Limits to Effectively Zero
 
