@@ -6,7 +6,7 @@ This proposal performs six Ethereum actions: (1) reduce base withdrawal limits o
 
 **Tokens**: USDai (`0x0A1a1A107E45b7Ced86833863f482BC5f4ed82EF`), sUSDai (`0x0B2b2B2076d95dda7817e785989fE353fe955ef9`).
 
-Module upgrades and auth rotations (former actions 1–7) were split out; see `IGP132-actions-1-7-description.md` on the Desktop.
+Module upgrades and auth rotations (former actions 1–7 of the original draft) ship in a separate follow-on payload.
 
 ## Code Changes
 
@@ -93,4 +93,4 @@ A zero revenue amount causes Action 5 to revert.
 
 ## Conclusion
 
-IGP-132 aligns legacy vault withdrawal limits, launches the USDai ecosystem at dust limits, caps USR/RLP DEX supply, updates USDC/USDT rate curves, claims iETHv2 Lite revenue, and restricts withdrawals on sUSDS sunset vaults 58 and 85.
+IGP-133 aligns legacy vault withdrawal limits, launches the USDai ecosystem at dust limits, caps USR/RLP DEX supply, updates USDC/USDT rate curves, claims iETHv2 Lite revenue, and restricts withdrawals on sUSDS sunset vaults 58 and 85.

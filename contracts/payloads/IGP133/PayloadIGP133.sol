@@ -8,13 +8,13 @@ import {
 import {IFluidDex} from "../common/interfaces/IFluidDex.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
-/// @notice IGP132: Tightened base withdrawal limits on legacy vaults 1–10, USDai
+/// @notice IGP133: Tightened base withdrawal limits on legacy vaults 1–10, USDai
 ///         ecosystem dust limits, max supply share caps on USR/RLP DEXes, USDC/USDT
 ///         rate curve updates, iETHv2 revenue claim, and sUSDS vault sunset
 ///         withdrawal caps. Lite revenue amount is configurable by Team Multisig
 ///         before execution.
-contract PayloadIGP132 is PayloadIGPPriceHelpers {
-    uint256 public constant PROPOSAL_ID = 132;
+contract PayloadIGP133 is PayloadIGPPriceHelpers {
+    uint256 public constant PROPOSAL_ID = 133;
 
     uint256 public constant USR_USDC_DEX_ID = 20;
     uint256 public constant RLP_USDC_DEX_ID = 28;
@@ -414,7 +414,7 @@ contract PayloadIGP132 is PayloadIGPPriceHelpers {
 
     /// @notice Action 5: Claim iETHv2 (Lite) stETH revenue to Team Multisig
     function action5() internal isActionSkippable(5) {
-        uint256 stethAmount_ = PayloadIGP132(ADDRESS_THIS).liteStethRevenueAmount();
+        uint256 stethAmount_ = PayloadIGP133(ADDRESS_THIS).liteStethRevenueAmount();
         require(stethAmount_ != 0, "lite-revenue-amount-not-set");
 
         IETHV2.collectRevenue(stethAmount_);
