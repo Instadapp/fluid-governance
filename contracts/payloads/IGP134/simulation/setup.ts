@@ -1,10 +1,10 @@
 /**
- * Pre-Setup Script for IGP133 Payload Simulation
+ * Pre-Setup Script for IGP134 Payload Simulation
  *
- * 1. Governor proposalCount bump: create a throwaway IGP-132 placeholder proposal so
- *    the real IGP-133 lands on id 133 (PayloadIGP133 hard-codes PROPOSAL_ID = 133).
+ * 1. Governor proposalCount bump: create a throwaway IGP-133 placeholder proposal so
+ *    the real IGP-134 lands on id 134 (PayloadIGP134 hard-codes PROPOSAL_ID = 134).
  * 2. Mock Chainlink feed 0x66ac... for oracle-dependent paths.
- * 3. Set liteStethRevenueAmount on the payload for Action 5.
+ * 3. Set liteStethRevenueAmount on the payload for Action 3.
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
@@ -19,13 +19,13 @@ const TEAM_MULTISIG = "0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e";
 const DELEGATOR = "0x5AAB0630aaCa6d0bf1c310aF6C2BB3826A951cFb";
 const PROPOSER = "0xA45f7bD6A5Ff45D31aaCE6bCD3d426D9328cea01";
 
-const IGP133_PROPOSAL_ID = 133;
-const TARGET_PROPOSAL_COUNT = IGP133_PROPOSAL_ID - 1; // 132
+const IGP134_PROPOSAL_ID = 134;
+const TARGET_PROPOSAL_COUNT = IGP134_PROPOSAL_ID - 1; // 133
 
 /** Chainlink feed mocked so latestRoundData() returns (1, 106475560, 1771926611, 1771926611, 1) */
 const CHAINLINK_FEED_TO_MOCK = "0x66ac817f997efd114edfcccdce99f3268557b32c";
 
-/** Non-zero stETH wei for Action 5 (iETHv2 revenue claim). */
+/** Non-zero stETH wei for Action 3 (iETHv2 revenue claim). */
 const SIM_LITE_STETH_REVENUE = 1n;
 
 function normalizeHex(raw: string): string {
@@ -97,7 +97,7 @@ async function createDummyProposal(provider: JsonRpcProvider): Promise<void> {
     DELEGATOR,
     INST,
     delegateData,
-    "delegate INST (delegator -> proposer) for dummy IGP-132",
+    "delegate INST (delegator -> proposer) for dummy IGP-133",
   );
 
   const targets = [TIMELOCK];
@@ -105,7 +105,7 @@ async function createDummyProposal(provider: JsonRpcProvider): Promise<void> {
   const signatures = [""];
   const calldatas = ["0x"];
   const description =
-    "IGP-132 placeholder (simulation only): consumes governor proposal id 132 so IGP-133 lands on id 133.";
+    "IGP-133 placeholder (simulation only): consumes governor proposal id 133 so IGP-134 lands on id 134.";
 
   const proposeData = new ethers.Interface([
     "function propose(address[] targets, uint256[] values, string[] signatures, bytes[] calldatas, string description) returns (uint256)",
@@ -121,7 +121,7 @@ async function createDummyProposal(provider: JsonRpcProvider): Promise<void> {
     PROPOSER,
     GOVERNOR,
     proposeData,
-    "create dummy IGP-132 proposal",
+    "create dummy IGP-133 proposal",
   );
 }
 
@@ -134,7 +134,7 @@ async function ensureGovernorProposalId(provider: JsonRpcProvider): Promise<void
   if (needed <= 0) {
     console.log(
       `[SETUP] proposalCount (${count}) already >= ${TARGET_PROPOSAL_COUNT}; ` +
-        `IGP-133 will land on id ${count + 1}. No dummy proposal created.`,
+        `IGP-134 will land on id ${count + 1}. No dummy proposal created.`,
     );
     return;
   }
@@ -152,16 +152,16 @@ async function ensureGovernorProposalId(provider: JsonRpcProvider): Promise<void
   console.log(
     `[SETUP] proposalCount after dummy = ${after} (next proposal -> id ${after + 1})`,
   );
-  if (after + 1 !== IGP133_PROPOSAL_ID) {
+  if (after + 1 !== IGP134_PROPOSAL_ID) {
     throw new Error(
-      `After dummy proposal the next id would be ${after + 1}, expected ${IGP133_PROPOSAL_ID}.`,
+      `After dummy proposal the next id would be ${after + 1}, expected ${IGP134_PROPOSAL_ID}.`,
     );
   }
 }
 
 async function mockChainlinkFeed(provider: JsonRpcProvider): Promise<void> {
   const bytecode = readArtifactBytecode(
-    "artifacts/contracts/payloads/IGP133/simulation/MockChainlinkFeed.sol/MockChainlinkFeed.json",
+    "artifacts/contracts/payloads/IGP134/simulation/MockChainlinkFeed.sol/MockChainlinkFeed.json",
   );
   await provider.send("tenderly_setCode", [CHAINLINK_FEED_TO_MOCK, bytecode]);
   console.log("[SETUP] Mocked Chainlink feed for OSETH oracle path");
@@ -190,7 +190,7 @@ export async function preSetup(
   provider: JsonRpcProvider,
   payloadAddress?: string,
 ): Promise<void> {
-  console.log("[SETUP] Running pre-setup for IGP133...");
+  console.log("[SETUP] Running pre-setup for IGP134...");
 
   try {
     await ensureGovernorProposalId(provider);
