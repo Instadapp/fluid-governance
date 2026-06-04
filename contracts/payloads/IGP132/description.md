@@ -15,7 +15,7 @@ This proposal introduces two updates on Ethereum:
 - Changes for every token:
   - `rateAtUtilizationMax`: `40% -> 15%`
 - Keeps unchanged (matching the current on-chain `getTokenRateData(token)` values):
-  - `USDC` / `USDT`: `kink1 = 85%`, `kink2 = 93%`, `rateAtUtilizationZero = 0%`, `rateAtUtilizationKink1 = 5.4%`, `rateAtUtilizationKink2 = 7.5%`
+  - `USDC` / `USDT`: `kink1 = 85%`, `kink2 = 93%`, `rateAtUtilizationZero = 0%`, `rateAtUtilizationKink1 = 6%`, `rateAtUtilizationKink2 = 8%`
   - `GHO`: `kink1 = 85%`, `kink2 = 93%`, `rateAtUtilizationZero = 0%`, `rateAtUtilizationKink1 = 6.5%`, `rateAtUtilizationKink2 = 9.5%`
 - The Liquidity AdminModule requires `rateAtUtilizationKink2 <= rateAtUtilizationMax`; this holds for all three tokens (`7.5% <= 15%`, `9.5% <= 15%`).
 
