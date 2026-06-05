@@ -196,8 +196,34 @@ For each external call returned by `externalsExtractor.extractExternalCalls`:
    a `REVIEW_DIFF` as "other params need on-chain confirmation". The
    resolvers exist precisely so payload reviewers can diff a proposed
    `updateX` struct against the current packed storage without
-   hand-decoding slots. Every deployed resolver has a committed address
-   in `../fluid-contracts/deployments/<chain>/<Name>Resolver.json`.
+   hand-decoding slots.
+
+   **Resolver address + ABI source (do this, nothing else):** the canonical
+   index is `../fluid-contracts/deployments/deployments.md` — every resolver,
+   every chain, current address. **Always look up the address for the specific
+   chain you are querying, directly from `deployments.md`.** Resolver addresses
+   are **NOT** reliably identical across chains — some match (a CREATE3
+   coincidence), many do not (e.g. `StakingRewardsResolver`,
+   `VaultTicksBranchesResolver` differ per chain). Never assume one chain's
+   address works on another, and never hardcode an address from memory; read
+   the row for `(resolver, chain)` each time. For the ABI, load the matching
+   artifact in the **same** repo: `../fluid-contracts/deployments/<chain>/<Name>.json`
+   (it pairs `.address` with `.abi`). Pitfalls that waste time:
+   - Do **not** read resolver addresses from the sibling `../fluid-deployments`
+     repo — it is stale (e.g. lists an old `VaultResolver` `0x394Ce4…`).
+   - Do **not** decode with the `../fluid-contracts/out/**/*.json` source ABI —
+     it drifts ahead of the deployed contract and `getVaultEntireData` (and
+     other nested structs) will fail with "could not decode result data".
+     Always use the deployment artifact's `.abi`, which matches the live code.
+
+   For supply/borrow limit audits prefer the flat structs
+   `LiquidityResolver.getUserSupplyData(user, token)` /
+   `getUserBorrowData(user, token)` (amounts already in normal token units,
+   shares for DEX users) or `VaultResolver.getAllVaultsAddresses()` +
+   `getVaultEntireData(vault)` (carries `liquidityUserSupplyData` /
+   `liquidityUserBorrowData`, `isSmartCol/isSmartDebt`, totals). fTokens via
+   `LendingResolver.getAllFTokens()`; smart lendings via
+   `SmartLendingResolver.getAllSmartLendingEntireViewDatas()`.
 
    Coverage map (resolver → the payload-call it validates):
 
@@ -214,8 +240,8 @@ For each external call returned by `externalsExtractor.extractExternalCalls`:
 
    1. Pick the resolver for the `(interfaceName, method)` tuple via the
       table. If none matches, document it and fall through to step 7.
-   2. Load the deployment JSON to get the resolver address on the
-      relevant chain.
+   2. Get the resolver address from `deployments.md` (or the per-chain
+      `<Name>.json` artifact), and load that artifact's `.abi` to decode.
    3. Call the getter with the RPC configured in the repo (default:
       `https://eth-mainnet.public.blastapi.io`, or `$ETH_RPC` /
       `$RPC_URL` when set). Use the resolver's `iXxxResolver.sol` ABI
