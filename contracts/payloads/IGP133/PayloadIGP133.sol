@@ -5,7 +5,6 @@ pragma experimental ABIEncoderV2;
 import {
     AdminModuleStructs as FluidLiquidityAdminStructs
 } from "../common/interfaces/IFluidLiquidity.sol";
-import {BigMathMinified} from "../libraries/bigMathMinified.sol";
 import {LiquiditySlotsLink} from "../libraries/liquiditySlotsLink.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
@@ -729,11 +728,11 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
     }
 
     /// @notice Action 7: Restrict the fsUSDs fToken's base withdrawal limit on the
-    ///         Liquidity Layer to its current total supply + 10%.
-    /// @dev Reads the live supply position of `F_SUSDs_ADDRESS` for `sUSDs` and
-    ///      caps the base withdrawal limit at `supply * 110 / 100`, preserving the
-    ///      existing mode and expansion (percent / duration) so only the base
-    ///      withdrawal limit is tightened.
+    ///         Liquidity Layer to total supply + 10%.
+    /// @dev Sets a fixed base withdrawal limit of `16,527.5` sUSDs (the `15,025`
+    ///      sUSDs supply at preparation time * 1.1). The existing mode and
+    ///      expansion (percent / duration) are read from storage and preserved,
+    ///      so only the base withdrawal limit is tightened.
     function action7() internal isActionSkippable(7) {
         uint256 userSupplyData_ = LIQUIDITY.readFromStorage(
             LiquiditySlotsLink.calculateDoubleMappingStorageSlot(
@@ -741,12 +740,6 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
                 F_SUSDs_ADDRESS,
                 sUSDs_ADDRESS
             )
-        );
-
-        uint256 totalSupplyAmount_ = BigMathMinified.fromBigNumber(
-            (userSupplyData_ >> LiquiditySlotsLink.BITS_USER_SUPPLY_AMOUNT) & X64,
-            DEFAULT_EXPONENT_SIZE,
-            DEFAULT_EXPONENT_MASK
         );
 
         FluidLiquidityAdminStructs.UserSupplyConfig[]
@@ -761,7 +754,7 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
                 LiquiditySlotsLink.BITS_USER_SUPPLY_EXPAND_PERCENT) & X14,
             expandDuration: (userSupplyData_ >>
                 LiquiditySlotsLink.BITS_USER_SUPPLY_EXPAND_DURATION) & X24,
-            baseWithdrawalLimit: (totalSupplyAmount_ * 110) / 100 // total supply + 10%
+            baseWithdrawalLimit: 16527.5 * 1e18 // 15,025 sUSDs * 1.1 = 16,527.5 sUSDs
         });
 
         LIQUIDITY.updateUserSupplyConfigs(configs_);

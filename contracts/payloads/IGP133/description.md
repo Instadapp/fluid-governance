@@ -134,7 +134,7 @@ DEX id **4**, share price **$2.2159112801948067**. Limits are set in DEX shares 
 
 ### Action 7: Restrict fsUSDs Base Withdrawal Limit to Total Supply + 10%
 
-Reads the live supply position of the **fsUSDs** fToken (`F_SUSDs_ADDRESS`) for the **sUSDs** token at the Liquidity Layer and sets its base withdrawal limit to `totalSupply * 110 / 100`. The existing **mode**, **expand percent**, and **expand duration** are read from storage and preserved, so only the base withdrawal limit is tightened. Single batched `LIQUIDITY.updateUserSupplyConfigs(...)`.
+Sets the **fsUSDs** fToken (`F_SUSDs_ADDRESS`) base withdrawal limit for the **sUSDs** token at the Liquidity Layer to a fixed **`16,527.5` sUSDs** (the `15,025` sUSDs supply at preparation time × 1.1). The existing **mode**, **expand percent**, and **expand duration** are read from storage and preserved, so only the base withdrawal limit is tightened. Single batched `LIQUIDITY.updateUserSupplyConfigs(...)`.
 
 ## Description
 
