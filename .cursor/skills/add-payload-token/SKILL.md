@@ -12,13 +12,20 @@ Two files must stay in sync for a token to be priceable from a payload:
 
 Every `*_ADDRESS` constant that flows through `getRawAmount` (via `setVaultLimits`, `setDexLimits`, or related limit helpers in `helpers.sol`) must have an entry in *both* files. The script checks both and refuses to proceed otherwise.
 
-**Not every `*_ADDRESS` in a payload needs a price override.** `prepare-prices.ts` only emits overrides for tokens that appear in limit-config struct fields (`supplyToken`, `borrowToken`, `tokenA`, `tokenB`). It ignores:
+**A token needs a price override iff it reaches `getRawAmount` with `amountInUSD != 0`.** That is the *only* branch of `getRawAmount` (in `pricehelpers.sol`) that consults a `*_USD_PRICE()` getter. Every other path returns without touching the price getter, so it needs no override. Concretely, `prepare-prices.ts` prices a token when:
 
-- Raw `LIQUIDITY.updateUserSupplyConfigs` / `updateUserBorrowConfigs` with literal limits (e.g. `token: wstUSR_ADDRESS`, `baseWithdrawalLimit: 24 * 1e18`)
-- `setBorrowProtocolLimitsPaused` / `_liquidityBorrowConfig` (fixed ceilings, no `getRawAmount`)
-- Treasury `BASIC-A` withdraws (`FLUID_ADDRESS`, etc.)
+- it appears in a limit-config struct field (`supplyToken`, `borrowToken`, `tokenA`, `tokenB`) consumed by a `*InUSD` helper (`setSupplyProtocolLimits`, `setBorrowProtocolLimits`, `setVaultLimits`, `setDexLimits`), **or**
+- it is the literal `token` arg of a direct `getRawAmount(token, amount, amountInUSD, ...)` call whose `amountInUSD` argument is a non-zero literal.
 
-If the script emits a price you do not need, the token is not actually priced — fix detection in `scripts/verify/lib/tokenUsage.ts`, do not add a useless override.
+It ignores (and these need **no** override):
+
+- **Raw-`amount` `getRawAmount(token, amount, 0, ...)` calls** (e.g. `_borrowConfig` in IGP133): the amount is already token-denominated and only normalised by the exchange price. Since the IGP133 refactor, `getRawAmount` returns from its raw-`amount` branch *before* the price dispatch, so these payloads compile and execute with **zero** `*_USD_PRICE()` getters.
+- **`setDexBorrowProtocolLimitsInShares` / DEX `*InShares` limits** (limits passed directly in DEX shares, never through `getRawAmount`).
+- Raw `LIQUIDITY.updateUserSupplyConfigs` / `updateUserBorrowConfigs` with literal limits (e.g. `token: wstUSR_ADDRESS`, `baseWithdrawalLimit: 24 * 1e18`).
+- `setBorrowProtocolLimitsPaused` / `_liquidityBorrowConfig` (fixed ceilings, no `getRawAmount`).
+- Treasury `BASIC-A` withdraws (`FLUID_ADDRESS`, etc.).
+
+So a payload that configures every limit in raw token / share amounts (like IGP133) correctly produces "No known token references found … Nothing to write." and must **not** carry any `*_USD_PRICE()` overrides. If the script emits a price you do not need, the token is not actually priced — fix detection in `scripts/verify/lib/tokenUsage.ts` (`detectPricedFromGetRawAmountCalls` / `detectPricedAddressConstants`), do not add a useless override.
 
 ## When this skill applies
 

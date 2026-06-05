@@ -57,6 +57,35 @@ abstract contract PayloadIGPPriceHelpers is PayloadIGPMain {
             revert("both usd and amount are not zero");
         }
 
+        // The live exchange price depends only on `token`, never on its USD
+        // price. Read it first so that raw-`amount` conversions can return
+        // immediately without ever consulting a `*_USD_PRICE()` getter. This
+        // is what lets a payload that configures every limit in raw token /
+        // share amounts ship with NO price overrides at all.
+        uint256 exchangePriceAndConfig_ = LIQUIDITY.readFromStorage(
+            LiquiditySlotsLink.calculateMappingStorageSlot(
+                LiquiditySlotsLink.LIQUIDITY_EXCHANGE_PRICES_MAPPING_SLOT,
+                token
+            )
+        );
+
+        (
+            uint256 supplyExchangePrice,
+            uint256 borrowExchangePrice
+        ) = LiquidityCalcs.calcExchangePrices(exchangePriceAndConfig_);
+
+        uint256 exchangePrice = isSupply
+            ? supplyExchangePrice
+            : borrowExchangePrice;
+
+        // Raw-amount mode: the caller already passes a token-denominated
+        // amount; only normalise it by the exchange price. The USD price
+        // getter and token decimals are intentionally NOT needed here.
+        if (amount > 0) {
+            return (amount * 1e12) / exchangePrice;
+        }
+
+        // USD mode only: dispatch token -> (usdPrice, decimals).
         uint256 usdPrice;
         uint256 decimals;
 
@@ -187,26 +216,6 @@ abstract contract PayloadIGPPriceHelpers is PayloadIGPMain {
             decimals = 18;
         } else {
             revert("not-found");
-        }
-
-        uint256 exchangePriceAndConfig_ = LIQUIDITY.readFromStorage(
-            LiquiditySlotsLink.calculateMappingStorageSlot(
-                LiquiditySlotsLink.LIQUIDITY_EXCHANGE_PRICES_MAPPING_SLOT,
-                token
-            )
-        );
-
-        (
-            uint256 supplyExchangePrice,
-            uint256 borrowExchangePrice
-        ) = LiquidityCalcs.calcExchangePrices(exchangePriceAndConfig_);
-
-        uint256 exchangePrice = isSupply
-            ? supplyExchangePrice
-            : borrowExchangePrice;
-
-        if (amount > 0) {
-            return (amount * 1e12) / exchangePrice;
         }
 
         return

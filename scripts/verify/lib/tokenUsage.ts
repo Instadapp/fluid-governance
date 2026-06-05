@@ -4,17 +4,21 @@
  * Given a payload's `.sol` source, figure out which token address constants
  * need USD price overrides for `prepare-prices.ts`.
  *
- * Only tokens that flow through `getRawAmount` (via limit helpers) are
- * "priced". A payload may reference many `*_ADDRESS` constants for transfers,
- * raw Liquidity configs, or paused-limit helpers — those are *referenced* but
- * not priced.
+ * A token is "priced" iff it reaches `getRawAmount` with `amountInUSD != 0` —
+ * that is the only code path that consults a `*_USD_PRICE()` getter. Everything
+ * else (raw-`amount` conversions, `*InShares` DEX limits, literal Liquidity
+ * configs, transfers, paused-limit helpers) is *referenced* but not priced and
+ * needs no override.
  *
  * Strategy:
  *   1. Strip comments, strings, and the auto-generated price marker block.
  *   2. Collect every `*_ADDRESS` identifier → `allReferences` (debug).
- *   3. Collect tokens in limit-config struct fields that call `getRawAmount`
- *      inside helpers (`supplyToken`, `borrowToken`, `tokenA`, `tokenB`) →
- *      priced set.
+ *   3. Collect priced tokens from two sources:
+ *      a. limit-config struct fields whose helpers call `getRawAmount` with a
+ *         `*InUSD` amount (`supplyToken`, `borrowToken`, `tokenA`, `tokenB`);
+ *      b. direct `getRawAmount(token, amount, amountInUSD, ...)` calls where the
+ *         literal `amountInUSD` argument is non-zero. Calls with `amountInUSD`
+ *         literally `0` (raw-amount mode) are ignored.
  *   4. Map priced + exempt constants to registry entries → `used`.
  *   5. Unknown `*_ADDRESS` identifiers outside the registry → `unknown`.
  */
@@ -39,9 +43,27 @@ export const NON_PRICED_EXEMPT = new Set<string>([
   "FLUID_ADDRESS",
 ]);
 
-/** Struct fields on configs that helpers pass into `getRawAmount`. */
+/** Struct fields on configs that helpers pass into `getRawAmount` with a
+ * `*InUSD` amount (always USD-mode), e.g. `setSupplyProtocolLimits`,
+ * `setBorrowProtocolLimits`, `setVaultLimits`, `setDexLimits`. */
 const PRICED_CONFIG_FIELD =
   /(?:supplyToken|borrowToken|tokenA|tokenB):\s*([A-Za-z_][A-Za-z0-9_]*_ADDRESS)\b/g;
+
+/**
+ * Direct `getRawAmount(token, amount, amountInUSD, isSupply)` call sites.
+ *
+ * A token only needs a `*_USD_PRICE()` override when it reaches `getRawAmount`
+ * with `amountInUSD != 0` — that is the ONLY branch that consults the price
+ * getter. The raw-`amount` form (`amountInUSD == 0`) is normalised purely by
+ * the live exchange price and needs no price at all.
+ *
+ * Captures the four top-level arguments. These calls never nest
+ * parentheses/commas in the payloads, so a non-greedy `[^,]` split is safe.
+ */
+const GET_RAW_AMOUNT_CALL =
+  /getRawAmount\(\s*([^,()]+?)\s*,\s*([^,()]+?)\s*,\s*([^,()]+?)\s*,\s*([^,()]+?)\)/g;
+
+const ADDRESS_CONSTANT = /^[A-Za-z_][A-Za-z0-9_]*_ADDRESS$/;
 
 export interface TokenUsageResult {
   /** Tokens that need price overrides in the payload (via `getRawAmount`). */
@@ -105,6 +127,34 @@ export function detectPricedAddressConstants(stripped: string): Set<string> {
   while ((match = PRICED_CONFIG_FIELD.exec(stripped)) !== null) {
     const ident = match[1]!;
     if (ident !== "address") priced.add(ident);
+  }
+  for (const ident of detectPricedFromGetRawAmountCalls(stripped)) {
+    priced.add(ident);
+  }
+  return priced;
+}
+
+/**
+ * Return `*_ADDRESS` constants passed as the `token` argument of a direct
+ * `getRawAmount(...)` call whose `amountInUSD` argument is non-zero. Calls in
+ * raw-`amount` mode (`amountInUSD` literally `0`) are ignored — they require no
+ * USD price. Tokens passed as a variable (helper indirection) cannot be
+ * resolved here and are covered by `detectPricedAddressConstants`'s struct-field
+ * scan instead.
+ */
+export function detectPricedFromGetRawAmountCalls(
+  stripped: string
+): Set<string> {
+  const priced = new Set<string>();
+  let match: RegExpExecArray | null;
+  GET_RAW_AMOUNT_CALL.lastIndex = 0;
+  while ((match = GET_RAW_AMOUNT_CALL.exec(stripped)) !== null) {
+    const tokenArg = match[1]!.trim();
+    const amountInUSD = match[3]!.trim();
+    // raw-amount mode: USD arg is literally 0 -> no price needed.
+    if (amountInUSD === "0") continue;
+    // only a literal token constant can be mapped to a registry entry.
+    if (ADDRESS_CONSTANT.test(tokenArg)) priced.add(tokenArg);
   }
   return priced;
 }
