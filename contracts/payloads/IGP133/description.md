@@ -8,6 +8,8 @@ This proposal tightens supply-side withdrawal limits on legacy and sUSDS sunset 
 
 **Actions 3–6** lower base/max debt ceilings, cut borrow expansion to **25%** (or **10%** on the largest pools), and shorten the borrow expansion window from **6h to 3h** on every affected vault. Action 3 updates 54 vaults at the Liquidity Layer; Actions 4–6 update smart-debt vaults on three DEXes.
 
+**Action 7** caps the **fsUSDs** fToken's base withdrawal limit on the Liquidity Layer to its current total supply **+ 10%**.
+
 ## Code Changes
 
 ### Action 1: Reduce Base Withdrawal Limits on Legacy Vaults 1–10
@@ -130,6 +132,10 @@ DEX id **4**, share price **$2.2159112801948067**. Limits are set in DEX shares 
 | 125 | GHO-sUSDe / GHO-USDC | T4 | $11.07M → **$1M** | $33.23M → **$25M** | 30% → **25%** |
 | 139 | GHO-USDe / GHO-USDC | T4 | $11.07M → **$1M** | $22.14M → **$10M** | 30% → **25%** |
 
+### Action 7: Restrict fsUSDs Base Withdrawal Limit to Total Supply + 10%
+
+Reads the live supply position of the **fsUSDs** fToken (`F_SUSDs_ADDRESS`) for the **sUSDs** token at the Liquidity Layer and sets its base withdrawal limit to `totalSupply * 110 / 100`. The existing **mode**, **expand percent**, and **expand duration** are read from storage and preserved, so only the base withdrawal limit is tightened. Single batched `LIQUIDITY.updateUserSupplyConfigs(...)`.
+
 ## Description
 
 Following a review of the less-trusted vault set, borrow capacity is being right-sized down to current usage with tighter, slower expansion so that available debt cannot grow as quickly during stress. Legacy vault supply withdrawal limits (Action 1) and sUSDS sunset caps (Action 2) tighten supply-side exit capacity.
@@ -140,6 +146,8 @@ Liquidity-Layer vaults (Action 3) have their ceilings set in the debt token's ow
 
 The 10% expand tier is applied to the largest / most concentrated pools: vaults **61**, **74**, **99**, **159**, **160**, **161**, **163**, and **164**. All other vaults move to the 25% tier.
 
+Finally, the fsUSDs fToken's base withdrawal limit is right-sized to its current supply + 10% (Action 7), capping additional withdrawal headroom on this sunsetting lending market.
+
 ## Conclusion
 
-IGP-133 tightens supply withdrawal limits on legacy vaults 1–10 and sUSDS sunset vaults 58 and 85 (Actions 1–2), then tightens borrow limits on 66 less-trusted Ethereum vaults: 54 at the Liquidity Layer (Action 3) and 12 smart-debt vaults across three DEXes (Actions 4–6).
+IGP-133 tightens supply withdrawal limits on legacy vaults 1–10 and sUSDS sunset vaults 58 and 85 (Actions 1–2), tightens borrow limits on 66 less-trusted Ethereum vaults: 54 at the Liquidity Layer (Action 3) and 12 smart-debt vaults across three DEXes (Actions 4–6), and caps the fsUSDs fToken base withdrawal limit to total supply + 10% (Action 7).

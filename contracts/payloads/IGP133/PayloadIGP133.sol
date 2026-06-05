@@ -5,10 +5,13 @@ pragma experimental ABIEncoderV2;
 import {
     AdminModuleStructs as FluidLiquidityAdminStructs
 } from "../common/interfaces/IFluidLiquidity.sol";
+import {BigMathMinified} from "../libraries/bigMathMinified.sol";
+import {LiquiditySlotsLink} from "../libraries/liquiditySlotsLink.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
-/// @notice IGP133: Legacy and sUSDS supply withdrawal tightening, then
-///         risk-tightening of borrow limits across 66 less-trusted Ethereum vaults.
+/// @notice IGP133: Legacy and sUSDS supply withdrawal tightening, risk-tightening
+///         of borrow limits across 66 less-trusted Ethereum vaults, and capping the
+///         fsUSDs fToken base withdrawal limit to total supply + 10%.
 contract PayloadIGP133 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 133;
 
@@ -32,6 +35,9 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
 
         // Action 6: Tighten smart-debt limits on the GHO-USDC DEX (id 4)
         action6();
+
+        // Action 7: Restrict fsUSDs base withdrawal limit to total supply + 10%
+        action7();
     }
 
     function verifyProposal() public view override {}
@@ -720,6 +726,45 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
                 maxBorrowLimit: 4_512_816_054_224_370_028_374_750 // $10M in shares
             })
         );
+    }
+
+    /// @notice Action 7: Restrict the fsUSDs fToken's base withdrawal limit on the
+    ///         Liquidity Layer to its current total supply + 10%.
+    /// @dev Reads the live supply position of `F_SUSDs_ADDRESS` for `sUSDs` and
+    ///      caps the base withdrawal limit at `supply * 110 / 100`, preserving the
+    ///      existing mode and expansion (percent / duration) so only the base
+    ///      withdrawal limit is tightened.
+    function action7() internal isActionSkippable(7) {
+        uint256 userSupplyData_ = LIQUIDITY.readFromStorage(
+            LiquiditySlotsLink.calculateDoubleMappingStorageSlot(
+                LiquiditySlotsLink.LIQUIDITY_USER_SUPPLY_DOUBLE_MAPPING_SLOT,
+                F_SUSDs_ADDRESS,
+                sUSDs_ADDRESS
+            )
+        );
+
+        uint256 totalSupplyAmount_ = BigMathMinified.fromBigNumber(
+            (userSupplyData_ >> LiquiditySlotsLink.BITS_USER_SUPPLY_AMOUNT) & X64,
+            DEFAULT_EXPONENT_SIZE,
+            DEFAULT_EXPONENT_MASK
+        );
+
+        FluidLiquidityAdminStructs.UserSupplyConfig[]
+            memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
+                1
+            );
+        configs_[0] = FluidLiquidityAdminStructs.UserSupplyConfig({
+            user: F_SUSDs_ADDRESS,
+            token: sUSDs_ADDRESS,
+            mode: uint8(userSupplyData_ & 1),
+            expandPercent: (userSupplyData_ >>
+                LiquiditySlotsLink.BITS_USER_SUPPLY_EXPAND_PERCENT) & X14,
+            expandDuration: (userSupplyData_ >>
+                LiquiditySlotsLink.BITS_USER_SUPPLY_EXPAND_DURATION) & X24,
+            baseWithdrawalLimit: (totalSupplyAmount_ * 110) / 100 // total supply + 10%
+        });
+
+        LIQUIDITY.updateUserSupplyConfigs(configs_);
     }
 
     /**
