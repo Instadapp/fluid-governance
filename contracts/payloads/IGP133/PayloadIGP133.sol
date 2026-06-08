@@ -6,32 +6,34 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
 /// @notice IGP133: Launch the USDai ecosystem on Ethereum at dust limits.
 ///         Sets conservative "dust" supply / borrow limits and grants Team
-///         Multisig auth on the three new USDai DEXes (ids 46–48) and the nine
-///         new USDai / sUSDai vaults (ids 170–178), so each market is live but
+///         Multisig auth on the three USDai DEXes (ids 46–48) and the nine
+///         USDai / sUSDai vaults (ids 171–179), so each market is live but
 ///         effectively capped near zero until launch limits ship in a later
-///         proposal.
+///         proposal. DEX and vault ids are verified against the live Fluid
+///         factories on mainnet.
 contract PayloadIGP133 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 133;
 
-    // --- USDai ecosystem ids (deployments receive these ids when batched) ---
-    uint256 public constant USDAI_USDC_DEX_ID = 46;
-    uint256 public constant SUSDAI_USDC_DEX_ID = 47;
-    uint256 public constant SUSDAI_USDT_DEX_ID = 48;
+    // --- USDai ecosystem DEX ids (verified on-chain) ---
+    uint256 public constant SUSDAI_USDC_DEX_ID = 46; // sUSDai / USDC
+    uint256 public constant USDAI_USDC_DEX_ID = 47; // USDai / USDC
+    uint256 public constant SUSDAI_USDT_DEX_ID = 48; // sUSDai / USDT
 
-    uint256 public constant VAULT_USDAI_USDC_ID = 170; // T1: USDai / USDC
+    // --- USDai ecosystem vault ids (verified on-chain) ---
     uint256 public constant VAULT_SUSDAI_USDC_ID = 171; // T1: sUSDai / USDC
     uint256 public constant VAULT_SUSDAI_USDT_ID = 172; // T1: sUSDai / USDT
     uint256 public constant VAULT_SUSDAI__USDC_USDT_ID = 173; // T3: sUSDai / USDC-USDT
-    uint256 public constant VAULT_SUSDAI_USDC__USDC_USDT_ID = 174; // T4: sUSDai-USDC / USDC-USDT
-    uint256 public constant VAULT_SUSDAI_USDT__USDC_USDT_ID = 175; // T4: sUSDai-USDT / USDC-USDT
-    uint256 public constant VAULT_SUSDAI_USDT__USDT_ID = 176; // T2: sUSDai-USDT / USDT
-    uint256 public constant VAULT_SUSDAI_USDC__USDC_ID = 177; // T2: sUSDai-USDC / USDC
-    uint256 public constant VAULT_SUSDAI_GHO_ID = 178; // T1: sUSDai / GHO
+    uint256 public constant VAULT_USDAI_USDC_ID = 174; // T1: USDai / USDC
+    uint256 public constant VAULT_SUSDAI_USDC__USDC_USDT_ID = 175; // T4: sUSDai-USDC / USDC-USDT
+    uint256 public constant VAULT_SUSDAI_USDT__USDC_USDT_ID = 176; // T4: sUSDai-USDT / USDC-USDT
+    uint256 public constant VAULT_SUSDAI_USDT__USDT_ID = 177; // T2: sUSDai-USDT / USDT
+    uint256 public constant VAULT_SUSDAI_USDC__USDC_ID = 178; // T2: sUSDai-USDC / USDC
+    uint256 public constant VAULT_SUSDAI_GHO_ID = 179; // T1: sUSDai / GHO
 
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: USDai ecosystem dust limits (DEXes 46–48, vaults 170–178)
+        // Action 1: USDai ecosystem dust limits (DEXes 46–48, vaults 171–179)
         action1();
     }
 
@@ -48,31 +50,14 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
      */
 
     /// @notice Action 1: Dust limits + Team Multisig auth for the USDai ecosystem
-    ///         (DEXes 46–48, vaults 170–178). All collateral/debt ceilings are
+    ///         (DEXes 46–48, vaults 171–179). All collateral/debt ceilings are
     ///         set to dust ($10k per DEX token; $7k/$7k/$9k withdraw/base/max
     ///         per vault) so the markets are live but effectively capped near
     ///         zero until launch limits ship.
     function action1() internal isActionSkippable(1) {
         address USDC_USDT_DEX = getDexAddress(2);
 
-        // DEX 46: USDai-USDC
-        {
-            address USDAI_USDC_DEX = getDexAddress(USDAI_USDC_DEX_ID);
-            DexConfig memory DEX_USDAI_USDC = DexConfig({
-                dex: USDAI_USDC_DEX,
-                tokenA: USDAI_ADDRESS,
-                tokenB: USDC_ADDRESS,
-                smartCollateral: true,
-                smartDebt: false,
-                baseWithdrawalLimitInUSD: 10_000, // $10k
-                baseBorrowLimitInUSD: 0,
-                maxBorrowLimitInUSD: 0
-            });
-            setDexLimits(DEX_USDAI_USDC);
-            DEX_FACTORY.setDexAuth(USDAI_USDC_DEX, TEAM_MULTISIG, true);
-        }
-
-        // DEX 47: sUSDai-USDC
+        // DEX 46: sUSDai-USDC
         {
             address SUSDAI_USDC_DEX = getDexAddress(SUSDAI_USDC_DEX_ID);
             DexConfig memory DEX_SUSDAI_USDC = DexConfig({
@@ -87,6 +72,23 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
             });
             setDexLimits(DEX_SUSDAI_USDC);
             DEX_FACTORY.setDexAuth(SUSDAI_USDC_DEX, TEAM_MULTISIG, true);
+        }
+
+        // DEX 47: USDai-USDC
+        {
+            address USDAI_USDC_DEX = getDexAddress(USDAI_USDC_DEX_ID);
+            DexConfig memory DEX_USDAI_USDC = DexConfig({
+                dex: USDAI_USDC_DEX,
+                tokenA: USDAI_ADDRESS,
+                tokenB: USDC_ADDRESS,
+                smartCollateral: true,
+                smartDebt: false,
+                baseWithdrawalLimitInUSD: 10_000, // $10k
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
+            });
+            setDexLimits(DEX_USDAI_USDC);
+            DEX_FACTORY.setDexAuth(USDAI_USDC_DEX, TEAM_MULTISIG, true);
         }
 
         // DEX 48: sUSDai-USDT
@@ -104,22 +106,6 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
             });
             setDexLimits(DEX_SUSDAI_USDT);
             DEX_FACTORY.setDexAuth(SUSDAI_USDT_DEX, TEAM_MULTISIG, true);
-        }
-
-        // Vault 170: USDai / USDC (TYPE_1)
-        {
-            address USDAI_USDC_VAULT = getVaultAddress(VAULT_USDAI_USDC_ID);
-            VaultConfig memory VAULT_USDAI_USDC = VaultConfig({
-                vault: USDAI_USDC_VAULT,
-                vaultType: VAULT_TYPE.TYPE_1,
-                supplyToken: USDAI_ADDRESS,
-                borrowToken: USDC_ADDRESS,
-                baseWithdrawalLimitInUSD: 7_000, // $7k
-                baseBorrowLimitInUSD: 7_000, // $7k
-                maxBorrowLimitInUSD: 9_000 // $9k
-            });
-            setVaultLimits(VAULT_USDAI_USDC);
-            VAULT_FACTORY.setVaultAuth(USDAI_USDC_VAULT, TEAM_MULTISIG, true);
         }
 
         // Vault 171: sUSDai / USDC (TYPE_1)
@@ -187,7 +173,23 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
             setDexBorrowProtocolLimitsInShares(config_);
         }
 
-        // Vault 174: sUSDai-USDC / USDC-USDT (TYPE_4)
+        // Vault 174: USDai / USDC (TYPE_1)
+        {
+            address USDAI_USDC_VAULT = getVaultAddress(VAULT_USDAI_USDC_ID);
+            VaultConfig memory VAULT_USDAI_USDC = VaultConfig({
+                vault: USDAI_USDC_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: USDAI_ADDRESS,
+                borrowToken: USDC_ADDRESS,
+                baseWithdrawalLimitInUSD: 7_000, // $7k
+                baseBorrowLimitInUSD: 7_000, // $7k
+                maxBorrowLimitInUSD: 9_000 // $9k
+            });
+            setVaultLimits(VAULT_USDAI_USDC);
+            VAULT_FACTORY.setVaultAuth(USDAI_USDC_VAULT, TEAM_MULTISIG, true);
+        }
+
+        // Vault 175: sUSDai-USDC / USDC-USDT (TYPE_4) — collateral at DEX 46
         {
             address SUSDAI_USDC__USDC_USDT_VAULT = getVaultAddress(
                 VAULT_SUSDAI_USDC__USDC_USDT_ID
@@ -210,7 +212,7 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
             setDexBorrowProtocolLimitsInShares(config_);
         }
 
-        // Vault 175: sUSDai-USDT / USDC-USDT (TYPE_4)
+        // Vault 176: sUSDai-USDT / USDC-USDT (TYPE_4) — collateral at DEX 48
         {
             address SUSDAI_USDT__USDC_USDT_VAULT = getVaultAddress(
                 VAULT_SUSDAI_USDT__USDC_USDT_ID
@@ -233,7 +235,7 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
             setDexBorrowProtocolLimitsInShares(config_);
         }
 
-        // Vault 176: sUSDai-USDT / USDT (TYPE_2)
+        // Vault 177: sUSDai-USDT / USDT (TYPE_2) — collateral at DEX 48
         {
             address SUSDAI_USDT__USDT_VAULT = getVaultAddress(
                 VAULT_SUSDAI_USDT__USDT_ID
@@ -255,7 +257,7 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
             );
         }
 
-        // Vault 177: sUSDai-USDC / USDC (TYPE_2)
+        // Vault 178: sUSDai-USDC / USDC (TYPE_2) — collateral at DEX 46
         {
             address SUSDAI_USDC__USDC_VAULT = getVaultAddress(
                 VAULT_SUSDAI_USDC__USDC_ID
@@ -277,7 +279,7 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
             );
         }
 
-        // Vault 178: sUSDai / GHO (TYPE_1)
+        // Vault 179: sUSDai / GHO (TYPE_1)
         {
             address SUSDAI_GHO_VAULT = getVaultAddress(VAULT_SUSDAI_GHO_ID);
             VaultConfig memory VAULT_SUSDAI_GHO = VaultConfig({
