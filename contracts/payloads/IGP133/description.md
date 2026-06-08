@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal launches the USDai ecosystem on Ethereum at **dust limits**: it sets conservative supply / borrow limits and grants Team Multisig auth on the three USDai DEXes (ids **46–48**) and the nine USDai / sUSDai vaults (ids **171–179**). Every market is enabled but capped near zero so liquidity, oracles, and integrations can be validated on-chain before launch-scale limits ship in a follow-up proposal.
+This proposal launches the USDai ecosystem on Ethereum at **dust limits**: it sets conservative supply / borrow limits and grants Team Multisig auth on the three USDai DEXes (ids **46–48**) and the nine USDai / sUSDai vaults (ids **171–179**). Every market is enabled but capped with strict limits so liquidity, oracles, and integrations can be validated on-chain before launch-scale limits ship in a follow-up proposal.
 
 ## Code Changes
 
@@ -28,10 +28,6 @@ Vault auth is set via **VaultFactoryOwner** (`VAULT_FACTORY_WRAPPER_OWNER`, `0xB
 | sUSDai / GHO | 179 | TYPE_1 | `$7k / $7k / $9k` |
 
 All three DEXes and nine vaults grant Team Multisig auth.
-
-## Description
-
-USDai is a `$1`-pegged stable and sUSDai its yield-bearing variant. This is the first step of the USDai launch on Fluid: it wires up the new DEXes and vaults with intentionally tiny limits so the markets are live for end-to-end verification (pricing, liquidations, routing, UI) without meaningful risk. Because the Fluid admin modules reject literal-zero limits, the smart-debt sides are left off and every other ceiling is set to a small dust value; sUSDai is conservatively priced at `$1.00` for the conversions. Launch-scale limits (max shares, LR/UR, fees, full risk parameters) are **not** included here and follow in a later proposal once the dust phase is validated.
 
 ## Conclusion
 
