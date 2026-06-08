@@ -327,7 +327,7 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
     // fetched: 2026-05-30T11:25:35.114Z, source: coingecko
-    function SUSDAI_USD_PRICE() public pure override returns (uint256) { return 1 * 1e2; }
+    function SUSDAI_USD_PRICE() public pure override returns (uint256) { return 1.09 * 1e2; }
     function STABLE_USD_PRICE() public pure override returns (uint256) { return 1 * 1e2; }
     // --- END AUTO-GENERATED PRICES ---
 }
