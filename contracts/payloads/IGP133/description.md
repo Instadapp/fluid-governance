@@ -10,8 +10,6 @@ This proposal launches the USDai ecosystem on Ethereum at **dust limits**: it se
 
 USDai (`0x0A1a1A107E45b7Ced86833863f482BC5f4ed82EF`), sUSDai (`0x0B2b2B2076d95dda7817e785989fE353fe955ef9`). DEX and vault ids are verified against the live Fluid `DEX_FACTORY` / `VAULT_FACTORY`.
 
-Vault auth is set via **VaultFactoryOwner** (`VAULT_FACTORY_WRAPPER_OWNER`, `0xB031913cB7AD81b8A4Ba412B471c2dA69BEA410B`). DEX auth via `DEX_FACTORY`.
-
 | Market | Id | Type | Limits |
 | --- | --- | --- | --- |
 | sUSDai-USDC DEX | 46 | smart col | `$10k` base withdrawal per token; smart debt off |
