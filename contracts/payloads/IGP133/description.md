@@ -41,6 +41,8 @@ Team Multisig auth is granted on all three DEXes and nine vaults so operators ca
 - **TYPE_4 vaults (175, 176)** get only the `3500e18` / `4500e18` borrow-shares limit on the USDC-USDT DEX (id **2**); their collateral lives on DEXes 46 / 48.
 - **TYPE_2 vaults (177, 178)** get `$7k` / `$9k` base / max debt ceilings on their borrow token (30% expand / 6h); their collateral lives on DEXes 48 / 46.
 
+Vault auth is granted via the **VaultFactoryOwner** wrapper (`VAULT_FACTORY_WRAPPER_OWNER`, `0xB031913cB7AD81b8A4Ba412B471c2dA69BEA410B`), which owns `VAULT_FACTORY`; governance (the timelock) is authorized on the wrapper, not directly on the factory. DEX auth is set directly on `DEX_FACTORY`.
+
 ## Description
 
 USDai is a `$1`-pegged stable and sUSDai is its yield-bearing variant. This proposal is the first step of the USDai launch on Fluid: it wires up the new DEXes and vaults with intentionally tiny limits so the markets are live for end-to-end verification (pricing, liquidations, routing, UI) without exposing the protocol to meaningful risk.
