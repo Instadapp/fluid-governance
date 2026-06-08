@@ -1,45 +1,74 @@
-# Launch USDai Dust Limits, Cap USR/RLP DEX Supply, and Claim Lite Revenue
+# Tighten Supply/Borrow Limits, Cap fsUSDs Withdrawal, Cap USR/RLP DEX Supply, and Claim Lite Revenue
 
 ## Summary
 
-This proposal performs three Ethereum actions: (1) set conservative dust limits and Team Multisig auth on the USDai ecosystem (**DEXes 46–48**, **vaults 170–178**); (2) set max supply shares to **0** on the USR-USDC DEX (**Pool 20**) and RLP-USDC DEX (**Pool 28**); (3) claim accumulated **iETHv2 (Lite) stETH revenue** to Team Multisig. The Lite revenue amount is configurable by Team Multisig before execution.
+This proposal performs nine Ethereum actions:
 
-**Tokens**: USDai (`0x0A1a1A107E45b7Ced86833863f482BC5f4ed82EF`), sUSDai (`0x0B2b2B2076d95dda7817e785989fE353fe955ef9`).
+1. Reduce base withdrawal limits on **legacy vaults 1–10** to total supply + ~5%.
+2. Restrict base withdrawal limits on the **sUSDS sunset vaults** (vaults 58 and 85).
+3. Risk-tighten **Liquidity Layer borrow limits across 54 vaults** (expand window 6h → 3h).
+4. Tighten smart-debt limits on the **USDC-USDT DEX (id 2)** (expand window 6h → 3h).
+5. Tighten smart-debt limits on the **USDC-USDT DEX (id 34)** (expand window 6h → 3h).
+6. Tighten smart-debt limits on the **GHO-USDC DEX (id 4)** (expand window 6h → 3h).
+7. Restrict the **fsUSDs fToken** base withdrawal limit to total supply + 10%.
+8. Set max supply shares to **0** on the **USR-USDC DEX (Pool 20)** and **RLP-USDC DEX (Pool 28)**.
+9. Claim accumulated **iETHv2 (Lite) stETH revenue** to Team Multisig.
 
-Legacy vault 1–10 and sUSDS sunset withdrawal limits (former actions 1 and 5 of the IGP-133 draft) were split out; see `IGP133-actions-1-and-5-description.md` on the Desktop.
-
-Module upgrades and auth rotations (former actions 1–7 of the original IGP-132 draft) ship in a separate follow-on payload.
+The Lite revenue amount is configurable by Team Multisig before execution.
 
 ## Code Changes
 
-### Action 1: USDai Ecosystem Dust Limits + Team Multisig Auth
+### Action 1: Reduce Legacy Vault 1–10 Base Withdrawal Limits
 
-Assumes deployments receive **DEX ids 46–48** and **vault ids 170–178** when batched in order.
+Sets base withdrawal limits on legacy vaults 1–10 to total supply + ~5%, using `MAX_RESTRICTED_EXPAND_PERCENT` / `MAX_RESTRICTED_EXPAND_DURATION` for the expansion.
 
-| Market | Id | Type | Dust limits |
-| --- | --- | --- | --- |
-| USDai-USDC DEX | 46 | smart col | `$10k` base withdrawal per token |
-| sUSDai-USDC DEX | 47 | smart col | `$10k` per token |
-| sUSDai-USDT DEX | 48 | smart col | `$10k` per token |
-| USDai / USDC | 170 | TYPE_1 | `$7k` / `$7k` / `$9k` withdraw / base borrow / max borrow |
-| sUSDai / USDC | 171 | TYPE_1 | `$7k` / `$7k` / `$9k` |
-| sUSDai / USDT | 172 | TYPE_1 | `$7k` / `$7k` / `$9k` |
-| sUSDai / USDC-USDT | 173 | TYPE_3 | `$7k` supply; USDC-USDT DEX (id **2**) borrow shares `3500e18` / `4500e18` |
-| sUSDai-USDC / USDC-USDT | 174 | TYPE_4 | USDC-USDT DEX borrow shares `3500e18` / `4500e18`; smart col at DEX **47** |
-| sUSDai-USDT / USDC-USDT | 175 | TYPE_4 | USDC-USDT DEX borrow shares `3500e18` / `4500e18`; smart col at DEX **48** |
-| sUSDai-USDT / USDT | 176 | TYPE_2 | USDT debt `$7k` / `$9k`; smart col at DEX **48** |
-| sUSDai-USDC / USDC | 177 | TYPE_2 | USDC debt `$7k` / `$9k`; smart col at DEX **47** |
-| sUSDai / GHO | 178 | TYPE_1 | `$7k` / `$7k` / `$9k` |
+| Vault | Supply token | Base withdrawal limit (raw) |
+| --- | --- | --- |
+| 1 | ETH | `628187e12` |
+| 2 | ETH | `945974e12` |
+| 3 | wstETH | `646899e12` |
+| 4 | wstETH | `544134e12` |
+| 5 | wstETH | `549870e12` |
+| 6 | weETH | `695132095e12` |
+| 7 | sUSDe | `3298946018e12` |
+| 8 | sUSDe | `413657754e12` |
+| 9 | weETH | `240487e12` |
+| 10 | weETH | `213728e12` |
 
-Team Multisig auth is granted on all three DEXes and nine vaults.
+### Action 2: Restrict sUSDS Sunset Vault Withdrawal Limits
 
-### Action 2: Set USR and RLP DEX Max Supply Shares to 0
+| Vault | Supply token | Base withdrawal limit (raw) |
+| --- | --- | --- |
+| 58 | sUSDs | `650e18` |
+| 85 | wstETH | `9372630468e6` |
+
+### Action 3: Tighten Liquidity Layer Borrow Limits (54 Vaults)
+
+Tightens `UserBorrowConfig` for 54 less-trusted Ethereum vaults, reducing the expand window from 6h to 3h and resetting base/max debt ceilings. Amounts are denominated in each borrow token's own decimals and normalised by the live borrow exchange price via `getRawAmount`. Vaults covered: 16, 17, 18, 19, 20, 26, 27, 32, 56, 57, 74, 80, 92, 93, 94, 96, 97, 103, 104, 107, 108, 109, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 130, 137, 138, 140, 141, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 159, 160, 161, 162, 164.
+
+### Action 4: Tighten Smart-Debt Limits on USDC-USDT DEX (id 2)
+
+Sets `DexBorrowProtocolConfigInShares` (expand window 3h) for vaults **47, 50, 98, 99, 156, 163**.
+
+### Action 5: Tighten Smart-Debt Limits on USDC-USDT DEX (id 34)
+
+Sets `DexBorrowProtocolConfigInShares` (expand window 3h) for vaults **126, 127, 157**.
+
+### Action 6: Tighten Smart-Debt Limits on GHO-USDC DEX (id 4)
+
+Sets `DexBorrowProtocolConfigInShares` (expand window 3h) for vaults **61, 125, 139**.
+
+### Action 7: Cap fsUSDs Base Withdrawal Limit
+
+Restricts the fsUSDs fToken's base withdrawal limit on the Liquidity Layer to total supply + 10%. Sets a fixed base withdrawal limit of **16,527.5 sUSDs** (the `15,025` sUSDs supply at preparation time × 1.1). The existing mode and expansion (percent / duration) are read from storage and preserved, so only the base withdrawal limit is tightened.
+
+### Action 8: Set USR and RLP DEX Max Supply Shares to 0
 
 - **DEX Pool 20** — USR-USDC: `updateMaxSupplyShares(0)`
 - **DEX Pool 28** — RLP-USDC: `updateMaxSupplyShares(0)`
 - **Purpose**: Prevent new supply on these DEXes while existing LPs retain withdrawal access
 
-### Action 3: Claim iETHv2 (Lite) stETH Revenue
+### Action 9: Claim iETHv2 (Lite) stETH Revenue
 
 - **Lite contract**: iETHv2 (`0xA0D3707c569ff8C87FA923d3823eC5D81c98Be78`)
 - **Amount**: Configurable via `setLiteStethRevenueAmount()` by Team Multisig (stETH wei)
@@ -49,16 +78,16 @@ Team Multisig auth is granted on all three DEXes and nine vaults.
 
 ## Description
 
-**Action 1** launches the USDai ecosystem at dust scale. **Action 2** sets max supply shares to zero on the USR-USDC and RLP-USDC DEXes. **Action 3** collects iETHv2 stETH revenue and forwards it to Team Multisig.
+**Actions 1–7** are risk-tightening measures: they reduce withdrawal headroom on legacy and sunset vaults, shrink borrow limits and expansion windows across less-trusted vaults and DEXes, and cap the fsUSDs withdrawal limit. **Action 8** sets max supply shares to zero on the USR-USDC and RLP-USDC DEXes. **Action 9** collects iETHv2 stETH revenue and forwards it to Team Multisig.
 
 ### Configurable Values (Team Multisig sets before execution)
 
 | Variable | Purpose |
 | --- | --- |
-| `liteStethRevenueAmount` | stETH amount for iETHv2 revenue claim (Action 3) |
+| `liteStethRevenueAmount` | stETH amount for iETHv2 revenue claim (Action 9) |
 
-A zero revenue amount causes Action 3 to revert.
+A zero revenue amount causes Action 9 to revert.
 
 ## Conclusion
 
-IGP-134 launches the USDai ecosystem at dust limits, caps USR/RLP DEX supply, and claims iETHv2 Lite revenue.
+IGP-134 tightens supply and borrow limits across legacy/sunset vaults, DEXes, and the fsUSDs fToken, caps USR/RLP DEX supply, and claims iETHv2 Lite revenue.

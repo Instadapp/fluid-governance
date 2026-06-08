@@ -3,8 +3,8 @@
  *
  * 1. Governor proposalCount bump: create a throwaway IGP-133 placeholder proposal so
  *    the real IGP-134 lands on id 134 (PayloadIGP134 hard-codes PROPOSAL_ID = 134).
- * 2. Mock Chainlink feed 0x66ac... for oracle-dependent paths.
- * 3. Set liteStethRevenueAmount on the payload for Action 3.
+ * 2. Mock Chainlink feed 0x66ac... for oracle-dependent paths (osETH vaults).
+ * 3. Set liteStethRevenueAmount on the payload for Action 9.
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
@@ -25,7 +25,7 @@ const TARGET_PROPOSAL_COUNT = IGP134_PROPOSAL_ID - 1; // 133
 /** Chainlink feed mocked so latestRoundData() returns (1, 106475560, 1771926611, 1771926611, 1) */
 const CHAINLINK_FEED_TO_MOCK = "0x66ac817f997efd114edfcccdce99f3268557b32c";
 
-/** Non-zero stETH wei for Action 3 (iETHv2 revenue claim). */
+/** Non-zero stETH wei for Action 9 (iETHv2 revenue claim). */
 const SIM_LITE_STETH_REVENUE = 1n;
 
 function normalizeHex(raw: string): string {
