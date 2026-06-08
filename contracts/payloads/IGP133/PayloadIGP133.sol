@@ -3,7 +3,6 @@ pragma solidity ^0.8.21;
 pragma experimental ABIEncoderV2;
 
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
-import {IFluidVaultFactory} from "../common/interfaces/IFluidVaultFactory.sol";
 
 /// @notice IGP133: Launch the USDai ecosystem on Ethereum at dust limits.
 ///         Sets conservative "dust" supply / borrow limits and grants Team
@@ -30,12 +29,6 @@ contract PayloadIGP133 is PayloadIGPPriceHelpers {
     uint256 public constant VAULT_SUSDAI_USDT__USDT_ID = 177; // T2: sUSDai-USDT / USDT
     uint256 public constant VAULT_SUSDAI_USDC__USDC_ID = 178; // T2: sUSDai-USDC / USDC
     uint256 public constant VAULT_SUSDAI_GHO_ID = 179; // T1: sUSDai / GHO
-
-    // VaultFactory is owned by the VaultFactoryOwner wrapper, so vault auth
-    // must be routed through it: governance (the timelock) is authorized on
-    // the wrapper, not directly on the factory.
-    IFluidVaultFactory public constant VAULT_FACTORY_WRAPPER_OWNER =
-        IFluidVaultFactory(0xB031913cB7AD81b8A4Ba412B471c2dA69BEA410B);
 
     function execute() public virtual override {
         super.execute();
