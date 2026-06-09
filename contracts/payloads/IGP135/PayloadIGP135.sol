@@ -5,27 +5,27 @@ pragma experimental ABIEncoderV2;
 import {
     AdminModuleStructs as FluidLiquidityAdminStructs
 } from "../common/interfaces/IFluidLiquidity.sol";
-import {IFluidDex} from "../common/interfaces/IFluidDex.sol";
+import {IFluidDex, IFluidAdminDex} from "../common/interfaces/IFluidDex.sol";
 import {LiquiditySlotsLink} from "../libraries/liquiditySlotsLink.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
-/// @notice IGP134: Legacy and sUSDS supply withdrawal tightening, risk-tightening
+/// @notice IGP135: Legacy and sUSDS supply withdrawal tightening, risk-tightening
 ///         of borrow limits across 66 less-trusted Ethereum vaults, capping the
 ///         fsUSDs fToken base withdrawal limit to total supply + 10%, max supply
-///         share caps on USR/RLP DEXes, and iETHv2 revenue claim. Lite revenue
-///         amount is configurable by Team Multisig before execution.
-contract PayloadIGP134 is PayloadIGPPriceHelpers {
-    uint256 public constant PROPOSAL_ID = 134;
+///         share caps on USR/RLP DEXes, dust limits for reUSD-USDT / USDC-USDT
+///         vault (id 170), and removal of Team Multisig auth on the USDai-USDC
+///         DEX (id 47) and USDai-USDC / USDC T2 vault (id 180) retained from
+///         the IGP-134 USDai launch.
+contract PayloadIGP135 is PayloadIGPPriceHelpers {
+    uint256 public constant PROPOSAL_ID = 135;
 
     uint256 public constant USR_USDC_DEX_ID = 20;
     uint256 public constant RLP_USDC_DEX_ID = 28;
-
-    uint256 public liteStethRevenueAmount;
-
-    function setLiteStethRevenueAmount(uint256 liteStethRevenueAmount_) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        liteStethRevenueAmount = liteStethRevenueAmount_;
-    }
+    uint256 public constant REUSD_USDT_DEX_ID = 44;
+    uint256 public constant USDC_USDT_DEX_ID = 2;
+    uint256 public constant VAULT_REUSD_USDT__USDC_USDT_ID = 170;
+    uint256 public constant USDAI_USDC_DEX_ID = 47;
+    uint256 public constant VAULT_USDAI_USDC__USDC_ID = 180;
 
     function execute() public virtual override {
         super.execute();
@@ -54,8 +54,11 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         // Action 8: Set USR-USDC and RLP-USDC DEX max supply shares to 0
         action8();
 
-        // Action 9: Claim iETHv2 (Lite) stETH revenue to Team Multisig
+        // Action 9: Set dust limits for reUSD-USDT / USDC-USDT vault (id 170)
         action9();
+
+        // Action 10: Remove Team MS auth on USDai-USDC DEX and T2 vault
+        action10();
     }
 
     function verifyProposal() public view override {}
@@ -785,27 +788,59 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         IFluidDex(getDexAddress(RLP_USDC_DEX_ID)).updateMaxSupplyShares(0);
     }
 
-    /// @notice Action 9: Claim iETHv2 (Lite) stETH revenue to Team Multisig
+    /// @notice Action 9: Set dust limits for reUSD-USDT / USDC-USDT vault (id 170, TYPE_4)
     function action9() internal isActionSkippable(9) {
-        uint256 stethAmount_ = PayloadIGP134(ADDRESS_THIS).liteStethRevenueAmount();
-        require(stethAmount_ != 0, "lite-revenue-amount-not-set");
-
-        IETHV2.collectRevenue(stethAmount_);
-
-        string[] memory targets_ = new string[](1);
-        bytes[] memory encodedSpells_ = new bytes[](1);
-
-        targets_[0] = "BASIC-A";
-        encodedSpells_[0] = abi.encodeWithSignature(
-            "withdraw(address,uint256,address,uint256,uint256)",
-            stETH_ADDRESS,
-            stethAmount_,
-            TEAM_MULTISIG,
-            0,
-            0
+        address REUSD_USDT_DEX = getDexAddress(REUSD_USDT_DEX_ID);
+        address USDC_USDT_DEX = getDexAddress(USDC_USDT_DEX_ID);
+        address REUSD_USDT__USDC_USDT_VAULT = getVaultAddress(
+            VAULT_REUSD_USDT__USDC_USDT_ID
         );
 
-        TREASURY.cast(targets_, encodedSpells_, address(this));
+        {
+            IFluidAdminDex.UserSupplyConfig[]
+                memory supplyConfigs_ = new IFluidAdminDex.UserSupplyConfig[](
+                    1
+                );
+            supplyConfigs_[0] = IFluidAdminDex.UserSupplyConfig({
+                user: REUSD_USDT__USDC_USDT_VAULT,
+                expandPercent: 30 * 1e2, // 30%
+                expandDuration: 6 hours,
+                baseWithdrawalLimit: 3500 * 1e18 // ~$7k in DEX shares
+            });
+            IFluidDex(REUSD_USDT_DEX).updateUserSupplyConfigs(supplyConfigs_);
+        }
+
+        setDexBorrowProtocolLimitsInShares(
+            DexBorrowProtocolConfigInShares({
+                dex: USDC_USDT_DEX,
+                protocol: REUSD_USDT__USDC_USDT_VAULT,
+                expandPercent: 30 * 1e2, // 30%
+                expandDuration: 6 hours,
+                baseBorrowLimit: 3500 * 1e18, // ~$7k shares
+                maxBorrowLimit: 4500 * 1e18 // ~$9k shares
+            })
+        );
+
+        VAULT_FACTORY.setVaultAuth(
+            REUSD_USDT__USDC_USDT_VAULT,
+            TEAM_MULTISIG,
+            true
+        );
+    }
+
+    /// @notice Action 10: Remove Team Multisig auth on USDai-USDC DEX (id 47) and
+    ///         USDai-USDC / USDC T2 vault (id 180), retained from IGP-134 launch.
+    function action10() internal isActionSkippable(10) {
+        DEX_FACTORY.setDexAuth(
+            getDexAddress(USDAI_USDC_DEX_ID),
+            TEAM_MULTISIG,
+            false
+        );
+        VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
+            getVaultAddress(VAULT_USDAI_USDC__USDC_ID),
+            TEAM_MULTISIG,
+            false
+        );
     }
 
     /**

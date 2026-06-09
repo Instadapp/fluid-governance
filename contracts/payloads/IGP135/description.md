@@ -1,8 +1,8 @@
-# Tighten Supply/Borrow Limits, Cap fsUSDs Withdrawal, Cap USR/RLP DEX Supply, and Claim Lite Revenue
+# Tighten Supply/Borrow Limits, Cap fsUSDs Withdrawal, Cap USR/RLP DEX Supply, Set reUSD Vault Dust Limits, and Remove USDai Team MS Auth
 
 ## Summary
 
-This proposal performs nine Ethereum actions:
+This proposal performs ten Ethereum actions:
 
 1. Reduce base withdrawal limits on **legacy vaults 1–10** to total supply + ~5%.
 2. Restrict base withdrawal limits on the **sUSDS sunset vaults** (vaults 58 and 85).
@@ -12,9 +12,8 @@ This proposal performs nine Ethereum actions:
 6. Tighten smart-debt limits on the **GHO-USDC DEX (id 4)** (expand window 6h → 3h).
 7. Restrict the **fsUSDs fToken** base withdrawal limit to total supply + 10%.
 8. Set max supply shares to **0** on the **USR-USDC DEX (Pool 20)** and **RLP-USDC DEX (Pool 28)**.
-9. Claim accumulated **iETHv2 (Lite) stETH revenue** to Team Multisig.
-
-The Lite revenue amount is configurable by Team Multisig before execution.
+9. Set conservative **dust limits** on **reUSD-USDT / USDC-USDT vault (id 170)** and grant Team Multisig auth.
+10. Remove Team Multisig auth on the **USDai-USDC DEX (id 47)** and **USDai-USDC / USDC T2 vault (id 180)**, retained from the IGP-134 USDai launch.
 
 ## Code Changes
 
@@ -68,26 +67,23 @@ Restricts the fsUSDs fToken's base withdrawal limit on the Liquidity Layer to to
 - **DEX Pool 28** — RLP-USDC: `updateMaxSupplyShares(0)`
 - **Purpose**: Prevent new supply on these DEXes while existing LPs retain withdrawal access
 
-### Action 9: Claim iETHv2 (Lite) stETH Revenue
+### Action 9: Set Dust Limits for reUSD-USDT / USDC-USDT Vault (id 170)
 
-- **Lite contract**: iETHv2 (`0xA0D3707c569ff8C87FA923d3823eC5D81c98Be78`)
-- **Amount**: Configurable via `setLiteStethRevenueAmount()` by Team Multisig (stETH wei)
-- **Step 1**: `IETHV2.collectRevenue(amount)` — pull accrued Lite revenue into treasury
-- **Step 2**: Treasury DSA `BASIC-A` `withdraw` — transfer stETH to Team Multisig
-- **Purpose**: Claim accumulated Fluid Lite revenue for operational use
+- **Vault**: reUSD-USDT / USDC-USDT (TYPE_4, vault id 170)
+- **Collateral DEX**: reUSD-USDT (Pool 44) — supply shares dust limit (~$7k, 30% expand / 6h)
+- **Debt DEX**: USDC-USDT (Pool 2) — borrow shares dust limit (~$7k base / ~$9k max, 30% expand / 6h)
+- **Auth**: Grants Team Multisig vault auth for subsequent launch configuration
+
+### Action 10: Remove Team Multisig Auth on USDai-USDC DEX and T2 Vault
+
+- **DEX Pool 47** — USDai-USDC: `setDexAuth(TEAM_MULTISIG, false)`
+- **Vault 180** — USDai-USDC / USDC (TYPE_2): `setVaultAuth(TEAM_MULTISIG, false)` via `VAULT_FACTORY_WRAPPER_OWNER`
+- **Purpose**: Completes decentralization of the USDai launch markets; IGP-134 retained Team Multisig auth on these two markets for post-launch configuration
 
 ## Description
 
-**Actions 1–7** are risk-tightening measures: they reduce withdrawal headroom on legacy and sunset vaults, shrink borrow limits and expansion windows across less-trusted vaults and DEXes, and cap the fsUSDs withdrawal limit. **Action 8** sets max supply shares to zero on the USR-USDC and RLP-USDC DEXes. **Action 9** collects iETHv2 stETH revenue and forwards it to Team Multisig.
-
-### Configurable Values (Team Multisig sets before execution)
-
-| Variable | Purpose |
-| --- | --- |
-| `liteStethRevenueAmount` | stETH amount for iETHv2 revenue claim (Action 9) |
-
-A zero revenue amount causes Action 9 to revert.
+**Actions 1–7** are risk-tightening measures: they reduce withdrawal headroom on legacy and sunset vaults, shrink borrow limits and expansion windows across less-trusted vaults and DEXes, and cap the fsUSDs withdrawal limit. **Action 8** sets max supply shares to zero on the USR-USDC and RLP-USDC DEXes. **Action 9** introduces the new reUSD-USDT / USDC-USDT vault with conservative dust limits and Team Multisig authorization. **Action 10** removes the Team Multisig auth retained on the USDai-USDC DEX and T2 vault from the IGP-134 USDai launch.
 
 ## Conclusion
 
-IGP-134 tightens supply and borrow limits across legacy/sunset vaults, DEXes, and the fsUSDs fToken, caps USR/RLP DEX supply, and claims iETHv2 Lite revenue.
+IGP-135 tightens supply and borrow limits across legacy/sunset vaults, DEXes, and the fsUSDs fToken, caps USR/RLP DEX supply, sets dust limits on the reUSD-USDT / USDC-USDT vault (id 170), and removes Team Multisig auth on the USDai-USDC DEX (id 47) and T2 vault (id 180).
