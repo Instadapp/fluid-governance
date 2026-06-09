@@ -5,156 +5,40 @@ pragma experimental ABIEncoderV2;
 import {
     AdminModuleStructs as FluidLiquidityAdminStructs
 } from "../common/interfaces/IFluidLiquidity.sol";
-import {
-    IFluidDex,
-    IFluidAdminDex
-} from "../common/interfaces/IFluidDex.sol";
-import {IInfiniteProxy} from "../common/interfaces/IInfiniteProxy.sol";
-import {
-    IFluidLiquidityRollback
-} from "../common/interfaces/IFluidLiquidityRollback.sol";
+import {IFluidAdminDex} from "../common/interfaces/IFluidDex.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
-/// @notice IGP131: Liquidity Layer module upgrades with rollback registration,
-///         pause auth registration, rates/ranges auth rotation, wstUSR vault
-///         rebalancing prep, FLUID rewards funding, and placeholders for
-///         PST-related dust limits and DSA/Lite connector auth cleanups.
-///         Module and auth values are configurable by Team Multisig before execution.
+/// @notice IGP131: wstUSR vault maintenance, FLUID rewards funding, PST
+///         ecosystem launch limits, and DSA connector Chief auth cleanup.
 contract PayloadIGP131 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 131;
 
-    address public constant OLD_USER_MODULE =
-        0x4bDC8816F2f56914B66EbF3786D78872D3a73Ab7;
-    address public constant OLD_ADMIN_MODULE =
-        0xea78faBC13D603895FE9efe8BB4A4F2c56e5698E;
-    address public constant OLD_LIQUIDITY_PAUSE_AUTH =
-        0xE9332F2d45e3216B7634cA4C7ab88945CD84ab76;
-    address public constant OLD_DEX_PAUSE_AUTH =
-        0x735BA3772c2cCC0b92Ff6993bd71da88236C1495;
-    address public constant OLD_RATES_AUTH =
-        0x1e6B029284dc2779F8FfBD83a3a5aA00EdCE6ba4;
-    address public constant OLD_RANGE_AUTH =
-        0x827089c01E9f761ff1A6D7041a9388bDdae74cc4;
+    // --- PST ecosystem ids ---------------------------------------------
+    uint256 public constant PST_USDC_DEX_ID = 45;
 
-    // --- Configurable values (Team Multisig can set before execution) ---
-    address public newUserModuleAddress = address(0);
-
-    address public newAdminModuleAddress = address(0);
-
-    address public liquidityPauseAuth = address(0);
-    address public dexPauseAuth = address(0);
-
-    address public newRatesAuth = address(0);
-
-    address public newRangeAuth = address(0);
-
-    // --- Lock flags (once true, the corresponding values can no longer be changed) ---
-    bool public newUserModuleAddressLocked;
-    bool public newAdminModuleAddressLocked;
-    bool public pauseAuthsLocked;
-    bool public ratesAuthsLocked;
-    bool public rangeAuthsLocked;
-
-    function lockNewUserModuleAddress() external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        newUserModuleAddressLocked = true;
-    }
-
-    function lockNewAdminModuleAddress() external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        newAdminModuleAddressLocked = true;
-    }
-
-    function lockPauseAuths() external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        pauseAuthsLocked = true;
-    }
-
-    function lockRatesAuths() external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        ratesAuthsLocked = true;
-    }
-
-    function lockRangeAuths() external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        rangeAuthsLocked = true;
-    }
-
-    function setNewUserModuleAddress(address newUserModuleAddress_) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        require(!newUserModuleAddressLocked, "locked");
-        newUserModuleAddress = newUserModuleAddress_;
-    }
-
-    function setNewAdminModuleAddress(address newAdminModuleAddress_) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        require(!newAdminModuleAddressLocked, "locked");
-        newAdminModuleAddress = newAdminModuleAddress_;
-    }
-
-    function setPauseAuths(
-        address liquidityPauseAuth_,
-        address dexPauseAuth_
-    ) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        require(!pauseAuthsLocked, "locked");
-        liquidityPauseAuth = liquidityPauseAuth_;
-        dexPauseAuth = dexPauseAuth_;
-    }
-
-    function setNewRatesAuth(address newRatesAuth_) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        require(!ratesAuthsLocked, "locked");
-        newRatesAuth = newRatesAuth_;
-    }
-
-    function setNewRangeAuth(address newRangeAuth_) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        require(!rangeAuthsLocked, "locked");
-        newRangeAuth = newRangeAuth_;
-    }
+    uint256 public constant VAULT_PST_USDC_ID = 165; // T1: PST / USDC
+    uint256 public constant VAULT_PST_USDT_ID = 166; // T1: PST / USDT
+    uint256 public constant VAULT_PST_USDC__USDC_ID = 167; // T2: PST-USDC / USDC
+    uint256 public constant VAULT_PST__USDC_USDT_ID = 168; // T3: PST / USDC-USDT
+    uint256 public constant VAULT_PST_USDC__USDC_USDT_ID = 169; // T4: PST-USDC / USDC-USDT
 
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Register UserModule LL upgrade on RollbackModule
+        // Action 1: Set vault 142 wstUSR withdrawal limit to 24 raw units
         action1();
 
-        // Action 2: Upgrade UserModule LL on InfiniteProxy
+        // Action 2: Rebalance wstUSR vaults and restore borrow restrictions
         action2();
 
-        // Action 3: Register AdminModule LL upgrade on RollbackModule
+        // Action 3: Withdraw FLUID rewards funding to Team Multisig
         action3();
 
-        // Action 4: Upgrade AdminModule LL on InfiniteProxy
+        // Action 4: Set PST ecosystem launch limits (PST-USDC DEX + five PST vaults)
         action4();
 
-        // Action 5: Set new pause auth contracts
+        // Action 5: Remove DSA connector Chief auths except Team Multisig
         action5();
-
-        // Action 6: Update Rates Auth
-        action6();
-
-        // Action 7: Update Ranges Auth
-        action7();
-
-        // Action 8: Set vault 142 wstUSR withdrawal limit to 24 raw units
-        action8();
-
-        // Action 9: Rebalance wstUSR vaults and restore borrow restrictions
-        action9();
-
-        // Action 10: Withdraw FLUID rewards funding to Team Multisig
-        action10();
-
-        // Action 11: Placeholder for PST-related protocol dust limits
-        action11();
-
-        // Action 12: Placeholder for removing DSA connector Chief auths
-        action12();
-
-        // Action 13: Placeholder for removing multisig auth from Lite
-        action13();
     }
 
     function verifyProposal() public view override {}
@@ -169,123 +53,8 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
      * |__________________________________
      */
 
-    /// @notice Action 1: Register UserModule LL upgrade on RollbackModule
+    /// @notice Action 1: Set vault 142 wstUSR withdrawal limit to 24 raw units
     function action1() internal isActionSkippable(1) {
-        address newUserModule_ = PayloadIGP131(ADDRESS_THIS)
-            .newUserModuleAddress();
-        require(newUserModule_ != address(0), "new-user-module-not-set");
-
-        IFluidLiquidityRollback(address(LIQUIDITY))
-            .registerRollbackImplementation(OLD_USER_MODULE, newUserModule_);
-    }
-
-    /// @notice Action 2: Upgrade UserModule LL on InfiniteProxy
-    function action2() internal isActionSkippable(2) {
-        address newUserModule_ = PayloadIGP131(ADDRESS_THIS)
-            .newUserModuleAddress();
-        require(newUserModule_ != address(0), "new-user-module-not-set");
-
-        bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
-            .getImplementationSigs(OLD_USER_MODULE);
-
-        IInfiniteProxy(address(LIQUIDITY)).removeImplementation(
-            OLD_USER_MODULE
-        );
-
-        IInfiniteProxy(address(LIQUIDITY)).addImplementation(
-            newUserModule_,
-            sigs_
-        );
-    }
-
-    /// @notice Action 3: Register AdminModule LL upgrade on RollbackModule
-    function action3() internal isActionSkippable(3) {
-        address newAdminModule_ = PayloadIGP131(ADDRESS_THIS)
-            .newAdminModuleAddress();
-        require(newAdminModule_ != address(0), "new-admin-module-not-set");
-
-        IFluidLiquidityRollback(address(LIQUIDITY))
-            .registerRollbackImplementation(OLD_ADMIN_MODULE, newAdminModule_);
-    }
-
-    /// @notice Action 4: Upgrade AdminModule LL on InfiniteProxy
-    function action4() internal isActionSkippable(4) {
-        address newAdminModule_ = PayloadIGP131(ADDRESS_THIS)
-            .newAdminModuleAddress();
-        require(newAdminModule_ != address(0), "new-admin-module-not-set");
-
-        bytes4[] memory sigs_ = IInfiniteProxy(address(LIQUIDITY))
-            .getImplementationSigs(OLD_ADMIN_MODULE);
-
-        IInfiniteProxy(address(LIQUIDITY)).removeImplementation(
-            OLD_ADMIN_MODULE
-        );
-
-        IInfiniteProxy(address(LIQUIDITY)).addImplementation(
-            newAdminModule_,
-            sigs_
-        );
-    }
-
-    /// @notice Action 5: Set new pause auth contracts
-    function action5() internal isActionSkippable(5) {
-        address liquidityPauseAuth_ = PayloadIGP131(ADDRESS_THIS)
-            .liquidityPauseAuth();
-        address dexPauseAuth_ = PayloadIGP131(ADDRESS_THIS).dexPauseAuth();
-        require(liquidityPauseAuth_ != address(0), "ll-pause-auth-not-set");
-        require(dexPauseAuth_ != address(0), "dex-pause-auth-not-set");
-
-        FluidLiquidityAdminStructs.AddressBool[]
-            memory guardiansStatus_ = new FluidLiquidityAdminStructs.AddressBool[](
-                2
-            );
-        guardiansStatus_[0] = FluidLiquidityAdminStructs.AddressBool({
-            addr: OLD_LIQUIDITY_PAUSE_AUTH,
-            value: false
-        });
-        guardiansStatus_[1] = FluidLiquidityAdminStructs.AddressBool({
-            addr: liquidityPauseAuth_,
-            value: true
-        });
-        LIQUIDITY.updateGuardians(guardiansStatus_);
-
-        DEX_FACTORY.setGlobalAuth(OLD_DEX_PAUSE_AUTH, false);
-        DEX_FACTORY.setGlobalAuth(dexPauseAuth_, true);
-    }
-
-    /// @notice Action 6: Update Rates Auth on Liquidity Layer
-    function action6() internal isActionSkippable(6) {
-        address newRatesAuth_ = PayloadIGP131(ADDRESS_THIS).newRatesAuth();
-        require(newRatesAuth_ != address(0), "new-rates-auth-not-set");
-
-        FluidLiquidityAdminStructs.AddressBool[]
-            memory authsStatus_ = new FluidLiquidityAdminStructs.AddressBool[](
-                2
-            );
-
-        authsStatus_[0] = FluidLiquidityAdminStructs.AddressBool({
-            addr: OLD_RATES_AUTH,
-            value: false
-        });
-        authsStatus_[1] = FluidLiquidityAdminStructs.AddressBool({
-            addr: newRatesAuth_,
-            value: true
-        });
-
-        LIQUIDITY.updateAuths(authsStatus_);
-    }
-
-    /// @notice Action 7: Update Ranges Auth on DexFactory
-    function action7() internal isActionSkippable(7) {
-        address newRangeAuth_ = PayloadIGP131(ADDRESS_THIS).newRangeAuth();
-        require(newRangeAuth_ != address(0), "new-range-auth-not-set");
-
-        DEX_FACTORY.setGlobalAuth(OLD_RANGE_AUTH, false);
-        DEX_FACTORY.setGlobalAuth(newRangeAuth_, true);
-    }
-
-    /// @notice Action 8: Set vault 142 wstUSR withdrawal limit to 24 raw units
-    function action8() internal isActionSkippable(8) {
         FluidLiquidityAdminStructs.UserSupplyConfig[]
             memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
                 1
@@ -303,10 +72,10 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         LIQUIDITY.updateUserSupplyConfigs(configs_);
     }
 
-    /// @notice Action 9: Rebalance wstUSR vaults and restore borrow restrictions
-    function action9() internal isActionSkippable(9) {
-        // Base and max are equal so the vaults can only rebalance the
-        // screenshot dust plus a small buffer.
+    /// @notice Action 2: Rebalance wstUSR vaults and restore borrow restrictions
+    function action2() internal isActionSkippable(2) {
+        // Base and max are equal: 2x the dust snapshot caps, rounded up to a
+        // whole token amount so rebalance operate() is not limit-bound.
         FluidLiquidityAdminStructs.UserBorrowConfig[]
             memory liquidityConfigs_ = new FluidLiquidityAdminStructs.UserBorrowConfig[](
                 4
@@ -315,44 +84,24 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         liquidityConfigs_[0] = _liquidityBorrowConfig(
             getVaultAddress(110), // wstUSR / USDC
             USDC_ADDRESS,
-            4 * 1e6
+            9 * 1e6
         );
         liquidityConfigs_[1] = _liquidityBorrowConfig(
             getVaultAddress(111), // wstUSR / USDT
             USDT_ADDRESS,
-            3 * 1e6
+            7 * 1e6
         );
         liquidityConfigs_[2] = _liquidityBorrowConfig(
             getVaultAddress(112), // wstUSR / GHO
             GHO_ADDRESS,
-            0.25 * 1e18
+            10 * 1e18
         );
         liquidityConfigs_[3] = _liquidityBorrowConfig(
             getVaultAddress(133), // wstUSR-USDC <> USDC
             USDC_ADDRESS,
-            0.7 * 1e6
+            10 * 1e6
         );
         LIQUIDITY.updateUserBorrowConfigs(liquidityConfigs_);
-
-        address USDC_USDT_DEX = getDexAddress(2);
-        address USDC_USDT_CONCENTRATED_DEX = getDexAddress(34);
-
-        IFluidAdminDex.UserBorrowConfig[]
-            memory dexConfigs_ = new IFluidAdminDex.UserBorrowConfig[](1);
-
-        dexConfigs_[0] = _dexBorrowConfig(
-            getVaultAddress(134), // wstUSR-USDC <> USDC-USDT
-            0.35 * 1e18
-        );
-        IFluidDex(USDC_USDT_DEX).updateUserBorrowConfigs(dexConfigs_);
-
-        dexConfigs_[0] = _dexBorrowConfig(
-            getVaultAddress(135), // wstUSR-USDC <> USDC-USDT concentrated
-            0.03 * 1e18
-        );
-        IFluidDex(USDC_USDT_CONCENTRATED_DEX).updateUserBorrowConfigs(
-            dexConfigs_
-        );
 
         FLUID_RESERVE.updateRebalancer(address(TIMELOCK), true);
 
@@ -366,31 +115,22 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
 
             FLUID_RESERVE.rebalanceVaults(vaults_, values_);
         }
-
         {
-            address[] memory vaults_ = new address[](3);
-            uint256[] memory values_ = new uint256[](3);
-            int256[] memory emptyMinMaxs_ = new int256[](3);
-            int256[] memory debtToken0MinMaxs_ = new int256[](3);
-            int256[] memory debtToken1MinMaxs_ = new int256[](3);
+            // T2 vault 133 only; 134/135 skipped (borrow below minimum).
+            address[] memory vaults_ = new address[](1);
+            uint256[] memory values_ = new uint256[](1);
+            int256[] memory emptyMinMaxs_ = new int256[](1);
+            int256[] memory emptyDebtMinMaxs_ = new int256[](1);
 
             vaults_[0] = getVaultAddress(133);
-            vaults_[1] = getVaultAddress(134);
-            vaults_[2] = getVaultAddress(135);
-
-            // Direct-borrow T2 vault 133 does not use smart-debt min/max values.
-            debtToken0MinMaxs_[1] = int256(0.4 * 1e6); // USDC
-            debtToken1MinMaxs_[1] = int256(0.4 * 1e6); // USDT
-            debtToken0MinMaxs_[2] = int256(0.04 * 1e6); // USDC
-            debtToken1MinMaxs_[2] = int256(0.03 * 1e6); // USDT
 
             FLUID_RESERVE.rebalanceDexVaults(
                 vaults_,
                 values_,
                 emptyMinMaxs_,
                 emptyMinMaxs_,
-                debtToken0MinMaxs_,
-                debtToken1MinMaxs_
+                emptyDebtMinMaxs_,
+                emptyDebtMinMaxs_
             );
         }
 
@@ -399,17 +139,11 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         setBorrowProtocolLimitsPaused(getVaultAddress(112), GHO_ADDRESS);
         setBorrowProtocolLimitsPaused(getVaultAddress(133), USDC_ADDRESS);
 
-        setBorrowProtocolLimitsPausedDex(USDC_USDT_DEX, getVaultAddress(134));
-        setBorrowProtocolLimitsPausedDex(
-            USDC_USDT_CONCENTRATED_DEX,
-            getVaultAddress(135)
-        );
-
         FLUID_RESERVE.updateRebalancer(address(TIMELOCK), false);
     }
 
-    /// @notice Action 10: Withdraw 750,000 FLUID from Treasury to Team Multisig for rewards
-    function action10() internal isActionSkippable(10) {
+    /// @notice Action 3: Withdraw 750,000 FLUID from Treasury to Team Multisig for rewards
+    function action3() internal isActionSkippable(3) {
         string[] memory targets_ = new string[](1);
         bytes[] memory encodedSpells_ = new bytes[](1);
 
@@ -426,19 +160,149 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         TREASURY.cast(targets_, encodedSpells_, address(this));
     }
 
-    /// @notice Action 11: Placeholder for PST-related protocol dust limits
-    function action11() internal isActionSkippable(11) {
-        // TODO: Fill PST-related protocol dust limit updates before finalizing IGP131.
+    /// @notice Action 4: Launch limits for the PST ecosystem (PST-USDC DEX + five PST vaults)
+    function action4() internal isActionSkippable(4) {
+        address USDC_USDT_DEX = getDexAddress(2);
+
+        // Vault 1: PST / USDC (TYPE_1)
+        {
+            address PST_USDC_VAULT = getVaultAddress(VAULT_PST_USDC_ID);
+            VaultConfig memory VAULT_PST_USDC = VaultConfig({
+                vault: PST_USDC_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: PST_ADDRESS,
+                borrowToken: USDC_ADDRESS,
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                baseBorrowLimitInUSD: 5_000_000, // $5M
+                maxBorrowLimitInUSD: 10_000_000 // $10M
+            });
+            setVaultLimits(VAULT_PST_USDC);
+            FLUID_VAULT_FACTORY_OWNER.setVaultAuth(
+                PST_USDC_VAULT,
+                TEAM_MULTISIG,
+                false
+            );
+        }
+
+        // Vault 2: PST / USDT (TYPE_1)
+        {
+            address PST_USDT_VAULT = getVaultAddress(VAULT_PST_USDT_ID);
+            VaultConfig memory VAULT_PST_USDT = VaultConfig({
+                vault: PST_USDT_VAULT,
+                vaultType: VAULT_TYPE.TYPE_1,
+                supplyToken: PST_ADDRESS,
+                borrowToken: USDT_ADDRESS,
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                baseBorrowLimitInUSD: 5_000_000, // $5M
+                maxBorrowLimitInUSD: 10_000_000 // $10M
+            });
+            setVaultLimits(VAULT_PST_USDT);
+            FLUID_VAULT_FACTORY_OWNER.setVaultAuth(
+                PST_USDT_VAULT,
+                TEAM_MULTISIG,
+                false
+            );
+        }
+
+        // Vault 3: PST-USDC / USDC (TYPE_2) — remove Team MS auth only; launch limits
+        // (LL borrow + smart-col withdrawal at PST-USDC DEX) to be added in a follow-up if needed.
+        {
+            address PST_USDC__USDC_VAULT = getVaultAddress(
+                VAULT_PST_USDC__USDC_ID
+            );
+            FLUID_VAULT_FACTORY_OWNER.setVaultAuth(
+                PST_USDC__USDC_VAULT,
+                TEAM_MULTISIG,
+                false
+            );
+        }
+
+        // Vault 4: PST / USDC-USDT (TYPE_3) - smart debt at USDC-USDT DEX (id 2)
+        {
+            address PST__USDC_USDT_VAULT = getVaultAddress(
+                VAULT_PST__USDC_USDT_ID
+            );
+            VaultConfig memory VAULT_PST__USDC_USDT = VaultConfig({
+                vault: PST__USDC_USDT_VAULT,
+                vaultType: VAULT_TYPE.TYPE_3,
+                supplyToken: PST_ADDRESS,
+                borrowToken: address(0),
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
+            });
+            setVaultLimits(VAULT_PST__USDC_USDT);
+            FLUID_VAULT_FACTORY_OWNER.setVaultAuth(
+                PST__USDC_USDT_VAULT,
+                TEAM_MULTISIG,
+                false
+            );
+
+            DexBorrowProtocolConfigInShares
+                memory config_ = DexBorrowProtocolConfigInShares({
+                    dex: USDC_USDT_DEX,
+                    protocol: PST__USDC_USDT_VAULT,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours,
+                    baseBorrowLimit: 2_500_000 * 1e18, // ~$5M shares
+                    maxBorrowLimit: 5_000_000 * 1e18 // ~$10M shares
+                });
+            setDexBorrowProtocolLimitsInShares(config_);
+        }
+
+        // Vault 5: PST-USDC / USDC-USDT (TYPE_4) - smart col at PST-USDC DEX, smart debt at USDC-USDT DEX
+        {
+            address PST_USDC__USDC_USDT_VAULT = getVaultAddress(
+                VAULT_PST_USDC__USDC_USDT_ID
+            );
+
+            FLUID_VAULT_FACTORY_OWNER.setVaultAuth(
+                PST_USDC__USDC_USDT_VAULT,
+                TEAM_MULTISIG,
+                false
+            );
+
+            DexBorrowProtocolConfigInShares
+                memory config_ = DexBorrowProtocolConfigInShares({
+                    dex: USDC_USDT_DEX,
+                    protocol: PST_USDC__USDC_USDT_VAULT,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours,
+                    baseBorrowLimit: 2_500_000 * 1e18, // ~$5M shares
+                    maxBorrowLimit: 5_000_000 * 1e18 // ~$10M shares
+                });
+            setDexBorrowProtocolLimitsInShares(config_);
+        }
+
+        // PST-USDC DEX: launch limits + remove Team MS auth
+        {
+            address PST_USDC_DEX = getDexAddress(PST_USDC_DEX_ID);
+            DexConfig memory DEX_PST_USDC = DexConfig({
+                dex: PST_USDC_DEX,
+                tokenA: PST_ADDRESS,
+                tokenB: USDC_ADDRESS,
+                smartCollateral: true,
+                smartDebt: false,
+                baseWithdrawalLimitInUSD: 5_000_000, // $5M per token
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
+            });
+            setDexLimits(DEX_PST_USDC);
+            DEX_FACTORY.setDexAuth(PST_USDC_DEX, TEAM_MULTISIG, false);
+        }
     }
 
-    /// @notice Action 12: Placeholder for DSA connector Chief auth cleanup
-    function action12() internal isActionSkippable(12) {
-        // TODO: Remove all DSA connector Chief auths from mainnet and keep only main multisig auth.
-    }
-
-    /// @notice Action 13: Placeholder for Lite auth cleanup
-    function action13() internal isActionSkippable(13) {
-        // TODO: Remove multisig auth from Lite.
+    /// @notice Action 5: Remove DSA connector Chief auths except Team Multisig
+    function action5() internal isActionSkippable(5) {
+        DSA_CONNECTORS_V2.toggleChief(
+            0xb3e586BCE929312e8B0685E2c12c1d6dbbcdc370
+        );
+        DSA_CONNECTORS_V2.toggleChief(
+            0xa6AEC494Aa19Dc910944E2374e9EA159dc919c59
+        );
+        DSA_CONNECTORS_V2.toggleChief(
+            0xCe40798c731Ce4F90EB239E4894D9c643eB1ddE7
+        );
     }
 
     /**
@@ -451,7 +315,11 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
         address user_,
         address token_,
         uint256 debtCeiling_
-    ) internal pure returns (FluidLiquidityAdminStructs.UserBorrowConfig memory) {
+    )
+        internal
+        pure
+        returns (FluidLiquidityAdminStructs.UserBorrowConfig memory)
+    {
         return
             FluidLiquidityAdminStructs.UserBorrowConfig({
                 user: user_,
@@ -479,5 +347,8 @@ contract PayloadIGP131 is PayloadIGPPriceHelpers {
     }
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
+    // fetched: 2026-05-22T21:14:16.163Z, source: coingecko
+    function PST_USD_PRICE()    public pure override returns (uint256) { return 1.10 * 1e2; }
+    function STABLE_USD_PRICE() public pure override returns (uint256) { return 1 * 1e2; }
     // --- END AUTO-GENERATED PRICES ---
 }

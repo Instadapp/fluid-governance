@@ -157,6 +157,9 @@ abstract contract PayloadIGPPriceHelpers is PayloadIGPMain {
         } else if (token == REUSD_ADDRESS) {
             usdPrice = REUSD_USD_PRICE();
             decimals = 18;
+        } else if (token == PST_ADDRESS) {
+            usdPrice = PST_USD_PRICE();
+            decimals = 6;
         } else if (token == SUSDAI_ADDRESS) {
             usdPrice = SUSDAI_USD_PRICE();
             decimals = 18;
@@ -273,6 +276,9 @@ abstract contract PayloadIGPPriceHelpers is PayloadIGPMain {
     }
     function REUSD_USD_PRICE() public pure virtual returns (uint256) {
         revert("REUSD_USD_PRICE not set");
+    }
+    function PST_USD_PRICE() public pure virtual returns (uint256) {
+        revert("PST_USD_PRICE not set");
     }
     function SUSDAI_USD_PRICE() public pure virtual returns (uint256) {
         revert("SUSDAI_USD_PRICE not set");

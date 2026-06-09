@@ -10,7 +10,15 @@ Two files must stay in sync for a token to be priceable from a payload:
 1. `scripts/verify/lib/tokens.ts` — tells `prepare-prices.ts` which CoinGecko id and rounding rule to use and which `*_USD_PRICE()` override to emit.
 2. `contracts/payloads/common/pricehelpers.sol` — tells on-chain `getRawAmount` which price getter + decimals to use for a given token address, and declares the `*_USD_PRICE()` virtual getter itself.
 
-Every `*_ADDRESS` constant a payload references that flows through `getRawAmount` must have an entry in *both* files. The script checks both and refuses to proceed otherwise.
+Every `*_ADDRESS` constant that flows through `getRawAmount` (via `setVaultLimits`, `setDexLimits`, or related limit helpers in `helpers.sol`) must have an entry in *both* files. The script checks both and refuses to proceed otherwise.
+
+**Not every `*_ADDRESS` in a payload needs a price override.** `prepare-prices.ts` only emits overrides for tokens that appear in limit-config struct fields (`supplyToken`, `borrowToken`, `tokenA`, `tokenB`). It ignores:
+
+- Raw `LIQUIDITY.updateUserSupplyConfigs` / `updateUserBorrowConfigs` with literal limits (e.g. `token: wstUSR_ADDRESS`, `baseWithdrawalLimit: 24 * 1e18`)
+- `setBorrowProtocolLimitsPaused` / `_liquidityBorrowConfig` (fixed ceilings, no `getRawAmount`)
+- Treasury `BASIC-A` withdraws (`FLUID_ADDRESS`, etc.)
+
+If the script emits a price you do not need, the token is not actually priced — fix detection in `scripts/verify/lib/tokenUsage.ts`, do not add a useless override.
 
 ## When this skill applies
 

@@ -2,26 +2,21 @@
  * Token-usage detector.
  *
  * Given a payload's `.sol` source, figure out which token address constants
- * flow through USD-denominated limit helpers so `prepare-prices.ts` only emits
- * constants for tokens whose price getters may actually be reached.
+ * need USD price overrides for `prepare-prices.ts`.
+ *
+ * Only tokens that flow through `getRawAmount` (via limit helpers) are
+ * "priced". A payload may reference many `*_ADDRESS` constants for transfers,
+ * raw Liquidity configs, or paused-limit helpers — those are *referenced* but
+ * not priced.
  *
  * Strategy:
- *   1. Strip comments and strings from the source so identifier names inside
- *      them are not counted. (Otherwise an explanatory NatSpec about "ETH"
- *      or a URL would falsely flag the token as used.)
- *   2. Keep `allReferences` as every `*_ADDRESS` identifier for debugging.
- *   3. Mark only price-relevant identifiers as `used`:
- *      - direct `getRawAmount(X_ADDRESS, ...)` first arguments
- *      - conservatively, every token reference in payloads that call common
- *        USD helpers (`setVaultLimits`, `setDexLimits`,
- *        `setSupplyProtocolLimits`, `setBorrowProtocolLimits`)
- *   4. Anything price-relevant that is not in the registry is returned as
- *      `unknown` so the caller can surface an actionable error pointing to the
- *      add-token skill. Raw token references are intentionally not unknowns.
- *
- * This regex-first approach is deliberate: parsing Solidity fully would need
- * solc + an AST walk, which is overkill given the payload convention is a
- * small flat file with no imports of other payloads.
+ *   1. Strip comments, strings, and the auto-generated price marker block.
+ *   2. Collect every `*_ADDRESS` identifier → `allReferences` (debug).
+ *   3. Collect tokens in limit-config struct fields that call `getRawAmount`
+ *      inside helpers (`supplyToken`, `borrowToken`, `tokenA`, `tokenB`) →
+ *      priced set.
+ *   4. Map priced + exempt constants to registry entries → `used`.
+ *   5. Unknown `*_ADDRESS` identifiers outside the registry → `unknown`.
  */
 
 import { readFileSync } from "node:fs";
@@ -35,44 +30,38 @@ import {
 } from "./markers.js";
 
 /**
- * Token constants NOT required to be dispatched in `pricehelpers.sol`
- * because they only appear in payload code for book-keeping (approve,
- * transfer, event topics) and never flow through `getRawAmount`. Listed
- * in `constants.sol` but intentionally absent from the priced universe.
- *
- * Keep this small and explicit — widening it silently weakens the
- * dispatch-coverage check.
+ * Registry tokens that may appear in a payload but never need a price
+ * override or `getRawAmount` dispatch (Treasury withdraw, WETH path, etc.).
  */
-const NON_PRICED_EXEMPT = new Set<string>([
-  // WETH is used as a transfer-path target but priced through ETH when
-  // it appears on the Liquidity side.
+export const NON_PRICED_EXEMPT = new Set<string>([
   "WETH_ADDRESS",
-  // Lido stETH — historical payloads reference it as a transfer target;
-  // liquidity-side pricing goes through wstETH. Add only if a new payload
-  // genuinely needs a stETH exchange-price lookup.
   "stETH_ADDRESS",
+  "FLUID_ADDRESS",
 ]);
 
+/** Struct fields on configs that helpers pass into `getRawAmount`. */
+const PRICED_CONFIG_FIELD =
+  /(?:supplyToken|borrowToken|tokenA|tokenB):\s*([A-Za-z_][A-Za-z0-9_]*_ADDRESS)\b/g;
+
 export interface TokenUsageResult {
+  /** Tokens that need price overrides in the payload (via `getRawAmount`). */
   used: TokenEntry[];
   /** `*_ADDRESS` identifiers that have no registry entry. */
   unknown: string[];
-  /** Debug: raw set of every `*_ADDRESS` identifier found in the payload. */
+  /** Every `*_ADDRESS` in the payload (including non-priced references). */
   allReferences: string[];
 }
 
 export interface DispatchCoverageResult {
   /** Tokens that have a `token == X_ADDRESS` branch in pricehelpers.sol. */
   covered: TokenEntry[];
-  /** Tokens the payload uses but which are not dispatched. */
+  /** Tokens the payload prices but which are not dispatched. */
   missing: TokenEntry[];
 }
 
 /**
- * Scan `contracts/payloads/common/pricehelpers.sol` and return which of the
- * requested tokens have a dispatch branch (`token == X_ADDRESS`) in its
- * `getRawAmount`. Token constants in `NON_PRICED_EXEMPT` are treated as
- * covered unconditionally — they never need a price lookup.
+ * Scan `pricehelpers.sol` and return which priced tokens have a dispatch
+ * branch in `getRawAmount`.
  */
 export function checkDispatchCoverage(
   pricehelpersPath: string,
@@ -104,24 +93,51 @@ export function detectTokensUsed(payloadPath: string): TokenUsageResult {
   return detectTokensUsedFromSource(src);
 }
 
+/**
+ * Return `*_ADDRESS` constants that appear in limit-config struct fields
+ * (`VaultConfig`, `DexConfig`, `SupplyProtocolConfig`, `BorrowProtocolConfig`)
+ * which helpers convert through `getRawAmount`.
+ */
+export function detectPricedAddressConstants(stripped: string): Set<string> {
+  const priced = new Set<string>();
+  let match: RegExpExecArray | null;
+  PRICED_CONFIG_FIELD.lastIndex = 0;
+  while ((match = PRICED_CONFIG_FIELD.exec(stripped)) !== null) {
+    const ident = match[1]!;
+    if (ident !== "address") priced.add(ident);
+  }
+  return priced;
+}
+
 export function detectTokensUsedFromSource(src: string): TokenUsageResult {
   const stripped = stripCommentsStringsAndMarkerBlock(src);
 
   const ADDRESS_IDENT = /\b([A-Za-z_][A-Za-z0-9_]*_ADDRESS)\b/g;
-  const allReferences = new Set<string>();
+  const allRefs = new Set<string>();
   let match: RegExpExecArray | null;
   while ((match = ADDRESS_IDENT.exec(stripped)) !== null) {
-    allReferences.add(match[1]!);
+    allRefs.add(match[1]!);
   }
 
-  const seen = detectPriceRelevantTokenConstants(stripped, allReferences);
+  const pricedIds = detectPricedAddressConstants(stripped);
 
   const used: TokenEntry[] = [];
   const unknown: string[] = [];
-  for (const ident of seen) {
+  for (const ident of pricedIds) {
+    if (NON_PRICED_EXEMPT.has(ident)) continue;
     const entry = tokenByConstantName(ident);
     if (entry) used.push(entry);
     else unknown.push(ident);
+  }
+
+  for (const ident of allRefs) {
+    // Book-keeping-only tokens (Treasury withdraw targets, WETH path) never
+    // flow through `getRawAmount`, so they need no price override even though
+    // they are referenced by the payload.
+    if (NON_PRICED_EXEMPT.has(ident)) continue;
+    if (!tokenByConstantName(ident) && !unknown.includes(ident)) {
+      unknown.push(ident);
+    }
   }
 
   used.sort((a, b) => a.symbol.localeCompare(b.symbol));
@@ -130,50 +146,17 @@ export function detectTokensUsedFromSource(src: string): TokenUsageResult {
   return {
     used,
     unknown,
-    allReferences: [...allReferences].sort(),
+    allReferences: [...allRefs].sort(),
   };
-}
-
-function detectPriceRelevantTokenConstants(
-  src: string,
-  allReferences: ReadonlySet<string>
-): Set<string> {
-  const seen = new Set<string>();
-
-  // Direct price conversion: getRawAmount(TOKEN_ADDRESS, ...).
-  const DIRECT_RAW_AMOUNT =
-    /\bgetRawAmount\s*\(\s*([A-Za-z_][A-Za-z0-9_]*_ADDRESS)\b/g;
-  let match: RegExpExecArray | null;
-  while ((match = DIRECT_RAW_AMOUNT.exec(src)) !== null) {
-    seen.add(match[1]!);
-  }
-
-  // Common helpers convert USD-denominated fields through getRawAmount()
-  // internally. Their token inputs are sometimes constants in struct fields,
-  // but sometimes arrays / variables (`tokens[i]`), so keep this path
-  // conservative once those helpers are used.
-  const USES_USD_HELPER =
-    /\b(?:setSupplyProtocolLimits|setBorrowProtocolLimits|setDexLimits|setVaultLimits)\s*\(/;
-  if (USES_USD_HELPER.test(src)) {
-    for (const ident of allReferences) seen.add(ident);
-  }
-
-  return seen;
 }
 
 /**
  * Remove `//` and `/* *\/` comments, double-quoted strings, and any content
- * inside the auto-generated price marker region. What's left is the
- * human-authored Solidity that matters for usage detection.
- *
- * Written as a simple character-by-character scanner to avoid regex
- * pathologies on multi-line comments.
+ * inside the auto-generated price marker region.
  */
 function stripCommentsStringsAndMarkerBlock(src: string): string {
-  // Phase 1: drop the marker block if present.
   src = dropMarkerRegion(src);
 
-  // Phase 2: strip comments and strings.
   let out = "";
   let i = 0;
   const n = src.length;
@@ -182,19 +165,16 @@ function stripCommentsStringsAndMarkerBlock(src: string): string {
     const c2 = src[i + 1];
 
     if (c === "/" && c2 === "/") {
-      // line comment
       const nl = src.indexOf("\n", i);
       i = nl === -1 ? n : nl;
       continue;
     }
     if (c === "/" && c2 === "*") {
-      // block comment
       const end = src.indexOf("*/", i + 2);
       i = end === -1 ? n : end + 2;
       continue;
     }
     if (c === '"') {
-      // double-quoted string — skip to the closing quote honoring `\"`.
       i += 1;
       while (i < n) {
         const ch = src[i]!;
@@ -222,6 +202,6 @@ function dropMarkerRegion(src: string): string {
   const begin = src.indexOf(BEGIN_MARKER_PREFIX);
   if (begin === -1) return src;
   const end = src.indexOf(END_MARKER, begin);
-  if (end === -1) return src; // malformed — let the generator complain later
+  if (end === -1) return src;
   return src.slice(0, begin) + src.slice(end + END_MARKER.length);
 }

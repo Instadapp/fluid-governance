@@ -12,17 +12,20 @@ re-reading every historical payload line by line.
 **You never modify any file while running this skill.** Output is the
 report only.
 
+**Past IGP payloads are immutable.** Never edit any existing
+`contracts/payloads/IGP<N>/PayloadIGP<N>.sol` where `N` is lower than the
+payload under review, unless the user explicitly asks for that exact past
+IGP to be changed. Historical payloads may be read for precedent only.
+
 ## 1. Scope & invariants
 
 - Input: one payload file + the human's proposal intent (paragraph or
   bullet list). If the proposer ships a `contracts/payloads/IGP<N>/description.md`
-  in-tree, use that as intent when no external text is provided, and call
-  that out in the report's "Run mode" line.
+  in-tree, use that as intent when no external text is provided.
 - Output: a single markdown document shaped like `§6 Report template`
-  below. Nothing else. The document **must end** with the `## Concise
-  verdict` block described in §6 — this is the part a reader should be
-  able to consume in 10 seconds, so it goes last (under the full
-  findings), not first.
+  below. Nothing else. Keep it concise and reviewer-friendly: no payload
+  path, run-mode, action-index metadata, source-file tables, or verbose
+  machinery unless it is needed to explain a finding.
 - You will **not** run `prepare-prices.ts`, `verify-deployment.ts`, or any
   compiler. Those are separate workflows.
 - You will **not** rewrite the payload. Findings belong in the report.
@@ -232,7 +235,22 @@ For each external call returned by `externalsExtractor.extractExternalCalls`:
    params need on-chain confirmation" into a concrete field-by-field
    proof in the audit report. If you wrote that phrase verbatim, you
    did not run this step.
-7. For non-Fluid targets (Avo, Reserve wrappers used only through a
+7. For DSA connector spells invoked through `TREASURY.cast`, cross-check
+   connector semantics against the Instadapp DSA connectors repository:
+   `https://github.com/Instadapp/dsa-connectors/tree/main/contracts`.
+   Mainnet connector source paths commonly used by payloads:
+   - `BASIC-A`: `contracts/mainnet/connectors/basic/main.sol`
+     (`withdraw(address,uint256,address,uint256,uint256)` resolves
+     `uint256(-1)` to the DSA's full token balance and transfers it to
+     `to`).
+   - `BASIC-D-V2`: `contracts/mainnet/connectors/basic-ERC4626/main.sol`
+     (`redeem(address,uint256,address,uint256,uint256)` resolves
+     `uint256(-1)` to the DSA's full ERC4626 share balance and redeems
+     shares to `to`).
+   Mention the GitHub path(s) only if there is a finding or execution
+   caveat. Only mark a DSA connector spell `EXTERNAL_UNVERIFIABLE` if the
+   relevant connector source or function cannot be resolved.
+8. For other non-Fluid targets (Avo, Reserve wrappers used only through a
    non-Fluid interface, third-party tokens, etc.), record
    `EXTERNAL_UNVERIFIABLE` with a one-line note about what could not be
    verified.
@@ -288,103 +306,59 @@ error, remove it; do not paper over it with a weaker verdict.
 
 ## 6. Report template
 
-Render the final output using **exactly** this structure. Keep headings
-verbatim so automated diffs between runs stay clean.
+Render the final output using **exactly** this compact structure. Keep
+headings verbatim so automated diffs between runs stay clean. Do not add
+the old long-form metadata sections (`Payload`, `Run mode`, `Action index`,
+full `Intent coverage`, `Cross-repo references used`, or `Concise verdict`)
+unless the user explicitly asks for the expanded audit.
 
 ```markdown
-# Payload audit — IGP<N>
+# Payload Audit — IGP<N>
 
 - **Verdict:** <PASS | PASS_WITH_NOTES | BLOCK>
-- **Payload:** `contracts/payloads/IGP<N>/PayloadIGP<N>.sol`
 - **Actions reviewed:** <count>
-- **Run mode:** <full | degraded (FLUID_REPO_MISSING) | stale-index>
-- **Action index:** `scripts/verify/.cache/action-index.json`
-  (generated <timestamp>)
+- **Intent:** <one-sentence proposal intent>
 
 ## Summary
 
-<3–6 bullets: what the proposal does in plain English, any top-line risks>
+- <plain-English summary bullet 1>
+- <plain-English summary bullet 2>
+- <mention historical precedent if useful, e.g. "Similar Treasury withdrawals were done in `IGP116` and `IGP119`.">
+- <mention top-line caveat only if there is one>
 
-## Per-action findings
+## Per-Action Findings
 
-### action1 — <one-sentence on-chain effect>
+### Action 1 — <short action title>
 
-- **NatSpec:** <quote>
-- **Intent mapping:** <quoted human-intent fragment>
-- **Historical class:** <HISTORICALLY_VERIFIED | REVIEW_DIFF | NEW_PATTERN>
-  - <closest precedent IGP + action>
-  - <literal deltas, if any>
-- **External calls:**
-  | Target | Interface | Method | Selector | Spec |
-  | --- | --- | --- | --- | --- |
-  | LIQUIDITY | IFluidLiquidityAdmin | updateRateDataV2s | 0x… | `../fluid-contracts/contracts/liquidity/SPEC.md#...` |
-- **Spec checks:** <pass/fail per invariant, with citations>
-- **Expected-behavior cross-refs:** <cite ids or "none">
-- **Parameter sanity:** <pass / list of flags>
-- **Flags:** <none | comma-separated list of flag ids>
+- **What it does:** <one sentence describing the on-chain effect>
+- **Intent:** <short mapping to the proposal intent>
+- **Precedent:** <prior IGP/action if useful, otherwise omit this line>
+- **Findings:** <None | concise finding text with severity and why>
 
 <repeat per action>
 
-## Intent coverage
+## Execution Note
 
-| Intent bullet | Action(s) | Status |
-| --- | --- | --- |
-| ... | action3 | covered |
-| ... | — | **MISSING_ACTION** |
+- <only include when there is an execution-time balance/auth/order check; otherwise omit this section>
 
-## Cross-repo references used
+## Open Questions
 
-- `../fluid-contracts/contracts/liquidity/SPEC.md` — updateRateDataV2s
-- `../fluid-contracts/audits/audit-expected-behavior.md#L-04` — rate curve
-- `../fluid-contracts/docs/errors.md#40001` — RateVersionNotSupported
-- ...
-
-## Open questions for the proposer
-
-- <unresolved ambiguity 1>
-- ...
-
-## Concise verdict
-
-- **Overall:** <✅ PASS | ⚠️ PASS_WITH_NOTES | ❌ BLOCK> — <≤15-word reason>
-
-| Action | Status | Description |
-| --- | --- | --- |
-| action1 | <✅ PASS \| ⚠️ WARN \| ❌ FAIL> | <≤18-word self-contained headline> |
-| action2 | <✅ PASS \| ⚠️ WARN \| ❌ FAIL> | <≤18-word self-contained headline> |
-| ... | ... | ... |
-
-- **Must-check before execution:** <1–3 bullets of on-chain reads or
-  ordering constraints the executor has to verify; omit the bullet
-  entirely if there are none>
+- <only include if unresolved proposer input is needed; otherwise omit this section>
 ```
 
-**Emoji rule (strict):** every status label in the `Concise verdict`
-block — the Overall line and every row of the table — **must** be
-prefixed inline with its emoji (`✅`, `⚠️`, `❌`). No separate
-status-icon column, no emoji-only cells. The emoji goes in front of the
-word, e.g. `✅ PASS`, `⚠️ WARN`, `❌ FAIL`, `⚠️ PASS_WITH_NOTES`,
-`❌ BLOCK`. Do not introduce new emoji or replace the word itself.
-
-**Concise-verdict mapping rules (strict; do not improvise):**
-
-- `PASS` on an action ⇔ no flag raised on it other than
-  `HISTORICALLY_VERIFIED` or `REVIEW_DIFF` where every literal delta is
-  spec-validated and no `EXTERNAL_UNVERIFIABLE` / dependency note exists.
-- `WARN` on an action ⇔ at least one of `NEW_PATTERN`,
-  `EXTERNAL_UNVERIFIABLE`, `UNMAPPED_TARGET`, `OUT_OF_SCOPE_HANDLER`,
-  `STALE_INDEX`, `FLUID_REPO_MISSING`, `EXPECTED_BEHAVIOR_CONFLICT`
-  (resolved positively), or a parameter-sanity caveat that is
-  informational only.
-- `FAIL` on an action ⇔ any `SPEC_VIOLATION`, `UNCLAIMED_ACTION`, or a
-  red-flag sanity finding (order-of-magnitude price, `address(0)` in a
-  recipient slot, wrong `isActionSkippable` index, etc.).
-- **Overall verdict** is the max over per-action severity and the
-  intent-coverage pass (a `MISSING_ACTION` from §4 forces `BLOCK`).
-- The per-action `Description` cell must be self-contained — a reader
-  who skipped the full report should still understand what the action
-  does and (for `WARN` / `FAIL`) why it's flagged. Keep it to one line;
-  do not include bullet lists or links inside the cell.
+Formatting rules:
+- Use `# Payload Audit — IGP<N>` as the only H1.
+- Use section headings exactly as shown.
+- Keep per-action sections short. If there are no issues, write
+  `- **Findings:** None.`
+- Include prior IGP precedent when it gives confidence in the pattern,
+  but do not include body hashes, selectors, extractor output, action-index
+  details, or spec citations unless there is an actual finding.
+- Use `PASS` when all actions are covered by intent and have no findings.
+- Use `PASS_WITH_NOTES` only for meaningful caveats that do not block
+  deployment, and state the caveat in `Summary` or `Execution Note`.
+- Use `BLOCK` for `SPEC_VIOLATION`, `UNCLAIMED_ACTION`, `MISSING_ACTION`,
+  or red-flag parameter sanity issues.
 
 ## 7. Flag glossary (phrasing reference)
 
@@ -422,9 +396,9 @@ the source of truth if this skill and the script disagree:
 
 - Don't speculate about spec content. If a SPEC.md is silent on a bound,
   say "spec does not constrain X" rather than inventing a bound.
-- Don't "verify" a Fluid action without citing the SPEC.md path that
-  supports the verification. A report without citations is evidence of a
-  missed check.
+- Don't "verify" a Fluid action without checking the SPEC.md path that
+  supports the verification. Cite the path in the report only when it is
+  needed to explain a finding or caveat.
 - Don't rely on commit messages or CHANGELOG notes for invariants. Spec
   files and `audits/audit-expected-behavior.md` are the only trusted
   sources inside `fluid-contracts`.
