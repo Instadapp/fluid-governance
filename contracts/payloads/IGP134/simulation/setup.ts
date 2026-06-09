@@ -4,50 +4,179 @@
  * Three responsibilities, run before the propose/queue/execute flow:
  *
  * 1. Deploy vault 180 (T2 USDai-USDC / USDC) if not yet live on the fork.
- *    Vaults 171-179 are already deployed on mainnet; only vault 180 is replayed
- *    from the pending Avocado deploy-only transaction before IGP-134 can set
- *    its borrow-side launch limits and deprecate vault 174.
+ *    Vaults 171-179 are already deployed on mainnet; only vault 180 is deployed
+ *    here (collateral at DEX 47, USDC debt) before IGP-134 can set its
+ *    borrow-side launch limits and deprecate vault 174.
  *
  * 2. Align the governor proposal id to 134.
- *    `PayloadIGPMain.propose()` ends with `require(proposedId == _PROPOSAL_ID())`
- *    and IGP134 hard-codes `PROPOSAL_ID = 134`. If the fork's GovernorBravo
- *    `proposalCount` is below 133, create a single throwaway placeholder
- *    proposal so the real IGP-134 proposal lands on id 134.
  *
  * 3. Set liteStethRevenueAmount on the payload for Action 3.
- *    Action 3 reverts unless Team Multisig configures a non-zero stETH amount.
- *    We set a minimal 1-wei amount so the revenue-claim path executes.
- *
- * Safety / non-interference (proposal id step):
- *   - The dummy proposal is created by the PROPOSER EOA, not the payload, so it
- *     never collides with the "one live proposal per proposer" rule guarding the
- *     real IGP-134 proposal (whose proposer is the deployed payload contract).
- *   - We temporarily delegate the configured delegator's INST to the proposer to
- *     clear the 1,000,000 INST proposal threshold. The main flow's own
- *     delegate(delegator -> payload) later overwrites this delegation.
- *   - The dummy proposal is never voted on, queued, or executed.
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
-
-import { deployVault180IfNeeded } from "../../common/simulation/usdai-vault-deploys.js";
 
 const GOVERNOR = "0x0204Cd037B2ec03605CFdFe482D8e257C765fA1B";
 const TIMELOCK = "0x2386DC45AdDed673317eF068992F19421B481F4c";
 const INST = "0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb";
 const TEAM_MULTISIG = "0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e";
+const VAULT_FACTORY = "0x324c5Dc1fC42c7a4D43d92df1eBA58a54d13Bf2d";
+const DEX_FACTORY = "0x91716C4EDA1Fb55e84Bf8b4c7085f84285c19085";
+const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+const VAULT_LOGIC_T2 = "0xf92b954D3B2F6497B580D799Bf0907332AF1f63B";
+const USDAI_USDC_DEX_ID = 47;
+const VAULT_180_ID = 180;
 
-// Matches addresses.delegator / addresses.proposer in config/simulation-config.yml.
 const DELEGATOR = "0x5AAB0630aaCa6d0bf1c310aF6C2BB3826A951cFb";
 const PROPOSER = "0xA45f7bD6A5Ff45D31aaCE6bCD3d426D9328cea01";
 
-// IGP134 hard-codes PROPOSAL_ID = 134, so the governor must be at count 133
-// before the real proposal is created.
 const IGP134_PROPOSAL_ID = 134;
 const TARGET_PROPOSAL_COUNT = IGP134_PROPOSAL_ID - 1; // 133
-
-// Non-zero stETH wei for Action 3 (iETHv2 revenue claim).
 const SIM_LITE_STETH_REVENUE = 1n;
+
+function getDeployVaultT2Calldata(
+  supplyDex: string,
+  borrowToken: string,
+): string {
+  const vaultData = new ethers.Interface([
+    "function vaultT2(address smartCol_, address borrowToken_) external",
+  ]).encodeFunctionData("vaultT2", [supplyDex, borrowToken]);
+
+  return new ethers.Interface([
+    "function deployVault(address vaultDeploymentLogic_, bytes calldata vaultDeploymentData_) external",
+  ]).encodeFunctionData("deployVault", [VAULT_LOGIC_T2, vaultData]);
+}
+
+async function hasCode(
+  provider: JsonRpcProvider,
+  address_: string,
+): Promise<boolean> {
+  const code = await provider.getCode(address_);
+  return code !== "0x";
+}
+
+async function getVaultAddress(
+  provider: JsonRpcProvider,
+  vaultId: number,
+): Promise<string> {
+  const iface = new ethers.Interface([
+    "function getVaultAddress(uint256 vaultId_) view returns (address)",
+  ]);
+  const result = await provider.send("eth_call", [
+    {
+      to: VAULT_FACTORY,
+      data: iface.encodeFunctionData("getVaultAddress", [vaultId]),
+    },
+    "latest",
+  ]);
+  return ethers.AbiCoder.defaultAbiCoder().decode(["address"], result)[0];
+}
+
+async function getDexAddress(
+  provider: JsonRpcProvider,
+  dexId: number,
+): Promise<string> {
+  const iface = new ethers.Interface([
+    "function getDexAddress(uint256 dexId_) view returns (address)",
+  ]);
+  const result = await provider.send("eth_call", [
+    {
+      to: DEX_FACTORY,
+      data: iface.encodeFunctionData("getDexAddress", [dexId]),
+    },
+    "latest",
+  ]);
+  return ethers.AbiCoder.defaultAbiCoder().decode(["address"], result)[0];
+}
+
+async function getTotalVaults(provider: JsonRpcProvider): Promise<number> {
+  const iface = new ethers.Interface([
+    "function totalVaults() view returns (uint256)",
+  ]);
+  const result = await provider.send("eth_call", [
+    { to: VAULT_FACTORY, data: iface.encodeFunctionData("totalVaults", []) },
+    "latest",
+  ]);
+  return Number(
+    ethers.AbiCoder.defaultAbiCoder().decode(["uint256"], result)[0],
+  );
+}
+
+async function deployVault180IfNeeded(
+  provider: JsonRpcProvider,
+): Promise<void> {
+  const vault180 = await getVaultAddress(provider, VAULT_180_ID);
+  if (await hasCode(provider, vault180)) {
+    console.log(
+      `[SETUP] Vault ${VAULT_180_ID} (T2 USDai-USDC / USDC) already deployed at ${vault180}`,
+    );
+    return;
+  }
+
+  const totalVaults = await getTotalVaults(provider);
+  if (totalVaults < VAULT_180_ID - 1) {
+    throw new Error(
+      `Cannot deploy vault ${VAULT_180_ID}: fork totalVaults=${totalVaults}, ` +
+        `expected at least ${VAULT_180_ID - 1} (vaults 171-179 must exist on the fork).`,
+    );
+  }
+  if (totalVaults !== VAULT_180_ID - 1) {
+    throw new Error(
+      `Cannot deploy vault ${VAULT_180_ID}: fork totalVaults=${totalVaults}, ` +
+        `expected exactly ${VAULT_180_ID - 1} before deploy.`,
+    );
+  }
+
+  const usdaiUsdcDex = await getDexAddress(provider, USDAI_USDC_DEX_ID);
+  if (!usdaiUsdcDex || usdaiUsdcDex === ethers.ZeroAddress) {
+    throw new Error(
+      `DEX ${USDAI_USDC_DEX_ID} (USDai-USDC) address is zero on the fork.`,
+    );
+  }
+  if (!(await hasCode(provider, usdaiUsdcDex))) {
+    throw new Error(
+      `DEX ${USDAI_USDC_DEX_ID} (USDai-USDC) has no code at ${usdaiUsdcDex}.`,
+    );
+  }
+
+  const deployData = getDeployVaultT2Calldata(usdaiUsdcDex, USDC_ADDRESS);
+  console.log(
+    `[SETUP] Deploying vault ${VAULT_180_ID} (T2 USDai-USDC / USDC) at ${vault180} ` +
+      `(collateral DEX ${usdaiUsdcDex})`,
+  );
+
+  const txHash = await provider.send("eth_sendTransaction", [
+    {
+      from: TEAM_MULTISIG,
+      to: VAULT_FACTORY,
+      data: deployData,
+      value: "0x0",
+      gas: "0x9896800",
+      gasPrice: "0x0",
+    },
+  ]);
+  const receipt = await provider.waitForTransaction(txHash);
+  if (!receipt || receipt.status !== 1) {
+    throw new Error(
+      `Vault ${VAULT_180_ID} deploy transaction failed (tx ${txHash})`,
+    );
+  }
+  console.log(
+    `[SETUP] deploy vault ${VAULT_180_ID} (T2 USDai-USDC / USDC) succeeded (${txHash})`,
+  );
+
+  if (!(await hasCode(provider, vault180))) {
+    throw new Error(
+      `Vault ${VAULT_180_ID} deploy succeeded but no code at ${vault180}`,
+    );
+  }
+
+  const totalAfter = await getTotalVaults(provider);
+  if (totalAfter !== VAULT_180_ID) {
+    throw new Error(
+      `Vault ${VAULT_180_ID} deploy succeeded but totalVaults=${totalAfter}, expected ${VAULT_180_ID}.`,
+    );
+  }
+}
 
 async function getProposalCount(provider: JsonRpcProvider): Promise<number> {
   const iface = new ethers.Interface([
@@ -186,13 +315,9 @@ export async function preSetup(
   console.log("[SETUP] Running pre-setup for IGP134...");
 
   try {
-    // Step 1: deploy vault 180 if not yet live (171-179 already on mainnet).
     await deployVault180IfNeeded(provider);
-
-    // Step 2: align the governor proposal id to 134.
     await ensureGovernorProposalId(provider);
 
-    // Step 3: set the iETHv2 revenue amount for Action 3.
     if (payloadAddress) {
       await setLiteStethRevenueAmount(provider, payloadAddress);
     } else {
