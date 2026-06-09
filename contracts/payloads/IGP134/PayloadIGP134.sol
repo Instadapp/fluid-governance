@@ -44,8 +44,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
     uint256 public constant VAULT_USDAI_USDC__USDC_ID = 180; // T2: USDai-USDC / USDC
 
     // Smart-debt limits on the USDC-USDT DEX (id 2) are denominated in DEX
-    // shares, approximated as USD / 2 (~$2 per share), matching the convention
-    // used for these vaults in IGP-133.
+    // shares (~$2.20/share atm).
 
     // --- iETHv2 (Lite) stETH revenue claim (Action 3) ---
     // stETH wei to collect from iETHv2 and forward to Team Multisig. Set by
@@ -175,7 +174,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         }
 
         // Vault 173: sUSDai / USDC-USDT (TYPE_3) — $8M sUSDai supply;
-        // USDC-USDT DEX (id 2) borrow shares ~$8M / ~$15M
+        // USDC-USDT DEX (id 2) borrow shares ~$8M / ~$15M (3.6M / 6.75M shares)
         {
             address SUSDAI__USDC_USDT_VAULT = getVaultAddress(
                 VAULT_SUSDAI__USDC_USDT_ID
@@ -197,8 +196,8 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
                     protocol: SUSDAI__USDC_USDT_VAULT,
                     expandPercent: 30 * 1e2, // 30%
                     expandDuration: 6 hours,
-                    baseBorrowLimit: 4_000_000 * 1e18, // ~$8M shares
-                    maxBorrowLimit: 7_500_000 * 1e18 // ~$15M shares
+                    baseBorrowLimit: 3_600_000 * 1e18, // ~$8M at ~$2.20/share
+                    maxBorrowLimit: 6_750_000 * 1e18 // ~$15M at ~$2.20/share
                 });
             setDexBorrowProtocolLimitsInShares(config_);
             VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
@@ -209,7 +208,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         }
 
         // Vault 175: sUSDai-USDC / USDC-USDT (TYPE_4) — collateral at DEX 46;
-        // USDC-USDT DEX (id 2) borrow shares ~$8M / ~$20M
+        // USDC-USDT DEX (id 2) borrow shares ~$8M / ~$20M (3.6M / 9M shares)
         {
             address SUSDAI_USDC__USDC_USDT_VAULT = getVaultAddress(
                 VAULT_SUSDAI_USDC__USDC_USDT_ID
@@ -221,8 +220,8 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
                     protocol: SUSDAI_USDC__USDC_USDT_VAULT,
                     expandPercent: 30 * 1e2, // 30%
                     expandDuration: 6 hours,
-                    baseBorrowLimit: 4_000_000 * 1e18, // ~$8M shares
-                    maxBorrowLimit: 10_000_000 * 1e18 // ~$20M shares
+                    baseBorrowLimit: 3_600_000 * 1e18, // ~$8M at ~$2.20/share
+                    maxBorrowLimit: 9_000_000 * 1e18 // ~$20M at ~$2.20/share
                 });
             setDexBorrowProtocolLimitsInShares(config_);
             VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
@@ -233,7 +232,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         }
 
         // Vault 176: sUSDai-USDT / USDC-USDT (TYPE_4) — collateral at DEX 48;
-        // USDC-USDT DEX (id 2) borrow shares ~$8M / ~$20M
+        // USDC-USDT DEX (id 2) borrow shares ~$8M / ~$20M (3.6M / 9M shares)
         {
             address SUSDAI_USDT__USDC_USDT_VAULT = getVaultAddress(
                 VAULT_SUSDAI_USDT__USDC_USDT_ID
@@ -245,8 +244,8 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
                     protocol: SUSDAI_USDT__USDC_USDT_VAULT,
                     expandPercent: 30 * 1e2, // 30%
                     expandDuration: 6 hours,
-                    baseBorrowLimit: 4_000_000 * 1e18, // ~$8M shares
-                    maxBorrowLimit: 10_000_000 * 1e18 // ~$20M shares
+                    baseBorrowLimit: 3_600_000 * 1e18, // ~$8M at ~$2.20/share
+                    maxBorrowLimit: 9_000_000 * 1e18 // ~$20M at ~$2.20/share
                 });
             setDexBorrowProtocolLimitsInShares(config_);
             VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(

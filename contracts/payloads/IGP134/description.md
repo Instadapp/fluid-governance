@@ -31,16 +31,16 @@ USDai (`0x0A1a1A107E45b7Ced86833863f482BC5f4ed82EF`), sUSDai (`0x0B2b2B2076d95dd
 | sUSDai / USDC | 171 | TYPE_1 | `$8M` | `$8M` | `$15M` | Remove Team Multisig auth |
 | sUSDai / USDT | 172 | TYPE_1 | `$8M` | `$8M` | `$15M` | Remove Team Multisig auth |
 | sUSDai / GHO | 179 | TYPE_1 | `$8M` | `$8M` | `$15M` | Remove Team Multisig auth |
-| sUSDai / USDC-USDT | 173 | TYPE_3 | `$8M` sUSDai supply | USDC-USDT DEX (id **2**) borrow shares `~$8M / ~$15M` | | Remove Team Multisig auth |
-| sUSDai-USDC / USDC-USDT | 175 | TYPE_4 | smart col at DEX **46** | USDC-USDT DEX (id **2**) borrow shares `~$8M / ~$20M` | | Remove Team Multisig auth |
-| sUSDai-USDT / USDC-USDT | 176 | TYPE_4 | smart col at DEX **48** | USDC-USDT DEX (id **2**) borrow shares `~$8M / ~$20M` | | Remove Team Multisig auth |
+| sUSDai / USDC-USDT | 173 | TYPE_3 | `$8M` sUSDai supply | USDC-USDT DEX (id **2**) borrow shares `~$8M / ~$15M` (`3.6M / 6.75M` shares) | | Remove Team Multisig auth |
+| sUSDai-USDC / USDC-USDT | 175 | TYPE_4 | smart col at DEX **46** | USDC-USDT DEX (id **2**) borrow shares `~$8M / ~$20M` (`3.6M / 9M` shares) | | Remove Team Multisig auth |
+| sUSDai-USDT / USDC-USDT | 176 | TYPE_4 | smart col at DEX **48** | USDC-USDT DEX (id **2**) borrow shares `~$8M / ~$20M` (`3.6M / 9M` shares) | | Remove Team Multisig auth |
 | sUSDai-USDT / USDT | 177 | TYPE_2 | smart col at DEX **48** | `$8M` USDT | `$20M` USDT | Remove Team Multisig auth |
 | sUSDai-USDC / USDC | 178 | TYPE_2 | smart col at DEX **46** | `$8M` USDC | `$20M` USDC | Remove Team Multisig auth |
 | USDai-USDC / USDC | 180 | TYPE_2 | smart col at DEX **47** | `$5M` USDC | `$10M` USDC | **Retain** Team Multisig auth |
 
 Vault **174** is intentionally excluded from launch limits; it is deprecated in Action 2. Vault **180** receives **borrow-side launch limits only** (no supply-side LL limits).
 
-Smart-debt limits on the USDC-USDT DEX (id 2) are denominated in DEX shares, approximated as USD / 2 (~$2 per share, matching IGP-133): `~$8M` → `4_000_000 * 1e18`, `~$15M` → `7_500_000 * 1e18`, `~$20M` → `10_000_000 * 1e18` shares.
+Smart-debt limits on the USDC-USDT DEX (id 2) are denominated in DEX shares (~$2.20/share atm): `~$8M` → `3_600_000 * 1e18`, `~$15M` → `6_750_000 * 1e18`, `~$20M` → `9_000_000 * 1e18` shares.
 
 #### Market config — set by Team Multisig (not in this payload)
 
