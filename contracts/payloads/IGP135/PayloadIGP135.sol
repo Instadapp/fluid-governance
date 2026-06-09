@@ -942,8 +942,8 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
             });
     }
 
-    // No `*_USD_PRICE()` overrides are needed: every limit in this payload is
-    // configured in raw token / share amounts (`getRawAmount(token, amount, 0,
-    // ...)` and `setDexBorrowProtocolLimitsInShares`), so `getRawAmount` returns
-    // via its raw-`amount` branch and never dispatches to a USD price getter.
+    // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
+    // fetched: 2026-06-09T11:58:20.234Z, source: coingecko
+    function REUSD_USD_PRICE() public pure override returns (uint256) { return 1.08 * 1e2; }
+    // --- END AUTO-GENERATED PRICES ---
 }

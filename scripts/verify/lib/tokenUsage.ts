@@ -37,6 +37,8 @@ export const NON_PRICED_EXEMPT = new Set<string>([
   "WETH_ADDRESS",
   "stETH_ADDRESS",
   "FLUID_ADDRESS",
+  // fToken admin contracts used as Liquidity `user` / protocol addresses.
+  "F_SUSDs_ADDRESS",
 ]);
 
 /** Struct fields on configs that helpers pass into `getRawAmount`. */
