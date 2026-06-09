@@ -6,7 +6,7 @@
  * 1. Deploy vault 180 (T2 USDai-USDC / USDC) if not yet live on the fork.
  *    Vaults 171-179 are already deployed on mainnet; only vault 180 is deployed
  *    here (collateral at DEX 47, USDC debt) before IGP-134 can set its
- *    borrow-side launch limits and deprecate vault 174.
+ *    borrow-side dust limits and deprecate vault 174.
  *
  * 2. Align the governor proposal id to 134.
  *

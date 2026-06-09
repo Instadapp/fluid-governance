@@ -1,14 +1,14 @@
-# USDai Ecosystem Launch Limits, Vault 174 Deprecation, and iETHv2 Revenue Claim
+# USDai Ecosystem Launch Limits (Vault 180 at Dust), Vault 174 Deprecation, and iETHv2 Revenue Claim
 
 ## Summary
 
 This proposal performs three Ethereum actions:
 
-1. Raise the **USDai ecosystem** from dust limits (IGP-133) to **launch limits** — bumping only the Liquidity Layer supply / borrow ceilings on the three USDai DEXes (ids **46–48**) and vaults **171–173**, **175–179**, and **180**, and removing Team Multisig auth on every market except **DEX 47** and **vault 180** (retained until a later IGP).
+1. Raise the **USDai ecosystem** from dust limits (IGP-133) to **launch limits** — bumping the Liquidity Layer supply / borrow ceilings on the three USDai DEXes (ids **46–48**) and vaults **171–173** and **175–179**, holding **vault 180** (USDai-USDC / USDC) at **dust** borrow limits, and removing Team Multisig auth on every market except **vault 180** (retained until it launches in a later IGP).
 2. **Deprecate** the wrongly deployed T1 vault **174** (USDai / USDC) with a full pause and remove its Team Multisig auth.
 3. Claim accrued **iETHv2 (Lite) stETH revenue** to Team Multisig.
 
-Governance sets **limits and auth only**. Per-market config (collateral factor, liquidation threshold / max-limit / penalty, DEX max supply shares, range, and fee) is set directly by **Team Multisig** on the markets where it retains auth (DEX 47 and vault 180).
+Governance sets **limits and auth only**. Per-market config (collateral factor, liquidation threshold / max-limit / penalty, DEX max supply shares, range, and fee) is set directly by **Team Multisig** on vault 180, the one market where it retains auth.
 
 ## Code Changes
 
@@ -21,7 +21,7 @@ USDai (`0x0A1a1A107E45b7Ced86833863f482BC5f4ed82EF`), sUSDai (`0x0B2b2B2076d95dd
 | DEX | Id | Per-token limit | Authorization |
 | --- | --- | --- | --- |
 | sUSDai-USDC | 46 | `$10M` | Remove Team Multisig auth |
-| USDai-USDC | 47 | `$5M` | **Retain** Team Multisig auth |
+| USDai-USDC | 47 | `$5M` | Remove Team Multisig auth |
 | sUSDai-USDT | 48 | `$10M` | Remove Team Multisig auth |
 
 #### Vault limits (Liquidity Layer)
@@ -36,15 +36,15 @@ USDai (`0x0A1a1A107E45b7Ced86833863f482BC5f4ed82EF`), sUSDai (`0x0B2b2B2076d95dd
 | sUSDai-USDT / USDC-USDT | 176 | TYPE_4 | smart col at DEX **48** | USDC-USDT DEX (id **2**) borrow shares `~$8M / ~$20M` (`3.6M / 9M` shares) | | Remove Team Multisig auth |
 | sUSDai-USDT / USDT | 177 | TYPE_2 | smart col at DEX **48** | `$8M` USDT | `$20M` USDT | Remove Team Multisig auth |
 | sUSDai-USDC / USDC | 178 | TYPE_2 | smart col at DEX **46** | `$8M` USDC | `$20M` USDC | Remove Team Multisig auth |
-| USDai-USDC / USDC | 180 | TYPE_2 | smart col at DEX **47** | `$5M` USDC | `$10M` USDC | **Retain** Team Multisig auth |
+| USDai-USDC / USDC | 180 | TYPE_2 | smart col at DEX **47** | `$7k` USDC (dust) | `$9k` USDC (dust) | **Retain** Team Multisig auth |
 
-Vault **174** is intentionally excluded from launch limits; it is deprecated in Action 2. Vault **180** receives **borrow-side launch limits only** (no supply-side LL limits).
+Vault **174** is intentionally excluded from launch limits; it is deprecated in Action 2. Vault **180** receives **borrow-side dust limits only** (`$7k` / `$9k`, no supply-side LL limits) — it is not launched yet, so Team Multisig auth is explicitly retained (set to true) on it until a later IGP.
 
 Smart-debt limits on the USDC-USDT DEX (id 2) are denominated in DEX shares (~$2.20/share atm): `~$8M` → `3_600_000 * 1e18`, `~$15M` → `6_750_000 * 1e18`, `~$20M` → `9_000_000 * 1e18` shares.
 
 #### Market config — set by Team Multisig (not in this payload)
 
-For reference, the launch config Team Multisig applies via its retained auth on DEX 47 and vault 180:
+For reference, the launch config per market. Team Multisig retains auth only on **vault 180** and applies its config there; config for the auth-removed markets is applied before auth removal (or via governance):
 
 | Market | CF | LT | LML | LP | DEX max shares / range / fee |
 | --- | --- | --- | --- | --- | --- |
@@ -84,4 +84,4 @@ For reference, the launch config Team Multisig applies via its retained auth on 
 
 ## Conclusion
 
-IGP-134 raises the USDai ecosystem (DEXes 46–48, vaults 171–173, 175–179, and 180) from dust limits to launch-scale Liquidity Layer limits, removes Team Multisig auth on all markets except DEX 47 and vault 180, deprecates the wrongly deployed vault 174, and claims accrued iETHv2 Lite stETH revenue to Team Multisig.
+IGP-134 raises the USDai ecosystem (DEXes 46–48, vaults 171–173 and 175–179) to launch-scale Liquidity Layer limits while holding vault 180 (USDai-USDC / USDC) at dust, removes Team Multisig auth on all markets except vault 180, deprecates the wrongly deployed vault 174, and claims accrued iETHv2 Lite stETH revenue to Team Multisig.
