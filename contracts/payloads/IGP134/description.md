@@ -1,4 +1,4 @@
-# USDai Ecosystem Launch Limits, Vault 180 Dust, Vault 174 Deprecation, and iETHv2 Revenue Claim
+# USDai Ecosystem Launch Limits and Lite ETH Revenue Claim
 
 ## Summary
 
