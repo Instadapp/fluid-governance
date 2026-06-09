@@ -8,17 +8,18 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         launch limits (except vault 180, held at dust), and claim accrued
 ///         iETHv2 (Lite) stETH revenue to Team Multisig.
 ///
-///         Action 1 raises the Liquidity Layer supply / borrow limits on the
-///         three USDai DEXes (ids 46–48) and vaults 171–173 and 175–179 to their
+///         Action 1 raises the Liquidity Layer supply / borrow limits on two
+///         USDai DEXes (ids 46 and 48) and vaults 171–173 and 175–179 to their
 ///         launch-scale targets and removes Team Multisig auth on each.
 ///         Per-market config (collateral factor, liquidation threshold /
 ///         max-limit / penalty, DEX max supply shares, range, and fee) is
 ///         intentionally NOT touched here. DEX and vault ids are verified
 ///         against the live Fluid factories on mainnet.
 ///
-///         Action 2 gives vault 180 (USDai-USDC / USDC) borrow-side dust limits
-///         only and explicitly retains Team Multisig auth on it, since it is not
-///         launched yet (launch ships in a later IGP).
+///         Action 2 holds the USDai-USDC market (DEX 47 + vault 180) until it
+///         launches in a later IGP: vault 180 gets borrow-side dust limits only,
+///         and Team Multisig auth is explicitly retained on both DEX 47 and
+///         vault 180 (DEX 47 launch limits are deferred to the vault's launch).
 ///
 ///         Action 3 deprecates the wrongly deployed T1 vault 174 with a full
 ///         pause and removes its Team Multisig auth.
@@ -64,11 +65,12 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Raise USDai ecosystem to launch limits (DEXes 46-48,
+        // Action 1: Raise USDai ecosystem to launch limits (DEXes 46 and 48,
         // vaults 171-173, 175-179), removing Team MS auth on each
         action1();
 
-        // Action 2: Give vault 180 (USDai-USDC / USDC) dust limits, keep auth
+        // Action 2: Hold the USDai-USDC market (DEX 47 + vault 180) - vault 180
+        // dust limits, keep Team MS auth on both, defer their launch
         action2();
 
         // Action 3: Deprecate wrongly deployed vault 174
@@ -90,9 +92,9 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
      * |__________________________________
      */
 
-    /// @notice Action 1: USDai ecosystem launch limits (DEXes 46–48, vaults
+    /// @notice Action 1: USDai ecosystem launch limits (DEXes 46 and 48, vaults
     ///         171–173 and 175–179) and remove Team Multisig auth on each.
-    ///         Vault 180 is handled separately in Action 2.
+    ///         The USDai-USDC DEX 47 and vault 180 are handled in Action 2.
     function action1() internal isActionSkippable(1) {
         address USDC_USDT_DEX = getDexAddress(2);
 
@@ -113,23 +115,9 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
             DEX_FACTORY.setDexAuth(SUSDAI_USDC_DEX, TEAM_MULTISIG, false);
         }
 
-        // DEX 47: USDai-USDC — smart-collateral token limits $5M each;
-        // remove Team MS auth
-        {
-            address USDAI_USDC_DEX = getDexAddress(USDAI_USDC_DEX_ID);
-            DexConfig memory DEX_USDAI_USDC = DexConfig({
-                dex: USDAI_USDC_DEX,
-                tokenA: USDAI_ADDRESS,
-                tokenB: USDC_ADDRESS,
-                smartCollateral: true,
-                smartDebt: false,
-                baseWithdrawalLimitInUSD: 5_000_000, // $5M
-                baseBorrowLimitInUSD: 0,
-                maxBorrowLimitInUSD: 0
-            });
-            setDexLimits(DEX_USDAI_USDC);
-            DEX_FACTORY.setDexAuth(USDAI_USDC_DEX, TEAM_MULTISIG, false);
-        }
+        // DEX 47 (USDai-USDC) is intentionally skipped here: it is held back
+        // and launched together with vault 180 in a later IGP. Action 2 keeps
+        // Team MS auth on it; its launch limits are deferred to that IGP.
 
         // DEX 48: sUSDai-USDT — smart-collateral token limits $10M each
         {
@@ -325,11 +313,20 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         }
     }
 
-    /// @notice Action 2: Give vault 180 (USDai-USDC / USDC, TYPE_2) borrow-side
-    ///         dust limits ($7k / $9k) only — it is not launched yet, so Team
-    ///         Multisig auth is explicitly retained (set to true) on it until it
-    ///         launches in a later IGP. No supply-side LL limits are set.
+    /// @notice Action 2: Hold the USDai-USDC market (DEX 47 + vault 180) until it
+    ///         launches in a later IGP. Vault 180 (USDai-USDC / USDC, TYPE_2)
+    ///         gets borrow-side dust limits ($7k / $9k) only. Team Multisig auth
+    ///         is explicitly retained (set to true) on both DEX 47 and vault 180.
+    ///         DEX 47 launch limits are deferred to the vault's launch, so no
+    ///         DEX 47 limits are changed here.
     function action2() internal isActionSkippable(2) {
+        // DEX 47 (USDai-USDC): keep Team MS auth; launch limits are deferred to
+        // the IGP that launches vault 180, so no DEX limits are set here.
+        address USDAI_USDC_DEX = getDexAddress(USDAI_USDC_DEX_ID);
+        DEX_FACTORY.setDexAuth(USDAI_USDC_DEX, TEAM_MULTISIG, true);
+
+        // Vault 180 (USDai-USDC / USDC, TYPE_2): borrow-side dust limits only,
+        // keep Team MS auth.
         address USDAI_USDC__USDC_VAULT = getVaultAddress(
             VAULT_USDAI_USDC__USDC_ID
         );
