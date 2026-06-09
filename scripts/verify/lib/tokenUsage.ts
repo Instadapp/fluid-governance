@@ -131,6 +131,10 @@ export function detectTokensUsedFromSource(src: string): TokenUsageResult {
   }
 
   for (const ident of allRefs) {
+    // Book-keeping-only tokens (Treasury withdraw targets, WETH path) never
+    // flow through `getRawAmount`, so they need no price override even though
+    // they are referenced by the payload.
+    if (NON_PRICED_EXEMPT.has(ident)) continue;
     if (!tokenByConstantName(ident) && !unknown.includes(ident)) {
       unknown.push(ident);
     }
