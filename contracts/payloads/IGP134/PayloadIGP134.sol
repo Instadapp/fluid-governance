@@ -10,19 +10,20 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///
 ///         Action 1 raises the Liquidity Layer supply / borrow limits on the
 ///         three USDai DEXes (ids 46–48) and vaults 171–173 and 175–179 to their
-///         launch-scale targets, holds vault 180 (USDai-USDC / USDC) at dust
-///         borrow limits, and removes Team Multisig auth on every market except
-///         vault 180 (retained until it launches in a later IGP). Per-market
-///         config (collateral factor, liquidation threshold / max-limit /
-///         penalty, DEX max supply shares, range, and fee) is intentionally NOT
-///         touched here: it is set directly by Team Multisig on vault 180 where
-///         it retains auth. DEX and vault ids are verified against the live
-///         Fluid factories on mainnet.
+///         launch-scale targets and removes Team Multisig auth on each.
+///         Per-market config (collateral factor, liquidation threshold /
+///         max-limit / penalty, DEX max supply shares, range, and fee) is
+///         intentionally NOT touched here. DEX and vault ids are verified
+///         against the live Fluid factories on mainnet.
 ///
-///         Action 2 deprecates the wrongly deployed T1 vault 174 with a full
+///         Action 2 gives vault 180 (USDai-USDC / USDC) borrow-side dust limits
+///         only and explicitly retains Team Multisig auth on it, since it is not
+///         launched yet (launch ships in a later IGP).
+///
+///         Action 3 deprecates the wrongly deployed T1 vault 174 with a full
 ///         pause and removes its Team Multisig auth.
 ///
-///         Action 3 collects a Team-Multisig-configured amount of iETHv2 (Lite)
+///         Action 4 collects a Team-Multisig-configured amount of iETHv2 (Lite)
 ///         stETH revenue into the Treasury and forwards it to Team Multisig.
 contract PayloadIGP134 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 134;
@@ -63,15 +64,18 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Raise USDai ecosystem to launch limits (vault 180 held at
-        // dust), removing Team MS auth on every market except vault 180
+        // Action 1: Raise USDai ecosystem to launch limits (DEXes 46-48,
+        // vaults 171-173, 175-179), removing Team MS auth on each
         action1();
 
-        // Action 2: Deprecate wrongly deployed vault 174
+        // Action 2: Give vault 180 (USDai-USDC / USDC) dust limits, keep auth
         action2();
 
-        // Action 3: Claim iETHv2 (Lite) stETH revenue to Team Multisig
+        // Action 3: Deprecate wrongly deployed vault 174
         action3();
+
+        // Action 4: Claim iETHv2 (Lite) stETH revenue to Team Multisig
+        action4();
     }
 
     function verifyProposal() public view override {}
@@ -87,8 +91,8 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
      */
 
     /// @notice Action 1: USDai ecosystem launch limits (DEXes 46–48, vaults
-    ///         171–173, 175–179) with vault 180 held at dust, and remove Team
-    ///         Multisig auth on every market except vault 180.
+    ///         171–173 and 175–179) and remove Team Multisig auth on each.
+    ///         Vault 180 is handled separately in Action 2.
     function action1() internal isActionSkippable(1) {
         address USDC_USDT_DEX = getDexAddress(2);
 
@@ -319,35 +323,36 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
             setVaultLimits(VAULT_SUSDAI_GHO);
             VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(SUSDAI_GHO_VAULT, TEAM_MULTISIG, false);
         }
-
-        // Vault 180: USDai-USDC / USDC (TYPE_2) — borrow-side dust limits only
-        // ($7k / $9k); not launched yet, so Team MS auth is explicitly retained
-        // (set to true) on this vault until it launches in a later IGP
-        {
-            address USDAI_USDC__USDC_VAULT = getVaultAddress(
-                VAULT_USDAI_USDC__USDC_ID
-            );
-            VaultConfig memory VAULT_USDAI_USDC__USDC = VaultConfig({
-                vault: USDAI_USDC__USDC_VAULT,
-                vaultType: VAULT_TYPE.TYPE_2,
-                supplyToken: address(0),
-                borrowToken: USDC_ADDRESS,
-                baseWithdrawalLimitInUSD: 0,
-                baseBorrowLimitInUSD: 7_000, // $7k
-                maxBorrowLimitInUSD: 9_000 // $9k
-            });
-            setVaultLimits(VAULT_USDAI_USDC__USDC);
-            VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
-                USDAI_USDC__USDC_VAULT,
-                TEAM_MULTISIG,
-                true
-            );
-        }
     }
 
-    /// @notice Action 2: Deprecate wrongly deployed T1 vault 174 (USDai / USDC).
-    ///         Removes dust limits, applies a full pause, and removes Team MS auth.
+    /// @notice Action 2: Give vault 180 (USDai-USDC / USDC, TYPE_2) borrow-side
+    ///         dust limits ($7k / $9k) only — it is not launched yet, so Team
+    ///         Multisig auth is explicitly retained (set to true) on it until it
+    ///         launches in a later IGP. No supply-side LL limits are set.
     function action2() internal isActionSkippable(2) {
+        address USDAI_USDC__USDC_VAULT = getVaultAddress(
+            VAULT_USDAI_USDC__USDC_ID
+        );
+        VaultConfig memory VAULT_USDAI_USDC__USDC = VaultConfig({
+            vault: USDAI_USDC__USDC_VAULT,
+            vaultType: VAULT_TYPE.TYPE_2,
+            supplyToken: address(0),
+            borrowToken: USDC_ADDRESS,
+            baseWithdrawalLimitInUSD: 0,
+            baseBorrowLimitInUSD: 7_000, // $7k
+            maxBorrowLimitInUSD: 9_000 // $9k
+        });
+        setVaultLimits(VAULT_USDAI_USDC__USDC);
+        VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
+            USDAI_USDC__USDC_VAULT,
+            TEAM_MULTISIG,
+            true
+        );
+    }
+
+    /// @notice Action 3: Deprecate wrongly deployed T1 vault 174 (USDai / USDC).
+    ///         Removes dust limits, applies a full pause, and removes Team MS auth.
+    function action3() internal isActionSkippable(3) {
         address USDAI_USDC_VAULT = getVaultAddress(VAULT_USDAI_USDC_ID);
 
         setSupplyProtocolLimitsPaused(USDAI_USDC_VAULT, USDAI_ADDRESS);
@@ -364,11 +369,11 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(USDAI_USDC_VAULT, TEAM_MULTISIG, false);
     }
 
-    /// @notice Action 3: Claim iETHv2 (Lite) stETH revenue to Team Multisig.
+    /// @notice Action 4: Claim iETHv2 (Lite) stETH revenue to Team Multisig.
     /// @dev Collects `liteStethRevenueAmount` (set by Team Multisig) of stETH
     ///      revenue from iETHv2 into the Treasury, then forwards it to Team
     ///      Multisig via the Treasury DSA `BASIC-A` connector.
-    function action3() internal isActionSkippable(3) {
+    function action4() internal isActionSkippable(4) {
         uint256 stethAmount_ = PayloadIGP134(ADDRESS_THIS)
             .liteStethRevenueAmount();
         require(stethAmount_ != 0, "lite-revenue-amount-not-set");
