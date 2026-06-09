@@ -10,7 +10,7 @@
  *
  * 2. Align the governor proposal id to 134.
  *
- * 3. Set liteStethRevenueAmount on the payload for Action 3.
+ * 3. Set liteStethRevenueAmount on the payload for Action 4.
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
@@ -31,7 +31,7 @@ const PROPOSER = "0xA45f7bD6A5Ff45D31aaCE6bCD3d426D9328cea01";
 
 const IGP134_PROPOSAL_ID = 134;
 const TARGET_PROPOSAL_COUNT = IGP134_PROPOSAL_ID - 1; // 133
-const SIM_LITE_STETH_REVENUE = 1n;
+const SIM_LITE_STETH_REVENUE = 200n * 10n ** 18n; // 200 stETH
 
 function getDeployVaultT2Calldata(
   supplyDex: string,
