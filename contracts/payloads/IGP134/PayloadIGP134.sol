@@ -155,7 +155,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
                 maxBorrowLimitInUSD: 15_000_000 // $15M
             });
             setVaultLimits(VAULT_SUSDAI_USDC);
-            VAULT_FACTORY.setVaultAuth(SUSDAI_USDC_VAULT, TEAM_MULTISIG, false);
+            VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(SUSDAI_USDC_VAULT, TEAM_MULTISIG, false);
         }
 
         // Vault 172: sUSDai / USDT (TYPE_1) — $8M / $8M / $15M
@@ -171,7 +171,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
                 maxBorrowLimitInUSD: 15_000_000 // $15M
             });
             setVaultLimits(VAULT_SUSDAI_USDT);
-            VAULT_FACTORY.setVaultAuth(SUSDAI_USDT_VAULT, TEAM_MULTISIG, false);
+            VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(SUSDAI_USDT_VAULT, TEAM_MULTISIG, false);
         }
 
         // Vault 173: sUSDai / USDC-USDT (TYPE_3) — $8M sUSDai supply;
@@ -201,7 +201,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
                     maxBorrowLimit: 7_500_000 * 1e18 // ~$15M shares
                 });
             setDexBorrowProtocolLimitsInShares(config_);
-            VAULT_FACTORY.setVaultAuth(
+            VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
                 SUSDAI__USDC_USDT_VAULT,
                 TEAM_MULTISIG,
                 false
@@ -225,7 +225,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
                     maxBorrowLimit: 10_000_000 * 1e18 // ~$20M shares
                 });
             setDexBorrowProtocolLimitsInShares(config_);
-            VAULT_FACTORY.setVaultAuth(
+            VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
                 SUSDAI_USDC__USDC_USDT_VAULT,
                 TEAM_MULTISIG,
                 false
@@ -249,7 +249,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
                     maxBorrowLimit: 10_000_000 * 1e18 // ~$20M shares
                 });
             setDexBorrowProtocolLimitsInShares(config_);
-            VAULT_FACTORY.setVaultAuth(
+            VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
                 SUSDAI_USDT__USDC_USDT_VAULT,
                 TEAM_MULTISIG,
                 false
@@ -272,7 +272,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
                 maxBorrowLimitInUSD: 20_000_000 // $20M
             });
             setVaultLimits(VAULT_SUSDAI_USDT__USDT);
-            VAULT_FACTORY.setVaultAuth(
+            VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
                 SUSDAI_USDT__USDT_VAULT,
                 TEAM_MULTISIG,
                 false
@@ -295,7 +295,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
                 maxBorrowLimitInUSD: 20_000_000 // $20M
             });
             setVaultLimits(VAULT_SUSDAI_USDC__USDC);
-            VAULT_FACTORY.setVaultAuth(
+            VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
                 SUSDAI_USDC__USDC_VAULT,
                 TEAM_MULTISIG,
                 false
@@ -315,7 +315,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
                 maxBorrowLimitInUSD: 15_000_000 // $15M
             });
             setVaultLimits(VAULT_SUSDAI_GHO);
-            VAULT_FACTORY.setVaultAuth(SUSDAI_GHO_VAULT, TEAM_MULTISIG, false);
+            VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(SUSDAI_GHO_VAULT, TEAM_MULTISIG, false);
         }
 
         // Vault 180: USDai-USDC / USDC (TYPE_2) — borrow-side launch limits only;
@@ -353,7 +353,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
 
         LIQUIDITY.pauseUser(USDAI_USDC_VAULT, supplyTokens_, borrowTokens_);
 
-        VAULT_FACTORY.setVaultAuth(USDAI_USDC_VAULT, TEAM_MULTISIG, false);
+        VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(USDAI_USDC_VAULT, TEAM_MULTISIG, false);
     }
 
     /// @notice Action 3: Claim iETHv2 (Lite) stETH revenue to Team Multisig.
