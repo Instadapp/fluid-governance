@@ -4,6 +4,8 @@
  * 1. Governor proposalCount bump: create a throwaway IGP-134 placeholder proposal so
  *    the real IGP-135 lands on id 135 (PayloadIGP135 hard-codes PROPOSAL_ID = 135).
  * 2. Mock Chainlink feed 0x66ac... for oracle-dependent paths (osETH vaults).
+ *
+ * Vaults 170 and 181 are assumed deployed on mainnet before this payload goes live.
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
@@ -13,7 +15,6 @@ import * as path from "path";
 const GOVERNOR = "0x0204Cd037B2ec03605CFdFe482D8e257C765fA1B";
 const TIMELOCK = "0x2386DC45AdDed673317eF068992F19421B481F4c";
 const INST = "0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb";
-const TEAM_MULTISIG = "0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e";
 
 const DELEGATOR = "0x5AAB0630aaCa6d0bf1c310aF6C2BB3826A951cFb";
 const PROPOSER = "0xA45f7bD6A5Ff45D31aaCE6bCD3d426D9328cea01";

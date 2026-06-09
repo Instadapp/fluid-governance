@@ -12,7 +12,7 @@ This proposal performs ten Ethereum actions:
 6. Tighten smart-debt limits on the **GHO-USDC DEX (id 4)** (expand window 6h → 3h).
 7. Restrict the **fsUSDs fToken** base withdrawal limit to total supply + 10%.
 8. Set max supply shares to **0** on the **USR-USDC DEX (Pool 20)** and **RLP-USDC DEX (Pool 28)**.
-9. Set conservative **dust limits** on **reUSD-USDT / USDC-USDT vault (id 170)** and grant Team Multisig auth.
+9. Set conservative **dust limits** on **reUSD-USDT / USDC-USDT vault (id 170, TYPE_4)** and **reUSD / GHO-USDC vault (id 181, TYPE_3)** and grant Team Multisig auth.
 10. Remove Team Multisig auth on the **USDai-USDC DEX (id 47)** and **USDai-USDC / USDC T2 vault (id 180)**, retained from the IGP-134 USDai launch.
 
 ## Code Changes
@@ -67,11 +67,20 @@ Restricts the fsUSDs fToken's base withdrawal limit on the Liquidity Layer to to
 - **DEX Pool 28** — RLP-USDC: `updateMaxSupplyShares(0)`
 - **Purpose**: Prevent new supply on these DEXes while existing LPs retain withdrawal access
 
-### Action 9: Set Dust Limits for reUSD-USDT / USDC-USDT Vault (id 170)
+### Action 9: Set Dust Limits for reUSD Vaults (ids 170, 181)
+
+#### Vault 170: reUSD-USDT / USDC-USDT
 
 - **Vault**: reUSD-USDT / USDC-USDT (TYPE_4, vault id 170)
 - **Collateral DEX**: reUSD-USDT (Pool 44) — supply shares dust limit (~$7k, 30% expand / 6h)
 - **Debt DEX**: USDC-USDT (Pool 2) — borrow shares dust limit (~$7k base / ~$9k max, 30% expand / 6h)
+- **Auth**: Grants Team Multisig vault auth for subsequent launch configuration
+
+#### Vault 181: reUSD / GHO-USDC
+
+- **Vault**: reUSD / GHO-USDC (TYPE_3, vault id 181)
+- **Supply**: `$7k` REUSD withdraw limit
+- **Debt DEX**: GHO-USDC (Pool 4) — borrow shares dust limit (~$7k base / ~$9k max, 30% expand / 6h)
 - **Auth**: Grants Team Multisig vault auth for subsequent launch configuration
 
 ### Action 10: Remove Team Multisig Auth on USDai-USDC DEX and T2 Vault
@@ -82,8 +91,8 @@ Restricts the fsUSDs fToken's base withdrawal limit on the Liquidity Layer to to
 
 ## Description
 
-**Actions 1–7** are risk-tightening measures: they reduce withdrawal headroom on legacy and sunset vaults, shrink borrow limits and expansion windows across less-trusted vaults and DEXes, and cap the fsUSDs withdrawal limit. **Action 8** sets max supply shares to zero on the USR-USDC and RLP-USDC DEXes. **Action 9** introduces the new reUSD-USDT / USDC-USDT vault with conservative dust limits and Team Multisig authorization. **Action 10** removes the Team Multisig auth retained on the USDai-USDC DEX and T2 vault from the IGP-134 USDai launch.
+**Actions 1–7** are risk-tightening measures: they reduce withdrawal headroom on legacy and sunset vaults, shrink borrow limits and expansion windows across less-trusted vaults and DEXes, and cap the fsUSDs withdrawal limit. **Action 8** sets max supply shares to zero on the USR-USDC and RLP-USDC DEXes. **Action 9** introduces the new reUSD vaults (170 TYPE_4, 181 TYPE_3) with conservative dust limits and Team Multisig authorization. **Action 10** removes the Team Multisig auth retained on the USDai-USDC DEX and T2 vault from the IGP-134 USDai launch.
 
 ## Conclusion
 
-IGP-135 tightens supply and borrow limits across legacy/sunset vaults, DEXes, and the fsUSDs fToken, caps USR/RLP DEX supply, sets dust limits on the reUSD-USDT / USDC-USDT vault (id 170), and removes Team Multisig auth on the USDai-USDC DEX (id 47) and T2 vault (id 180).
+IGP-135 tightens supply and borrow limits across legacy/sunset vaults, DEXes, and the fsUSDs fToken, caps USR/RLP DEX supply, sets dust limits on the reUSD vaults (170 and 181), and removes Team Multisig auth on the USDai-USDC DEX (id 47) and T2 vault (id 180).

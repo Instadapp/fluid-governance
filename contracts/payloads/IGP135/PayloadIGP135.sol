@@ -13,9 +13,9 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         of borrow limits across 66 less-trusted Ethereum vaults, capping the
 ///         fsUSDs fToken base withdrawal limit to total supply + 10%, max supply
 ///         share caps on USR/RLP DEXes, dust limits for reUSD-USDT / USDC-USDT
-///         vault (id 170), and removal of Team Multisig auth on the USDai-USDC
-///         DEX (id 47) and USDai-USDC / USDC T2 vault (id 180) retained from
-///         the IGP-134 USDai launch.
+///         vault (id 170) and reUSD / GHO-USDC vault (id 181), and removal of
+///         Team Multisig auth on the USDai-USDC DEX (id 47) and USDai-USDC /
+///         USDC T2 vault (id 180) retained from the IGP-134 USDai launch.
 contract PayloadIGP135 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 135;
 
@@ -23,7 +23,9 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
     uint256 public constant RLP_USDC_DEX_ID = 28;
     uint256 public constant REUSD_USDT_DEX_ID = 44;
     uint256 public constant USDC_USDT_DEX_ID = 2;
+    uint256 public constant GHO_USDC_DEX_ID = 4;
     uint256 public constant VAULT_REUSD_USDT__USDC_USDT_ID = 170;
+    uint256 public constant VAULT_REUSD__GHO_USDC_ID = 181;
     uint256 public constant USDAI_USDC_DEX_ID = 47;
     uint256 public constant VAULT_USDAI_USDC__USDC_ID = 180;
 
@@ -54,7 +56,7 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
         // Action 8: Set USR-USDC and RLP-USDC DEX max supply shares to 0
         action8();
 
-        // Action 9: Set dust limits for reUSD-USDT / USDC-USDT vault (id 170)
+        // Action 9: Set dust limits for reUSD TYPE_4 vaults (170, 181)
         action9();
 
         // Action 10: Remove Team MS auth on USDai-USDC DEX and T2 vault
@@ -788,44 +790,88 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
         IFluidDex(getDexAddress(RLP_USDC_DEX_ID)).updateMaxSupplyShares(0);
     }
 
-    /// @notice Action 9: Set dust limits for reUSD-USDT / USDC-USDT vault (id 170, TYPE_4)
+    /// @notice Action 9: Set dust limits for reUSD-USDT / USDC-USDT (170, TYPE_4)
+    ///         and reUSD / GHO-USDC (181, TYPE_3) vaults
     function action9() internal isActionSkippable(9) {
-        address REUSD_USDT_DEX = getDexAddress(REUSD_USDT_DEX_ID);
-        address USDC_USDT_DEX = getDexAddress(USDC_USDT_DEX_ID);
-        address REUSD_USDT__USDC_USDT_VAULT = getVaultAddress(
-            VAULT_REUSD_USDT__USDC_USDT_ID
-        );
-
+        // Vault 170: reUSD-USDT / USDC-USDT (TYPE_4) — smart col at DEX 44,
+        // smart debt at USDC-USDT DEX (id 2)
         {
-            IFluidAdminDex.UserSupplyConfig[]
-                memory supplyConfigs_ = new IFluidAdminDex.UserSupplyConfig[](
-                    1
+            address REUSD_USDT_DEX = getDexAddress(REUSD_USDT_DEX_ID);
+            address USDC_USDT_DEX = getDexAddress(USDC_USDT_DEX_ID);
+            address REUSD_USDT__USDC_USDT_VAULT = getVaultAddress(
+                VAULT_REUSD_USDT__USDC_USDT_ID
+            );
+
+            {
+                IFluidAdminDex.UserSupplyConfig[]
+                    memory supplyConfigs_ = new IFluidAdminDex.UserSupplyConfig[](
+                        1
+                    );
+                supplyConfigs_[0] = IFluidAdminDex.UserSupplyConfig({
+                    user: REUSD_USDT__USDC_USDT_VAULT,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours,
+                    baseWithdrawalLimit: 3500 * 1e18 // ~$7k in DEX shares
+                });
+                IFluidDex(REUSD_USDT_DEX).updateUserSupplyConfigs(
+                    supplyConfigs_
                 );
-            supplyConfigs_[0] = IFluidAdminDex.UserSupplyConfig({
-                user: REUSD_USDT__USDC_USDT_VAULT,
-                expandPercent: 30 * 1e2, // 30%
-                expandDuration: 6 hours,
-                baseWithdrawalLimit: 3500 * 1e18 // ~$7k in DEX shares
-            });
-            IFluidDex(REUSD_USDT_DEX).updateUserSupplyConfigs(supplyConfigs_);
+            }
+
+            setDexBorrowProtocolLimitsInShares(
+                DexBorrowProtocolConfigInShares({
+                    dex: USDC_USDT_DEX,
+                    protocol: REUSD_USDT__USDC_USDT_VAULT,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours,
+                    baseBorrowLimit: 3500 * 1e18, // ~$7k shares
+                    maxBorrowLimit: 4500 * 1e18 // ~$9k shares
+                })
+            );
+
+            VAULT_FACTORY.setVaultAuth(
+                REUSD_USDT__USDC_USDT_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
         }
 
-        setDexBorrowProtocolLimitsInShares(
-            DexBorrowProtocolConfigInShares({
-                dex: USDC_USDT_DEX,
-                protocol: REUSD_USDT__USDC_USDT_VAULT,
-                expandPercent: 30 * 1e2, // 30%
-                expandDuration: 6 hours,
-                baseBorrowLimit: 3500 * 1e18, // ~$7k shares
-                maxBorrowLimit: 4500 * 1e18 // ~$9k shares
-            })
-        );
+        // Vault 181: REUSD / GHO-USDC (TYPE_3) — $7k REUSD supply;
+        // GHO-USDC DEX (id 4) borrow shares ~$7k / ~$9k
+        {
+            address GHO_USDC_DEX = getDexAddress(GHO_USDC_DEX_ID);
+            address REUSD__GHO_USDC_VAULT = getVaultAddress(
+                VAULT_REUSD__GHO_USDC_ID
+            );
 
-        VAULT_FACTORY.setVaultAuth(
-            REUSD_USDT__USDC_USDT_VAULT,
-            TEAM_MULTISIG,
-            true
-        );
+            VaultConfig memory VAULT_REUSD__GHO_USDC = VaultConfig({
+                vault: REUSD__GHO_USDC_VAULT,
+                vaultType: VAULT_TYPE.TYPE_3,
+                supplyToken: REUSD_ADDRESS,
+                borrowToken: address(0),
+                baseWithdrawalLimitInUSD: 7_000, // $7k
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
+            });
+            setVaultLimits(VAULT_REUSD__GHO_USDC);
+
+            setDexBorrowProtocolLimitsInShares(
+                DexBorrowProtocolConfigInShares({
+                    dex: GHO_USDC_DEX,
+                    protocol: REUSD__GHO_USDC_VAULT,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours,
+                    baseBorrowLimit: 3500 * 1e18, // ~$7k shares
+                    maxBorrowLimit: 4500 * 1e18 // ~$9k shares
+                })
+            );
+
+            VAULT_FACTORY.setVaultAuth(
+                REUSD__GHO_USDC_VAULT,
+                TEAM_MULTISIG,
+                true
+            );
+        }
     }
 
     /// @notice Action 10: Remove Team Multisig auth on USDai-USDC DEX (id 47) and
