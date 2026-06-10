@@ -7,7 +7,7 @@ This proposal:
 1. Raises the **USDai ecosystem** from dust limits (IGP-133) to **launch limits** on DEXes **46** and **48** and vaults **171–173** and **175–179**, removing Team Multisig auth on each.
 2. **Holds the USDai-USDC market** (DEX **47** + vault **180**) until a later launch — vault 180 gets borrow dust limits and Team Multisig auth is retained on both (DEX 47 launch limits ship together with the vault).
 3. **Deprecates** the T1 vault **174** (USDai / USDC).
-4. Claims accrued **iETHv2 (Lite) stETH revenue** to Team Multisig.
+4. Sends `148` stETH of accrued **iETHv2 (Lite) revenue** from the Reserve to Team Multisig.
 
 Governance sets limits and auth only; per-market config (CF, LT, etc.) is applied by Team Multisig.
 
@@ -40,10 +40,10 @@ DEX 47 is used only by the T2 vault 180, so both launch together in a later IGP.
 
 Vault **174** (USDai / USDC, TYPE_1) is superseded by vault 180: limits restricted, user operations paused, Team Multisig auth removed.
 
-### Action 4: Claim iETHv2 (Lite) stETH Revenue
+### Action 4: Send 148 stETH of iETHv2 (Lite) Revenue
 
-Collect accrued Lite revenue via `IETHV2.collectRevenue` (stETH is deposited into the Fluid Reserve), then forward the Reserve's stETH balance minus a `0.1` stETH buffer to Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`) via `FLUID_RESERVE.withdrawFunds`. Amount is set by Team Multisig via `setLiteStethRevenueAmount()` (a zero amount reverts).
+Send `148` stETH of accrued Lite revenue from the Fluid Reserve to Team Multisig via `FLUID_RESERVE.withdrawFunds`. The revenue is collected into the Reserve separately by Team Multisig, so the payload performs no on-chain claim.
 
 ## Conclusion
 
-IGP-134 raises the USDai ecosystem (DEXes 46 and 48, vaults 171–173 and 175–179) to launch limits, holds the USDai-USDC market (DEX 47 + vault 180) until its later launch, deprecates vault 174, and claims iETHv2 Lite stETH revenue.
+IGP-134 raises the USDai ecosystem (DEXes 46 and 48, vaults 171–173 and 175–179) to launch limits, holds the USDai-USDC market (DEX 47 + vault 180) until its later launch, deprecates vault 174, and sends 148 stETH of iETHv2 Lite revenue from the Reserve to Team Multisig.

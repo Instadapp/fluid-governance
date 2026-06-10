@@ -3,12 +3,11 @@ pragma solidity ^0.8.21;
 pragma experimental ABIEncoderV2;
 
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
-import {IERC20} from "../common/interfaces/IERC20.sol";
 import {IFluidReserveContractV2} from "../common/interfaces/IFluidReserveContract.sol";
 
 /// @notice IGP134: Raise the USDai ecosystem from dust limits (IGP-133) to
-///         launch limits (except vault 180, held at dust), and claim accrued
-///         iETHv2 (Lite) stETH revenue to Team Multisig.
+///         launch limits (except vault 180, held at dust), and send 148 stETH
+///         of iETHv2 (Lite) revenue to Team Multisig.
 ///
 ///         Action 1 raises the Liquidity Layer supply / borrow limits on two
 ///         USDai DEXes (ids 46 and 48) and vaults 171–173 and 175–179 to their
@@ -23,11 +22,11 @@ import {IFluidReserveContractV2} from "../common/interfaces/IFluidReserveContrac
 ///         and Team Multisig auth is explicitly retained on both DEX 47 and
 ///         vault 180 (DEX 47 launch limits are deferred to the vault's launch).
 ///
-///         Action 3 deprecates the wrongly deployed T1 vault 174 with a full
-///         pause and removes its Team Multisig auth.
+///         Action 3 deprecates the T1 vault 174 with a full pause and removes
+///         its Team Multisig auth.
 ///
-///         Action 4 collects a Team-Multisig-configured amount of iETHv2 (Lite)
-///         stETH revenue into the Treasury and forwards it to Team Multisig.
+    ///         Action 4 sends 148 stETH of accrued iETHv2 (Lite) revenue from
+    ///         the Fluid Reserve to Team Multisig.
 contract PayloadIGP134 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 134;
 
@@ -40,7 +39,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
     uint256 public constant VAULT_SUSDAI_USDC_ID = 171; // T1: sUSDai / USDC
     uint256 public constant VAULT_SUSDAI_USDT_ID = 172; // T1: sUSDai / USDT
     uint256 public constant VAULT_SUSDAI__USDC_USDT_ID = 173; // T3: sUSDai / USDC-USDT
-    uint256 public constant VAULT_USDAI_USDC_ID = 174; // T1: USDai / USDC (wrongly deployed — deprecated)
+    uint256 public constant VAULT_USDAI_USDC_ID = 174; // T1: USDai / USDC (deprecated)
     uint256 public constant VAULT_SUSDAI_USDC__USDC_USDT_ID = 175; // T4: sUSDai-USDC / USDC-USDT
     uint256 public constant VAULT_SUSDAI_USDT__USDC_USDT_ID = 176; // T4: sUSDai-USDT / USDC-USDT
     uint256 public constant VAULT_SUSDAI_USDT__USDT_ID = 177; // T2: sUSDai-USDT / USDT
@@ -50,19 +49,6 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
 
     // Smart-debt limits on the USDC-USDT DEX (id 2) are denominated in DEX
     // shares (~$2.20/share atm).
-
-    // --- iETHv2 (Lite) stETH revenue claim (Action 3) ---
-    // stETH wei to collect from iETHv2 and forward to Team Multisig. Set by
-    // Team Multisig via setLiteStethRevenueAmount() before execution; a zero
-    // value makes Action 3 revert so it cannot run unconfigured.
-    uint256 public liteStethRevenueAmount;
-
-    function setLiteStethRevenueAmount(
-        uint256 liteStethRevenueAmount_
-    ) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        liteStethRevenueAmount = liteStethRevenueAmount_;
-    }
 
     function execute() public virtual override {
         super.execute();
@@ -75,10 +61,10 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         // dust limits, keep Team MS auth on both, defer their launch
         action2();
 
-        // Action 3: Deprecate wrongly deployed vault 174
+        // Action 3: Deprecate vault 174
         action3();
 
-        // Action 4: Claim iETHv2 (Lite) stETH revenue to Team Multisig
+        // Action 4: Send 148 stETH Lite revenue from the Reserve to Team Multisig
         action4();
     }
 
@@ -349,7 +335,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         );
     }
 
-    /// @notice Action 3: Deprecate wrongly deployed T1 vault 174 (USDai / USDC).
+    /// @notice Action 3: Deprecate T1 vault 174 (USDai / USDC).
     ///         Removes dust limits, applies a full pause, and removes Team MS auth.
     function action3() internal isActionSkippable(3) {
         address USDAI_USDC_VAULT = getVaultAddress(VAULT_USDAI_USDC_ID);
@@ -368,29 +354,17 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(USDAI_USDC_VAULT, TEAM_MULTISIG, false);
     }
 
-    /// @notice Action 4: Claim iETHv2 (Lite) stETH revenue to Team Multisig.
-    /// @dev `collectRevenue` deposits the claimed stETH into the Fluid Reserve.
-    ///      This then forwards the Reserve's stETH balance minus a 0.1 stETH
-    ///      buffer directly to Team Multisig via `FLUID_RESERVE.withdrawFunds`.
-    ///      The buffer absorbs stETH's 1-2 wei rounding so the withdraw cannot
-    ///      revert on an off-by-a-few-wei amount.
+    /// @notice Action 4: Send 148 stETH of iETHv2 (Lite) revenue to Team Multisig.
+    /// @dev Sends 148 stETH of already-accrued Lite revenue from the Fluid
+    ///      Reserve to Team Multisig via `FLUID_RESERVE.withdrawFunds`. The
+    ///      revenue is collected into the Reserve separately by Team Multisig,
+    ///      so no `collectRevenue` is performed here.
     function action4() internal isActionSkippable(4) {
-        uint256 stethAmount_ = PayloadIGP134(ADDRESS_THIS)
-            .liteStethRevenueAmount();
-        require(stethAmount_ != 0, "lite-revenue-amount-not-set");
-
-        // iETHv2 deposits the collected stETH revenue into the Fluid Reserve.
-        IETHV2.collectRevenue(stethAmount_);
-
-        // Forward the Reserve's stETH balance (minus a 0.1 stETH buffer) to
-        // Team Multisig.
         address[] memory tokens_ = new address[](1);
         uint256[] memory amounts_ = new uint256[](1);
 
         tokens_[0] = stETH_ADDRESS;
-        amounts_[0] =
-            IERC20(stETH_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
-            0.1 ether;
+        amounts_[0] = 148 ether; // 148 stETH
 
         IFluidReserveContractV2(address(FLUID_RESERVE)).withdrawFunds(
             tokens_,

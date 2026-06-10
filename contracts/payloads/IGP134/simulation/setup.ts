@@ -10,7 +10,8 @@
  *
  * 2. Align the governor proposal id to 134.
  *
- * 3. Set liteStethRevenueAmount on the payload for Action 4.
+ * 3. Fund the Fluid Reserve with stETH so Action 4 can withdraw 148 stETH to
+ *    Team Multisig (the payload no longer claims via collectRevenue).
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
@@ -31,7 +32,15 @@ const PROPOSER = "0xA45f7bD6A5Ff45D31aaCE6bCD3d426D9328cea01";
 
 const IGP134_PROPOSAL_ID = 134;
 const TARGET_PROPOSAL_COUNT = IGP134_PROPOSAL_ID - 1; // 133
-const SIM_LITE_STETH_REVENUE = 140n * 10n ** 18n; // 140 stETH
+
+// Action 4 sends 148 stETH from the Fluid Reserve. Since the payload no longer
+// claims via collectRevenue, the sim pre-funds the Reserve with stETH (with
+// margin over 148 to cover stETH's 1-2 wei transfer rounding).
+const STETH_ADDRESS = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
+const FLUID_RESERVE = "0x264786EF916af64a1DB19F513F24a3681734ce92";
+// wstETH holds essentially the entire wrapped stETH supply - used as a fork faucet.
+const STETH_WHALE = "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0";
+const SIM_RESERVE_STETH_FUNDING = 200n * 10n ** 18n; // 200 stETH
 
 function getDeployVaultT2Calldata(
   supplyDex: string,
@@ -289,42 +298,29 @@ async function ensureGovernorProposalId(
   }
 }
 
-async function setLiteStethRevenueAmount(
-  provider: JsonRpcProvider,
-  payloadAddress: string,
-): Promise<void> {
-  const iface = new ethers.Interface([
-    "function setLiteStethRevenueAmount(uint256) external",
-  ]);
-  const data = iface.encodeFunctionData("setLiteStethRevenueAmount", [
-    SIM_LITE_STETH_REVENUE,
-  ]);
+async function fundReserveWithSteth(provider: JsonRpcProvider): Promise<void> {
+  const data = new ethers.Interface([
+    "function transfer(address to, uint256 amount) returns (bool)",
+  ]).encodeFunctionData("transfer", [FLUID_RESERVE, SIM_RESERVE_STETH_FUNDING]);
   await sendTx(
     provider,
-    TEAM_MULTISIG,
-    payloadAddress,
+    STETH_WHALE,
+    STETH_ADDRESS,
     data,
-    "setLiteStethRevenueAmount",
+    `fund Fluid Reserve with ${SIM_RESERVE_STETH_FUNDING / 10n ** 18n} stETH (Action 4 withdraws 148)`,
   );
 }
 
 export async function preSetup(
   provider: JsonRpcProvider,
-  payloadAddress?: string,
+  _payloadAddress?: string,
 ): Promise<void> {
   console.log("[SETUP] Running pre-setup for IGP134...");
 
   try {
     await deployVault180IfNeeded(provider);
     await ensureGovernorProposalId(provider);
-
-    if (payloadAddress) {
-      await setLiteStethRevenueAmount(provider, payloadAddress);
-    } else {
-      console.warn(
-        "[SETUP] No payload address provided, skipping lite revenue setup",
-      );
-    }
+    await fundReserveWithSteth(provider);
 
     console.log("[SETUP] Pre-setup completed successfully");
   } catch (error: any) {
