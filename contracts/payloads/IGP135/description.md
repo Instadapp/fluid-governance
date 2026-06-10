@@ -1,4 +1,4 @@
-# Tighten Supply/Borrow Limits, Cap fsUSDs Withdrawal, Cap USR/RLP DEX Supply, Set reUSD Vault Dust Limits, and Remove USDai Team MS Auth
+# Tighten Supply/Borrow Limits, Cap fsUSDs Withdrawal, Cap USR/RLP DEX Supply, Set reUSD Vault Dust Limits, and Launch USDai-USDC Market
 
 ## Summary
 
@@ -13,7 +13,7 @@ This proposal performs ten Ethereum actions:
 7. Restrict the **fsUSDs fToken** base withdrawal limit to total supply + 10%.
 8. Set max supply shares to **0** on the **USR-USDC DEX (Pool 20)** and **RLP-USDC DEX (Pool 28)**.
 9. Set conservative **dust limits** on **reUSD-USDT / USDC-USDT vault (id 170, TYPE_4)** and **reUSD / GHO-USDC vault (id 181, TYPE_3)** and grant Team Multisig auth.
-10. Remove Team Multisig auth on the **USDai-USDC DEX (id 47)** and **USDai-USDC / USDC T2 vault (id 180)**, retained from the IGP-134 USDai launch.
+10. Raise the **USDai-USDC market** (DEX **47** + T2 vault **180**) from dust limits (IGP-134) to **launch limits**, then remove Team Multisig auth on both.
 
 ## Code Changes
 
@@ -83,16 +83,28 @@ Restricts the fsUSDs fToken's base withdrawal limit on the Liquidity Layer to to
 - **Debt DEX**: GHO-USDC (Pool 4) — borrow shares dust limit (~$7k base / ~$9k max, 30% expand / 6h)
 - **Auth**: Grants Team Multisig vault auth for subsequent launch configuration
 
-### Action 10: Remove Team Multisig Auth on USDai-USDC DEX and T2 Vault
+### Action 10: USDai-USDC Market Launch Limits + Remove Team MS Auth
 
-- **DEX Pool 47** — USDai-USDC: `setDexAuth(TEAM_MULTISIG, false)`
-- **Vault 180** — USDai-USDC / USDC (TYPE_2): `setVaultAuth(TEAM_MULTISIG, false)` via `VAULT_FACTORY_WRAPPER_OWNER`
-- **Purpose**: Completes decentralization of the USDai launch markets; IGP-134 retained Team Multisig auth on these two markets for post-launch configuration
+The USDai-USDC market was held at dust limits in IGP-134 (DEX 47 + vault 180) with Team Multisig auth retained for post-launch configuration. This action raises both to launch-scale Liquidity Layer limits and removes Team Multisig auth.
+
+#### DEX limits (Liquidity Layer)
+
+| DEX | Id | Per-token limit | Authorization |
+| --- | --- | --- | --- |
+| USDai-USDC | 47 | `$5M` | Remove Team Multisig auth |
+
+#### Vault limits (Liquidity Layer)
+
+| Vault | Id | Type | Base withdraw | Base borrow | Max borrow | Authorization |
+| --- | --- | --- | --- | --- | --- | --- |
+| USDai-USDC / USDC | 180 | TYPE_2 | smart col at DEX **47** | `$5M` USDC | `$10M` USDC | Remove Team Multisig auth |
+
+No supply-side Liquidity Layer limits are set on vault 180.
 
 ## Description
 
-**Actions 1–7** are risk-tightening measures: they reduce withdrawal headroom on legacy and sunset vaults, shrink borrow limits and expansion windows across less-trusted vaults and DEXes, and cap the fsUSDs withdrawal limit. **Action 8** sets max supply shares to zero on the USR-USDC and RLP-USDC DEXes. **Action 9** introduces the new reUSD vaults (170 TYPE_4, 181 TYPE_3) with conservative dust limits and Team Multisig authorization. **Action 10** removes the Team Multisig auth retained on the USDai-USDC DEX and T2 vault from the IGP-134 USDai launch.
+**Actions 1–7** are risk-tightening measures: they reduce withdrawal headroom on legacy and sunset vaults, shrink borrow limits and expansion windows across less-trusted vaults and DEXes, and cap the fsUSDs withdrawal limit. **Action 8** sets max supply shares to zero on the USR-USDC and RLP-USDC DEXes. **Action 9** introduces the new reUSD vaults (170 TYPE_4, 181 TYPE_3) with conservative dust limits and Team Multisig authorization. **Action 10** launches the USDai-USDC market (DEX 47 + T2 vault 180) from dust to launch limits and removes the Team Multisig auth retained in IGP-134.
 
 ## Conclusion
 
-IGP-135 tightens supply and borrow limits across legacy/sunset vaults, DEXes, and the fsUSDs fToken, caps USR/RLP DEX supply, sets dust limits on the reUSD vaults (170 and 181), and removes Team Multisig auth on the USDai-USDC DEX (id 47) and T2 vault (id 180).
+IGP-135 tightens supply and borrow limits across legacy/sunset vaults, DEXes, and the fsUSDs fToken, caps USR/RLP DEX supply, sets dust limits on the reUSD vaults (170 and 181), and launches the USDai-USDC market (DEX 47 + T2 vault 180) to launch-scale limits while removing Team Multisig auth on both.

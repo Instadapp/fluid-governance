@@ -14,8 +14,9 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         fsUSDs fToken base withdrawal limit to total supply + 10%, max supply
 ///         share caps on USR/RLP DEXes, dust limits for reUSD-USDT / USDC-USDT
 ///         vault (id 170) and reUSD / GHO-USDC vault (id 181), and removal of
-///         Team Multisig auth on the USDai-USDC DEX (id 47) and USDai-USDC /
-///         USDC T2 vault (id 180) retained from the IGP-134 USDai launch.
+///         launch limits on the USDai-USDC DEX (id 47) and USDai-USDC / USDC
+///         T2 vault (id 180), then remove Team Multisig auth retained from the
+///         IGP-134 USDai launch.
 contract PayloadIGP135 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 135;
 
@@ -59,7 +60,7 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
         // Action 9: Set dust limits for reUSD TYPE_4 vaults (170, 181)
         action9();
 
-        // Action 10: Remove Team MS auth on USDai-USDC DEX and T2 vault
+        // Action 10: USDai-USDC DEX + T2 vault launch limits, remove Team MS auth
         action10();
     }
 
@@ -874,19 +875,50 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
         }
     }
 
-    /// @notice Action 10: Remove Team Multisig auth on USDai-USDC DEX (id 47) and
-    ///         USDai-USDC / USDC T2 vault (id 180), retained from IGP-134 launch.
+    /// @notice Action 10: Raise the USDai-USDC market (DEX 47 + vault 180) from
+    ///         dust limits (IGP-134) to launch limits, then remove Team Multisig
+    ///         auth on both.
     function action10() internal isActionSkippable(10) {
-        DEX_FACTORY.setDexAuth(
-            getDexAddress(USDAI_USDC_DEX_ID),
-            TEAM_MULTISIG,
-            false
-        );
-        VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
-            getVaultAddress(VAULT_USDAI_USDC__USDC_ID),
-            TEAM_MULTISIG,
-            false
-        );
+        // DEX 47: USDai-USDC — smart-collateral token limits $5M each;
+        // remove Team MS auth
+        {
+            address USDAI_USDC_DEX = getDexAddress(USDAI_USDC_DEX_ID);
+            DexConfig memory DEX_USDAI_USDC = DexConfig({
+                dex: USDAI_USDC_DEX,
+                tokenA: USDAI_ADDRESS,
+                tokenB: USDC_ADDRESS,
+                smartCollateral: true,
+                smartDebt: false,
+                baseWithdrawalLimitInUSD: 5_000_000, // $5M
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
+            });
+            setDexLimits(DEX_USDAI_USDC);
+            DEX_FACTORY.setDexAuth(USDAI_USDC_DEX, TEAM_MULTISIG, false);
+        }
+
+        // Vault 180: USDai-USDC / USDC (TYPE_2) — borrow-side launch limits only;
+        // remove Team MS auth
+        {
+            address USDAI_USDC__USDC_VAULT = getVaultAddress(
+                VAULT_USDAI_USDC__USDC_ID
+            );
+            VaultConfig memory VAULT_USDAI_USDC__USDC = VaultConfig({
+                vault: USDAI_USDC__USDC_VAULT,
+                vaultType: VAULT_TYPE.TYPE_2,
+                supplyToken: address(0),
+                borrowToken: USDC_ADDRESS,
+                baseWithdrawalLimitInUSD: 0,
+                baseBorrowLimitInUSD: 5_000_000, // $5M
+                maxBorrowLimitInUSD: 10_000_000 // $10M
+            });
+            setVaultLimits(VAULT_USDAI_USDC__USDC);
+            VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
+                USDAI_USDC__USDC_VAULT,
+                TEAM_MULTISIG,
+                false
+            );
+        }
     }
 
     /**
@@ -943,7 +975,8 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
     }
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
-    // fetched: 2026-06-09T11:58:20.234Z, source: coingecko
-    function REUSD_USD_PRICE() public pure override returns (uint256) { return 1.08 * 1e2; }
+    // fetched: 2026-06-10T05:45:32.701Z, source: coingecko
+    function REUSD_USD_PRICE()  public pure override returns (uint256) { return 1.08 * 1e2; }
+    function STABLE_USD_PRICE() public pure override returns (uint256) { return 1 * 1e2; }
     // --- END AUTO-GENERATED PRICES ---
 }
