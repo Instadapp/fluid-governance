@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 import {IERC20} from "../common/interfaces/IERC20.sol";
+import {IFluidReserveContractV2} from "../common/interfaces/IFluidReserveContract.sol";
 
 /// @notice IGP134: Raise the USDai ecosystem from dust limits (IGP-133) to
 ///         launch limits (except vault 180, held at dust), and claim accrued
@@ -368,37 +369,35 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
     }
 
     /// @notice Action 4: Claim iETHv2 (Lite) stETH revenue to Team Multisig.
-    /// @dev Collects `liteStethRevenueAmount` (set by Team Multisig) of stETH
-    ///      revenue from iETHv2 into the Treasury, then forwards the Treasury's
-    ///      stETH balance minus a 0.1 stETH buffer to Team Multisig via the
-    ///      Treasury DSA `BASIC-A` connector. The buffer absorbs stETH's 1-2 wei
-    ///      rounding so the withdraw cannot revert on an off-by-a-few-wei amount.
+    /// @dev `collectRevenue` deposits the claimed stETH into the Fluid Reserve.
+    ///      This then forwards the Reserve's stETH balance minus a 0.1 stETH
+    ///      buffer directly to Team Multisig via `FLUID_RESERVE.withdrawFunds`.
+    ///      The buffer absorbs stETH's 1-2 wei rounding so the withdraw cannot
+    ///      revert on an off-by-a-few-wei amount.
     function action4() internal isActionSkippable(4) {
         uint256 stethAmount_ = PayloadIGP134(ADDRESS_THIS)
             .liteStethRevenueAmount();
         require(stethAmount_ != 0, "lite-revenue-amount-not-set");
 
+        // iETHv2 deposits the collected stETH revenue into the Fluid Reserve.
         IETHV2.collectRevenue(stethAmount_);
 
-        // Withdraw the Treasury's full stETH balance minus a 0.1 stETH buffer.
-        uint256 withdrawAmount_ = IERC20(stETH_ADDRESS).balanceOf(
-            address(TREASURY)
-        ) - 0.1 ether;
+        // Forward the Reserve's stETH balance (minus a 0.1 stETH buffer) to
+        // Team Multisig.
+        address[] memory tokens_ = new address[](1);
+        uint256[] memory amounts_ = new uint256[](1);
 
-        string[] memory targets_ = new string[](1);
-        bytes[] memory encodedSpells_ = new bytes[](1);
+        tokens_[0] = stETH_ADDRESS;
+        amounts_[0] =
+            IERC20(stETH_ADDRESS).balanceOf(address(FLUID_RESERVE)) -
+            0.1 ether;
 
-        targets_[0] = "BASIC-A";
-        encodedSpells_[0] = abi.encodeWithSignature(
-            "withdraw(address,uint256,address,uint256,uint256)",
-            stETH_ADDRESS,
-            withdrawAmount_,
+        IFluidReserveContractV2(address(FLUID_RESERVE)).withdrawFunds(
+            tokens_,
+            amounts_,
             TEAM_MULTISIG,
-            0,
-            0
+            "LITE STETH REVENUE CLAIM"
         );
-
-        TREASURY.cast(targets_, encodedSpells_, address(this));
     }
 
     /**

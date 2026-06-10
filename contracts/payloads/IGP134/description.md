@@ -42,7 +42,7 @@ Vault **174** (USDai / USDC, TYPE_1) is superseded by vault 180: limits restrict
 
 ### Action 4: Claim iETHv2 (Lite) stETH Revenue
 
-Collect accrued Lite revenue via `IETHV2.collectRevenue` into the Treasury and withdraw stETH to Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`). Amount is set by Team Multisig via `setLiteStethRevenueAmount()` (a zero amount reverts).
+Collect accrued Lite revenue via `IETHV2.collectRevenue` (stETH is deposited into the Fluid Reserve), then forward the Reserve's stETH balance minus a `0.1` stETH buffer to Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`) via `FLUID_RESERVE.withdrawFunds`. Amount is set by Team Multisig via `setLiteStethRevenueAmount()` (a zero amount reverts).
 
 ## Conclusion
 
