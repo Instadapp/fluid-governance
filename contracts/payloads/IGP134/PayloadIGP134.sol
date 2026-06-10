@@ -25,8 +25,8 @@ import {IFluidReserveContractV2} from "../common/interfaces/IFluidReserveContrac
 ///         Action 3 deprecates the T1 vault 174 with a full pause and removes
 ///         its Team Multisig auth.
 ///
-    ///         Action 4 sends 148 stETH of accrued iETHv2 (Lite) revenue from
-    ///         the Fluid Reserve to Team Multisig.
+///         Action 4 sends 148 stETH of accrued iETHv2 (Lite) revenue from
+///         the Fluid Reserve to Team Multisig.
 contract PayloadIGP134 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 134;
 
