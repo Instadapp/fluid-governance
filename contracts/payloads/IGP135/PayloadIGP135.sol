@@ -975,8 +975,10 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
     }
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
-    // fetched: 2026-06-11T08:09:08.925Z, source: coingecko
+    // fetched: 2026-06-11T08:39:31.500Z, source: coingecko
+    function BTC_USD_PRICE()    public pure override returns (uint256) { return 63_000 * 1e2; }
     function STABLE_USD_PRICE() public pure override returns (uint256) { return 1 * 1e2; }
     function REUSD_USD_PRICE()  public pure override returns (uint256) { return 1.08 * 1e2; }
+    function wstETH_USD_PRICE() public pure override returns (uint256) { return 2_050 * 1e2; }
     // --- END AUTO-GENERATED PRICES ---
 }
