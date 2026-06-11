@@ -3,26 +3,30 @@ pragma solidity ^0.8.21;
 pragma experimental ABIEncoderV2;
 
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
+import {IFluidReserveContractV2} from "../common/interfaces/IFluidReserveContract.sol";
 
 /// @notice IGP134: Raise the USDai ecosystem from dust limits (IGP-133) to
-///         launch limits, and claim accrued iETHv2 (Lite) stETH revenue to
-///         Team Multisig.
+///         launch limits (except vault 180, held at dust), and send 148 stETH
+///         of iETHv2 (Lite) revenue to Team Multisig.
 ///
-///         Action 1 raises only the Liquidity Layer supply / borrow limits on
-///         the three USDai DEXes (ids 46–48) and vaults 171–173, 175–179, and
-///         180 to their launch-scale targets, and removes Team Multisig auth on
-///         every market except DEX 47 and vault 180 (retained until a later
-///         IGP). Per-market config (collateral factor, liquidation threshold /
+///         Action 1 raises the Liquidity Layer supply / borrow limits on two
+///         USDai DEXes (ids 46 and 48) and vaults 171–173 and 175–179 to their
+///         launch-scale targets and removes Team Multisig auth on each.
+///         Per-market config (collateral factor, liquidation threshold /
 ///         max-limit / penalty, DEX max supply shares, range, and fee) is
-///         intentionally NOT touched here: it is set directly by Team Multisig
-///         on the markets where it retains auth. DEX and vault ids are verified
+///         intentionally NOT touched here. DEX and vault ids are verified
 ///         against the live Fluid factories on mainnet.
 ///
-///         Action 2 deprecates the wrongly deployed T1 vault 174 with a full
-///         pause and removes its Team Multisig auth.
+///         Action 2 holds the USDai-USDC market (DEX 47 + vault 180) until it
+///         launches in a later IGP: vault 180 gets borrow-side dust limits only,
+///         and Team Multisig auth is explicitly retained on both DEX 47 and
+///         vault 180 (DEX 47 launch limits are deferred to the vault's launch).
 ///
-///         Action 3 collects a Team-Multisig-configured amount of iETHv2 (Lite)
-///         stETH revenue into the Treasury and forwards it to Team Multisig.
+///         Action 3 deprecates the T1 vault 174 with a full pause and removes
+///         its Team Multisig auth.
+///
+///         Action 4 sends 148 stETH of accrued iETHv2 (Lite) revenue from
+///         the Fluid Reserve to Team Multisig.
 contract PayloadIGP134 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 134;
 
@@ -35,7 +39,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
     uint256 public constant VAULT_SUSDAI_USDC_ID = 171; // T1: sUSDai / USDC
     uint256 public constant VAULT_SUSDAI_USDT_ID = 172; // T1: sUSDai / USDT
     uint256 public constant VAULT_SUSDAI__USDC_USDT_ID = 173; // T3: sUSDai / USDC-USDT
-    uint256 public constant VAULT_USDAI_USDC_ID = 174; // T1: USDai / USDC (wrongly deployed — deprecated)
+    uint256 public constant VAULT_USDAI_USDC_ID = 174; // T1: USDai / USDC (deprecated)
     uint256 public constant VAULT_SUSDAI_USDC__USDC_USDT_ID = 175; // T4: sUSDai-USDC / USDC-USDT
     uint256 public constant VAULT_SUSDAI_USDT__USDC_USDT_ID = 176; // T4: sUSDai-USDT / USDC-USDT
     uint256 public constant VAULT_SUSDAI_USDT__USDT_ID = 177; // T2: sUSDai-USDT / USDT
@@ -44,34 +48,24 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
     uint256 public constant VAULT_USDAI_USDC__USDC_ID = 180; // T2: USDai-USDC / USDC
 
     // Smart-debt limits on the USDC-USDT DEX (id 2) are denominated in DEX
-    // shares, approximated as USD / 2 (~$2 per share), matching the convention
-    // used for these vaults in IGP-133.
-
-    // --- iETHv2 (Lite) stETH revenue claim (Action 3) ---
-    // stETH wei to collect from iETHv2 and forward to Team Multisig. Set by
-    // Team Multisig via setLiteStethRevenueAmount() before execution; a zero
-    // value makes Action 3 revert so it cannot run unconfigured.
-    uint256 public liteStethRevenueAmount;
-
-    function setLiteStethRevenueAmount(
-        uint256 liteStethRevenueAmount_
-    ) external {
-        require(msg.sender == TEAM_MULTISIG, "not-team-multisig");
-        liteStethRevenueAmount = liteStethRevenueAmount_;
-    }
+    // shares (~$2.20/share atm).
 
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Raise USDai ecosystem limits to launch scale (DEXes 46–48,
-        // vaults 171–173, 175–179, 180)
+        // Action 1: Raise USDai ecosystem to launch limits (DEXes 46 and 48,
+        // vaults 171-173, 175-179), removing Team MS auth on each
         action1();
 
-        // Action 2: Deprecate wrongly deployed vault 174
+        // Action 2: Hold the USDai-USDC market (DEX 47 + vault 180) - vault 180
+        // dust limits, keep Team MS auth on both, defer their launch
         action2();
 
-        // Action 3: Claim iETHv2 (Lite) stETH revenue to Team Multisig
+        // Action 3: Deprecate vault 174
         action3();
+
+        // Action 4: Send 148 stETH Lite revenue from the Reserve to Team Multisig
+        action4();
     }
 
     function verifyProposal() public view override {}
@@ -86,9 +80,9 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
      * |__________________________________
      */
 
-    /// @notice Action 1: USDai ecosystem launch limits (DEXes 46–48, vaults
-    ///         171–173, 175–179, 180) and remove Team Multisig auth except on
-    ///         DEX 47 and vault 180.
+    /// @notice Action 1: USDai ecosystem launch limits (DEXes 46 and 48, vaults
+    ///         171–173 and 175–179) and remove Team Multisig auth on each.
+    ///         The USDai-USDC DEX 47 and vault 180 are handled in Action 2.
     function action1() internal isActionSkippable(1) {
         address USDC_USDT_DEX = getDexAddress(2);
 
@@ -109,21 +103,9 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
             DEX_FACTORY.setDexAuth(SUSDAI_USDC_DEX, TEAM_MULTISIG, false);
         }
 
-        // DEX 47: USDai-USDC — smart-collateral token limits $5M each
-        {
-            address USDAI_USDC_DEX = getDexAddress(USDAI_USDC_DEX_ID);
-            DexConfig memory DEX_USDAI_USDC = DexConfig({
-                dex: USDAI_USDC_DEX,
-                tokenA: USDAI_ADDRESS,
-                tokenB: USDC_ADDRESS,
-                smartCollateral: true,
-                smartDebt: false,
-                baseWithdrawalLimitInUSD: 5_000_000, // $5M
-                baseBorrowLimitInUSD: 0,
-                maxBorrowLimitInUSD: 0
-            });
-            setDexLimits(DEX_USDAI_USDC);
-        }
+        // DEX 47 (USDai-USDC) is intentionally skipped here: it is held back
+        // and launched together with vault 180 in a later IGP. Action 2 keeps
+        // Team MS auth on it; its launch limits are deferred to that IGP.
 
         // DEX 48: sUSDai-USDT — smart-collateral token limits $10M each
         {
@@ -175,7 +157,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         }
 
         // Vault 173: sUSDai / USDC-USDT (TYPE_3) — $8M sUSDai supply;
-        // USDC-USDT DEX (id 2) borrow shares ~$8M / ~$15M
+        // USDC-USDT DEX (id 2) borrow shares ~$8M / ~$15M (3.6M / 6.75M shares)
         {
             address SUSDAI__USDC_USDT_VAULT = getVaultAddress(
                 VAULT_SUSDAI__USDC_USDT_ID
@@ -197,8 +179,8 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
                     protocol: SUSDAI__USDC_USDT_VAULT,
                     expandPercent: 30 * 1e2, // 30%
                     expandDuration: 6 hours,
-                    baseBorrowLimit: 4_000_000 * 1e18, // ~$8M shares
-                    maxBorrowLimit: 7_500_000 * 1e18 // ~$15M shares
+                    baseBorrowLimit: 3_600_000 * 1e18, // ~$8M at ~$2.20/share
+                    maxBorrowLimit: 6_750_000 * 1e18 // ~$15M at ~$2.20/share
                 });
             setDexBorrowProtocolLimitsInShares(config_);
             VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
@@ -209,7 +191,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         }
 
         // Vault 175: sUSDai-USDC / USDC-USDT (TYPE_4) — collateral at DEX 46;
-        // USDC-USDT DEX (id 2) borrow shares ~$8M / ~$20M
+        // USDC-USDT DEX (id 2) borrow shares ~$8M / ~$20M (3.6M / 9M shares)
         {
             address SUSDAI_USDC__USDC_USDT_VAULT = getVaultAddress(
                 VAULT_SUSDAI_USDC__USDC_USDT_ID
@@ -221,8 +203,8 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
                     protocol: SUSDAI_USDC__USDC_USDT_VAULT,
                     expandPercent: 30 * 1e2, // 30%
                     expandDuration: 6 hours,
-                    baseBorrowLimit: 4_000_000 * 1e18, // ~$8M shares
-                    maxBorrowLimit: 10_000_000 * 1e18 // ~$20M shares
+                    baseBorrowLimit: 3_600_000 * 1e18, // ~$8M at ~$2.20/share
+                    maxBorrowLimit: 9_000_000 * 1e18 // ~$20M at ~$2.20/share
                 });
             setDexBorrowProtocolLimitsInShares(config_);
             VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
@@ -233,7 +215,7 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         }
 
         // Vault 176: sUSDai-USDT / USDC-USDT (TYPE_4) — collateral at DEX 48;
-        // USDC-USDT DEX (id 2) borrow shares ~$8M / ~$20M
+        // USDC-USDT DEX (id 2) borrow shares ~$8M / ~$20M (3.6M / 9M shares)
         {
             address SUSDAI_USDT__USDC_USDT_VAULT = getVaultAddress(
                 VAULT_SUSDAI_USDT__USDC_USDT_ID
@@ -245,8 +227,8 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
                     protocol: SUSDAI_USDT__USDC_USDT_VAULT,
                     expandPercent: 30 * 1e2, // 30%
                     expandDuration: 6 hours,
-                    baseBorrowLimit: 4_000_000 * 1e18, // ~$8M shares
-                    maxBorrowLimit: 10_000_000 * 1e18 // ~$20M shares
+                    baseBorrowLimit: 3_600_000 * 1e18, // ~$8M at ~$2.20/share
+                    maxBorrowLimit: 9_000_000 * 1e18 // ~$20M at ~$2.20/share
                 });
             setDexBorrowProtocolLimitsInShares(config_);
             VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
@@ -317,29 +299,45 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
             setVaultLimits(VAULT_SUSDAI_GHO);
             VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(SUSDAI_GHO_VAULT, TEAM_MULTISIG, false);
         }
-
-        // Vault 180: USDai-USDC / USDC (TYPE_2) — borrow-side launch limits only;
-        // Team MS auth retained on this vault and DEX 47 until a later IGP
-        {
-            address USDAI_USDC__USDC_VAULT = getVaultAddress(
-                VAULT_USDAI_USDC__USDC_ID
-            );
-            VaultConfig memory VAULT_USDAI_USDC__USDC = VaultConfig({
-                vault: USDAI_USDC__USDC_VAULT,
-                vaultType: VAULT_TYPE.TYPE_2,
-                supplyToken: address(0),
-                borrowToken: USDC_ADDRESS,
-                baseWithdrawalLimitInUSD: 0,
-                baseBorrowLimitInUSD: 5_000_000, // $5M
-                maxBorrowLimitInUSD: 10_000_000 // $10M
-            });
-            setVaultLimits(VAULT_USDAI_USDC__USDC);
-        }
     }
 
-    /// @notice Action 2: Deprecate wrongly deployed T1 vault 174 (USDai / USDC).
-    ///         Removes dust limits, applies a full pause, and removes Team MS auth.
+    /// @notice Action 2: Hold the USDai-USDC market (DEX 47 + vault 180) until it
+    ///         launches in a later IGP. Vault 180 (USDai-USDC / USDC, TYPE_2)
+    ///         gets borrow-side dust limits ($7k / $9k) only. Team Multisig auth
+    ///         is explicitly retained (set to true) on both DEX 47 and vault 180.
+    ///         DEX 47 launch limits are deferred to the vault's launch, so no
+    ///         DEX 47 limits are changed here.
     function action2() internal isActionSkippable(2) {
+        // DEX 47 (USDai-USDC): keep Team MS auth; launch limits are deferred to
+        // the IGP that launches vault 180, so no DEX limits are set here.
+        address USDAI_USDC_DEX = getDexAddress(USDAI_USDC_DEX_ID);
+        DEX_FACTORY.setDexAuth(USDAI_USDC_DEX, TEAM_MULTISIG, true);
+
+        // Vault 180 (USDai-USDC / USDC, TYPE_2): borrow-side dust limits only,
+        // keep Team MS auth.
+        address USDAI_USDC__USDC_VAULT = getVaultAddress(
+            VAULT_USDAI_USDC__USDC_ID
+        );
+        VaultConfig memory VAULT_USDAI_USDC__USDC = VaultConfig({
+            vault: USDAI_USDC__USDC_VAULT,
+            vaultType: VAULT_TYPE.TYPE_2,
+            supplyToken: address(0),
+            borrowToken: USDC_ADDRESS,
+            baseWithdrawalLimitInUSD: 0,
+            baseBorrowLimitInUSD: 7_000, // $7k
+            maxBorrowLimitInUSD: 9_000 // $9k
+        });
+        setVaultLimits(VAULT_USDAI_USDC__USDC);
+        VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
+            USDAI_USDC__USDC_VAULT,
+            TEAM_MULTISIG,
+            true
+        );
+    }
+
+    /// @notice Action 3: Deprecate T1 vault 174 (USDai / USDC).
+    ///         Removes dust limits, applies a full pause, and removes Team MS auth.
+    function action3() internal isActionSkippable(3) {
         address USDAI_USDC_VAULT = getVaultAddress(VAULT_USDAI_USDC_ID);
 
         setSupplyProtocolLimitsPaused(USDAI_USDC_VAULT, USDAI_ADDRESS);
@@ -356,31 +354,24 @@ contract PayloadIGP134 is PayloadIGPPriceHelpers {
         VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(USDAI_USDC_VAULT, TEAM_MULTISIG, false);
     }
 
-    /// @notice Action 3: Claim iETHv2 (Lite) stETH revenue to Team Multisig.
-    /// @dev Collects `liteStethRevenueAmount` (set by Team Multisig) of stETH
-    ///      revenue from iETHv2 into the Treasury, then forwards it to Team
-    ///      Multisig via the Treasury DSA `BASIC-A` connector.
-    function action3() internal isActionSkippable(3) {
-        uint256 stethAmount_ = PayloadIGP134(ADDRESS_THIS)
-            .liteStethRevenueAmount();
-        require(stethAmount_ != 0, "lite-revenue-amount-not-set");
+    /// @notice Action 4: Send 148 stETH of iETHv2 (Lite) revenue to Team Multisig.
+    /// @dev Sends 148 stETH of already-accrued Lite revenue from the Fluid
+    ///      Reserve to Team Multisig via `FLUID_RESERVE.withdrawFunds`. The
+    ///      revenue is collected into the Reserve separately by Team Multisig,
+    ///      so no `collectRevenue` is performed here.
+    function action4() internal isActionSkippable(4) {
+        address[] memory tokens_ = new address[](1);
+        uint256[] memory amounts_ = new uint256[](1);
 
-        IETHV2.collectRevenue(stethAmount_);
+        tokens_[0] = stETH_ADDRESS;
+        amounts_[0] = 148 ether; // 148 stETH
 
-        string[] memory targets_ = new string[](1);
-        bytes[] memory encodedSpells_ = new bytes[](1);
-
-        targets_[0] = "BASIC-A";
-        encodedSpells_[0] = abi.encodeWithSignature(
-            "withdraw(address,uint256,address,uint256,uint256)",
-            stETH_ADDRESS,
-            stethAmount_,
+        IFluidReserveContractV2(address(FLUID_RESERVE)).withdrawFunds(
+            tokens_,
+            amounts_,
             TEAM_MULTISIG,
-            0,
-            0
+            "LITE STETH REVENUE CLAIM"
         );
-
-        TREASURY.cast(targets_, encodedSpells_, address(this));
     }
 
     /**
