@@ -57,6 +57,29 @@ abstract contract PayloadIGPPriceHelpers is PayloadIGPMain {
             revert("both usd and amount are not zero");
         }
 
+        // Raw-token path (e.g. `_borrowConfig` → `getRawAmount(token, amt, 0, false)`):
+        // only normalise by the live Liquidity exchange price. USD getters are
+        // not consulted and need no payload override.
+        if (amount > 0) {
+            uint256 exchangePriceAndConfig_ = LIQUIDITY.readFromStorage(
+                LiquiditySlotsLink.calculateMappingStorageSlot(
+                    LiquiditySlotsLink.LIQUIDITY_EXCHANGE_PRICES_MAPPING_SLOT,
+                    token
+                )
+            );
+
+            (
+                uint256 supplyExchangePrice,
+                uint256 borrowExchangePrice
+            ) = LiquidityCalcs.calcExchangePrices(exchangePriceAndConfig_);
+
+            uint256 exchangePrice = isSupply
+                ? supplyExchangePrice
+                : borrowExchangePrice;
+
+            return (amount * 1e12) / exchangePrice;
+        }
+
         uint256 usdPrice;
         uint256 decimals;
 

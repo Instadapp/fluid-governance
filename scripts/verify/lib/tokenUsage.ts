@@ -14,7 +14,8 @@
  *   2. Collect every `*_ADDRESS` identifier → `allReferences` (debug).
  *   3. Collect tokens in limit-config struct fields that call `getRawAmount`
  *      inside helpers (`supplyToken`, `borrowToken`, `tokenA`, `tokenB`) →
- *      priced set.
+ *      priced set. Positional `getRawAmount(token, amount, 0, …)` / `_borrowConfig`
+ *      raw-amount calls are intentionally excluded (exchange-price only).
  *   4. Map priced + exempt constants to registry entries → `used`.
  *   5. Unknown `*_ADDRESS` identifiers outside the registry → `unknown`.
  */
@@ -44,16 +45,6 @@ export const NON_PRICED_EXEMPT = new Set<string>([
 /** Struct fields on configs that helpers pass into `getRawAmount`. */
 const PRICED_CONFIG_FIELD =
   /(?:supplyToken|borrowToken|tokenA|tokenB):\s*([A-Za-z_][A-Za-z0-9_]*_ADDRESS)\b/g;
-
-/**
- * Tokens passed positionally into `getRawAmount` / `_borrowConfig`. The
- * dispatch in pricehelpers.sol calls the per-token getter even on the
- * `amount > 0` path, so these overrides must exist in the payload.
- */
-const PRICED_POSITIONAL_ARG = [
-  /\bgetRawAmount\s*\(\s*([A-Za-z_][A-Za-z0-9_]*_ADDRESS)\b/g,
-  /\b_borrowConfig\s*\(\s*[^,()]+,\s*([A-Za-z_][A-Za-z0-9_]*_ADDRESS)\b/g,
-];
 
 export interface TokenUsageResult {
   /** Tokens that need price overrides in the payload (via `getRawAmount`). */
@@ -113,12 +104,10 @@ export function detectTokensUsed(payloadPath: string): TokenUsageResult {
 export function detectPricedAddressConstants(stripped: string): Set<string> {
   const priced = new Set<string>();
   let match: RegExpExecArray | null;
-  for (const pattern of [PRICED_CONFIG_FIELD, ...PRICED_POSITIONAL_ARG]) {
-    pattern.lastIndex = 0;
-    while ((match = pattern.exec(stripped)) !== null) {
-      const ident = match[1]!;
-      if (ident !== "address") priced.add(ident);
-    }
+  PRICED_CONFIG_FIELD.lastIndex = 0;
+  while ((match = PRICED_CONFIG_FIELD.exec(stripped)) !== null) {
+    const ident = match[1]!;
+    if (ident !== "address") priced.add(ident);
   }
   return priced;
 }
