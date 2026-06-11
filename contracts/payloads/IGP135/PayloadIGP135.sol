@@ -754,8 +754,8 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
 
     /// @notice Action 7: Restrict the fsUSDs fToken's base withdrawal limit on the
     ///         Liquidity Layer to total supply + 10%.
-    /// @dev Sets a fixed base withdrawal limit of `16,527.5` sUSDs (the `15,025`
-    ///      sUSDs supply at preparation time * 1.1). The existing mode and
+    /// @dev Sets a fixed base withdrawal limit of `5,516.9` sUSDs (the `5,015.3`
+    ///      sUSDs fsUSDs supply at preparation time * 1.1). The existing mode and
     ///      expansion (percent / duration) are read from storage and preserved,
     ///      so only the base withdrawal limit is tightened.
     function action7() internal isActionSkippable(7) {
@@ -779,7 +779,7 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
                 LiquiditySlotsLink.BITS_USER_SUPPLY_EXPAND_PERCENT) & X14,
             expandDuration: (userSupplyData_ >>
                 LiquiditySlotsLink.BITS_USER_SUPPLY_EXPAND_DURATION) & X24,
-            baseWithdrawalLimit: 16527.5 * 1e18 // 15,025 sUSDs * 1.1 = 16,527.5 sUSDs
+            baseWithdrawalLimit: 5516.9 * 1e18 // 5,015.3 sUSDs * 1.1 = 5,516.9 sUSDs
         });
 
         LIQUIDITY.updateUserSupplyConfigs(configs_);
@@ -830,7 +830,7 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
                 })
             );
 
-            VAULT_FACTORY.setVaultAuth(
+            VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
                 REUSD_USDT__USDC_USDT_VAULT,
                 TEAM_MULTISIG,
                 true
@@ -867,7 +867,7 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
                 })
             );
 
-            VAULT_FACTORY.setVaultAuth(
+            VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
                 REUSD__GHO_USDC_VAULT,
                 TEAM_MULTISIG,
                 true
@@ -975,8 +975,8 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
     }
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
-    // fetched: 2026-06-10T05:45:32.701Z, source: coingecko
-    function REUSD_USD_PRICE()  public pure override returns (uint256) { return 1.08 * 1e2; }
+    // fetched: 2026-06-11T08:09:08.925Z, source: coingecko
     function STABLE_USD_PRICE() public pure override returns (uint256) { return 1 * 1e2; }
+    function REUSD_USD_PRICE()  public pure override returns (uint256) { return 1.08 * 1e2; }
     // --- END AUTO-GENERATED PRICES ---
 }
