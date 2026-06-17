@@ -16,7 +16,8 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         vault (id 170) and reUSD / GHO-USDC vault (id 181), and removal of
 ///         launch limits on the USDai-USDC DEX (id 47) and USDai-USDC / USDC
 ///         T2 vault (id 180), then remove Team Multisig auth retained from the
-///         IGP-134 USDai launch.
+///         IGP-134 USDai launch, and reduction of the USDC-USDT DEX (id 2) max
+///         borrow shares to 20M (from 50M).
 contract PayloadIGP135 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 135;
 
@@ -62,6 +63,9 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
 
         // Action 10: USDai-USDC DEX + T2 vault launch limits, remove Team MS auth
         action10();
+
+        // Action 11: Reduce USDC-USDT DEX (id 2) max borrow shares to 20M
+        action11();
     }
 
     function verifyProposal() public view override {}
@@ -919,6 +923,14 @@ contract PayloadIGP135 is PayloadIGPPriceHelpers {
                 false
             );
         }
+    }
+
+    /// @notice Action 11: Reduce the USDC-USDT DEX (id 2) max borrow shares to
+    ///         20M (from 50M) as overall stable liquidity has thinned.
+    function action11() internal isActionSkippable(11) {
+        IFluidDex(getDexAddress(USDC_USDT_DEX_ID)).updateMaxBorrowShares(
+            20_000_000 * 1e18 // 20M shares (from 50M)
+        );
     }
 
     /**
