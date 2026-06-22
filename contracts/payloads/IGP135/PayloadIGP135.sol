@@ -17,7 +17,7 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         launch limits on the USDai-USDC DEX (id 47) and USDai-USDC / USDC
 ///         T2 vault (id 180), then remove Team Multisig auth retained from the
 ///         IGP-134 USDai launch, and reduction of the USDC-USDT DEX (id 2) max
-///         borrow shares to 20M (from 50M).
+///         borrow shares to 20M (from 50M). 
 contract PayloadIGP135 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 135;
 
