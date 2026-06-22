@@ -15,6 +15,7 @@ Every `*_ADDRESS` constant that flows through `getRawAmount` (via `setVaultLimit
 **Not every `*_ADDRESS` in a payload needs a price override.** `prepare-prices.ts` only emits overrides for tokens that appear in limit-config struct fields (`supplyToken`, `borrowToken`, `tokenA`, `tokenB`). It ignores:
 
 - Raw `LIQUIDITY.updateUserSupplyConfigs` / `updateUserBorrowConfigs` with literal limits (e.g. `token: wstUSR_ADDRESS`, `baseWithdrawalLimit: 24 * 1e18`)
+- `_borrowConfig` / `getRawAmount(token, amount, 0, …)` — pre-computed raw token amounts; only the live exchange price is applied, no USD getter
 - `setBorrowProtocolLimitsPaused` / `_liquidityBorrowConfig` (fixed ceilings, no `getRawAmount`)
 - Treasury `BASIC-A` withdraws (`FLUID_ADDRESS`, etc.)
 
