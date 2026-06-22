@@ -9,8 +9,8 @@ import {IFluidDex, IFluidAdminDex} from "../common/interfaces/IFluidDex.sol";
 import {LiquiditySlotsLink} from "../libraries/liquiditySlotsLink.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
-/// @notice IGP135: Legacy and sUSDS supply withdrawal tightening, risk-tightening
-///         of borrow limits across 66 less-trusted Ethereum vaults, capping the
+/// @notice IGP135: Legacy and sUSDS supply withdrawal tightening, tightening
+///         of borrow limits across 54 Ethereum vaults, capping the
 ///         fsUSDs fToken base withdrawal limit to total supply + 10%, max supply
 ///         share caps on USR/RLP DEXes, dust limits for reUSD-USDT / USDC-USDT
 ///         vault (id 170) and reUSD / GHO-USDC vault (id 181), and removal of
