@@ -46,6 +46,21 @@ export const NON_PRICED_EXEMPT = new Set<string>([
 const PRICED_CONFIG_FIELD =
   /(?:supplyToken|borrowToken|tokenA|tokenB):\s*([A-Za-z_][A-Za-z0-9_]*_ADDRESS)\b/g;
 
+/**
+ * Positional token argument of a USD-denominated limit helper, e.g.
+ * `_borrowConfigUSD(vaultId, TOKEN_ADDRESS, expandPct, baseUSD, maxUSD)`.
+ *
+ * Such helpers route the token through `getRawAmount`'s USD path
+ * (`getRawAmount(token, 0, usd, ...)`), so the token needs a price override
+ * even though it is passed positionally rather than in a named struct field.
+ * The `USD` suffix on the helper name is the signal: raw-amount helpers (e.g.
+ * `_borrowConfig`, which calls `getRawAmount(token, amount, 0, ...)`) do NOT
+ * end in `USD` and are intentionally skipped — those carry pre-converted token
+ * amounts and only need the live exchange price, not a USD getter.
+ */
+const PRICED_USD_HELPER_ARG =
+  /\b_[A-Za-z0-9_]*USD\s*\(\s*[^(),]+,\s*([A-Za-z_][A-Za-z0-9_]*_ADDRESS)\b/g;
+
 export interface TokenUsageResult {
   /** Tokens that need price overrides in the payload (via `getRawAmount`). */
   used: TokenEntry[];
@@ -103,11 +118,13 @@ export function detectTokensUsed(payloadPath: string): TokenUsageResult {
  */
 export function detectPricedAddressConstants(stripped: string): Set<string> {
   const priced = new Set<string>();
-  let match: RegExpExecArray | null;
-  PRICED_CONFIG_FIELD.lastIndex = 0;
-  while ((match = PRICED_CONFIG_FIELD.exec(stripped)) !== null) {
-    const ident = match[1]!;
-    if (ident !== "address") priced.add(ident);
+  for (const re of [PRICED_CONFIG_FIELD, PRICED_USD_HELPER_ARG]) {
+    let match: RegExpExecArray | null;
+    re.lastIndex = 0;
+    while ((match = re.exec(stripped)) !== null) {
+      const ident = match[1]!;
+      if (ident !== "address") priced.add(ident);
+    }
   }
   return priced;
 }

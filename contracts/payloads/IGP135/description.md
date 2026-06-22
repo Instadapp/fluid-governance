@@ -24,14 +24,14 @@ Sets base withdrawal limits on legacy vaults 1–10 to total supply + ~5%, using
 
 | Vault | Supply token | Base withdrawal limit (raw) |
 | --- | --- | --- |
-| 1 | ETH | `628187e12` |
-| 2 | ETH | `945974e12` |
-| 3 | wstETH | `646899e12` |
-| 4 | wstETH | `544134e12` |
-| 5 | wstETH | `549870e12` |
-| 6 | weETH | `695132095e12` |
-| 7 | sUSDe | `3298946018e12` |
-| 8 | sUSDe | `413657754e12` |
+| 1 | ETH | `683849e12` |
+| 2 | ETH | `1030056e12` |
+| 3 | wstETH | `672601e12` |
+| 4 | wstETH | `562376e12` |
+| 5 | wstETH | `568754e12` |
+| 6 | weETH | `695062874e12` |
+| 7 | sUSDe | `3298946017e12` |
+| 8 | sUSDe | `413657753e12` |
 | 9 | weETH | `240487e12` |
 | 10 | weETH | `213728e12` |
 
@@ -39,8 +39,8 @@ Sets base withdrawal limits on legacy vaults 1–10 to total supply + ~5%, using
 
 | Vault | Supply token | Base withdrawal limit (raw) |
 | --- | --- | --- |
-| 58 | sUSDs | `650e18` |
-| 85 | wstETH | `9372630468e6` |
+| 58 | sUSDs | `649e18` |
+| 85 | wstETH | `9372872359e6` |
 
 ### Action 3: Tighten Liquidity Layer Borrow Limits (54 Vaults)
 
@@ -60,7 +60,7 @@ Sets `DexBorrowProtocolConfigInShares` (expand window 3h) for vaults **61, 125, 
 
 ### Action 7: Cap fsUSDs Base Withdrawal Limit
 
-Restricts the fsUSDs fToken's base withdrawal limit on the Liquidity Layer to total supply + 10%. Sets a fixed base withdrawal limit of **5,516.9 sUSDs** (the `5,015.3` sUSDs fsUSDs supply at preparation time × 1.1). The existing mode and expansion (percent / duration) are read from storage and preserved, so only the base withdrawal limit is tightened.
+Restricts the fsUSDs fToken's base withdrawal limit on the Liquidity Layer to total supply + 10%. Sets a fixed base withdrawal limit of **5,516.87 sUSDs** (the `5,015.34` sUSDs fsUSDs supply at preparation time × 1.1). The existing mode and expansion (percent / duration) are read from storage and preserved, so only the base withdrawal limit is tightened.
 
 ### Action 8: Set USR and RLP DEX Max Supply Shares to 0
 
