@@ -27,6 +27,10 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         nonce. It also re-points the sUSDai-USDC (DEX 46) and sUSDai-USDT
 ///         (DEX 48) DEX center prices to the same capped rate (DF nonce 258).
 ///         Max operate-rate delta vs the current oracles is < 0.01%.
+///
+///         Action 3 rebalances the PST T4 vault (169) supply-side drift from the
+///         Reserve: approve PST + USDC, allow-list the Timelock as rebalancer,
+///         run a supply-only `rebalanceDexVaults` (borrow skipped), then revoke.
 contract PayloadIGP136 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 136;
 
@@ -74,6 +78,9 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
 
         // Action 2: Migrate the 8 sUSDai vault oracles to the new capped-rate oracles.
         action2();
+
+        // Action 3: Rebalance the PST T4 vault (169) supply-side drift from the Reserve.
+        action3();
     }
 
     function verifyProposal() public view override {}
@@ -118,7 +125,8 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
         amounts_[0] = IERC20(stETH_ADDRESS).balanceOf(reserve_) - 0.1 ether;
 
         tokens_[1] = USDC_ADDRESS;
-        amounts_[1] = IERC20(USDC_ADDRESS).balanceOf(reserve_) - 10;
+        // Retain 3,400 USDC for the Action 3 rebalance; forward the rest.
+        amounts_[1] = IERC20(USDC_ADDRESS).balanceOf(reserve_) - 3_400 * 1e6;
 
         tokens_[2] = USDT_ADDRESS;
         amounts_[2] = IERC20(USDT_ADDRESS).balanceOf(reserve_) - 10;
@@ -198,6 +206,70 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
         // Vault 176 (T4): DexSmartDebtPegOracle_T4_SUSDAI-USDT_USDC-USDT
         IFluidVault(getVaultAddress(VAULT_SUSDAI_USDT__USDC_USDT_ID))
             .updateOracle(266);
+    }
+
+    /// @notice Action 3: Rebalance the PST T4 vault (169) supply-side drift from
+    ///         the Reserve. Borrow side is skipped (debt MinMax = 0); the Reserve
+    ///         must hold the PST + USDC at execution.
+    function action3() internal isActionSkippable(3) {
+        address vault_ = getVaultAddress(169);
+
+        // Approve the vault to pull PST + USDC from the Reserve.
+        {
+            address[] memory protocols_ = new address[](2);
+            address[] memory tokens_ = new address[](2);
+            uint256[] memory amounts_ = new uint256[](2);
+
+            protocols_[0] = vault_;
+            tokens_[0] = PST_ADDRESS;
+            amounts_[0] = 2_400 * 1e6;
+
+            protocols_[1] = vault_;
+            tokens_[1] = USDC_ADDRESS;
+            amounts_[1] = 3_400 * 1e6;
+
+            FLUID_RESERVE.approve(protocols_, tokens_, amounts_);
+        }
+
+        // Allow-list the Timelock as rebalancer, run the supply-only rebalance,
+        // then remove it.
+        FLUID_RESERVE.updateRebalancer(address(TIMELOCK), true);
+        {
+            address[] memory protocols_ = new address[](1);
+            uint256[] memory values_ = new uint256[](1);
+            int256[] memory colToken0MinMax_ = new int256[](1);
+            int256[] memory colToken1MinMax_ = new int256[](1);
+            int256[] memory debtToken0MinMax_ = new int256[](1);
+            int256[] memory debtToken1MinMax_ = new int256[](1);
+
+            protocols_[0] = vault_;
+            colToken0MinMax_[0] = 1e24; // PST deposit cap
+            colToken1MinMax_[0] = 1e24; // USDC deposit cap
+
+            FLUID_RESERVE.rebalanceDexVaults(
+                protocols_,
+                values_,
+                colToken0MinMax_,
+                colToken1MinMax_,
+                debtToken0MinMax_,
+                debtToken1MinMax_
+            );
+        }
+        FLUID_RESERVE.updateRebalancer(address(TIMELOCK), false);
+
+        // Revoke the Reserve's PST + USDC allowance for the vault.
+        {
+            address[] memory protocols_ = new address[](2);
+            address[] memory tokens_ = new address[](2);
+
+            protocols_[0] = vault_;
+            tokens_[0] = PST_ADDRESS;
+
+            protocols_[1] = vault_;
+            tokens_[1] = USDC_ADDRESS;
+
+            FLUID_RESERVE.revoke(protocols_, tokens_);
+        }
     }
 
     /**

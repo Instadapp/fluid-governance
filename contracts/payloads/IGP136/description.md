@@ -2,10 +2,11 @@
 
 ## Summary
 
-This proposal performs two Ethereum actions:
+This proposal performs three Ethereum actions:
 
 1. Collects accrued protocol revenue into the Fluid Reserve Contract and forwards it to Team Multisig. Specifically, it collects the **iETHv2 (Fluid Lite ETH) stETH revenue** and the **Liquidity Layer revenue for every token currently accruing more than $5k of uncollected revenue** (USDC, USDT, ETH, GHO, weETH), then withdraws the swept balances from the Reserve to Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`).
 2. Migrates the **8 live sUSDai vault oracles** (vaults 171–173, 175–179) from the raw exchange-rate contract to newly deployed oracles referencing **CappedRateChainlink_SUSDAI** (`0xC5D27C5d356479b681328351F1583c63051E76a0`, DF nonce 258), and re-points the **sUSDai-USDC (DEX 46)** and **sUSDai-USDT (DEX 48)** DEX center prices to the same capped rate (DF nonce 258).
+3. Rebalances the supply-side drift on the **PST T4 vault** (`169`, smart col `Dex_PST_USDC` / smart debt `Dex_USDC_USDT`, `0x04F461756D3799Bfa05f1a367c41FaBa09743791`) from the Reserve: approve PST + USDC, run a supply-only `rebalanceDexVaults`, then revoke the allowance.
 
 ## Code Changes
 
@@ -18,7 +19,7 @@ This proposal performs two Ethereum actions:
   - `ETH` — ~$36.5k
   - `GHO` — ~$8.8k
   - `weETH` — ~$5.4k
-- **Forward**: `IFluidReserveContractV2.withdrawFunds` on the Reserve (`0x264786EF916af64a1DB19F513F24a3681734ce92`) — nearly full balance per token minus operational dust (`-10` for 6-decimal tokens, `-0.1 ether` for 18-decimal tokens and native ETH) for `stETH, USDC, USDT, ETH, GHO, weETH`.
+- **Forward**: `IFluidReserveContractV2.withdrawFunds` on the Reserve (`0x264786EF916af64a1DB19F513F24a3681734ce92`) — nearly full balance per token minus operational dust (`-10` for 6-decimal tokens, `-0.1 ether` for 18-decimal tokens and native ETH) for `stETH, USDT, ETH, GHO, weETH`. **USDC retains `3,400` in the Reserve** (instead of dust) to self-fund the Action 3 rebalance's USDC leg; the remainder is forwarded.
 - **Recipient**: Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`).
 - **Reason tag**: `"REVENUE COLLECTION"`.
 
@@ -48,6 +49,26 @@ It also re-points two DEX center prices from the current center-price contract (
 
 DEX 47 (USDai-USDC) does not track the sUSDai rate (it currently has no external center-price address) and is intentionally left unchanged. The `1% / 2 days` shift (matching the IGP-105 oracle + center-price migration) bounds the transition to the new capped-rate center price; since the new value is near-identical (<0.01% delta) to the current one, the shift completes well within the cap.
 
+### Action 3: Rebalance the PST T4 Vault (169) Supply Drift from the Reserve
+
+The PST T4 vault (`VaultT4_DEX-PST-USDC_DEX-USDC-USDT`, id 169) has accrued a positive supply-side drift — its vault supply sits above its Liquidity-layer supply position (supply rewards / supply-rate magnifier) by roughly **+2,809 col shares ≈ ~2,268 PST + ~3,132 USDC (~$5.4k)**. This action tops the difference back into the collateral DEX (`Dex_PST_USDC`) from the Reserve.
+
+Self-contained in-payload flow (matching the IGP-131 pattern):
+
+1. **Approve**: `FLUID_RESERVE.approve` lets the vault pull PST + USDC from the Reserve, with buffers covering the drift with headroom:
+   - PST (6 dec): `2,400 PST`
+   - USDC (6 dec): `3,400 USDC`
+2. **Allow-list**: `FLUID_RESERVE.updateRebalancer(TIMELOCK, true)` temporarily authorizes the Timelock as a rebalancer.
+3. **Rebalance (supply only)**: `FLUID_RESERVE.rebalanceDexVaults([169], [0], colToken0MinMax, colToken1MinMax, debtToken0MinMax, debtToken1MinMax)` with:
+   - `colToken0MinMax = 1e24` (PST deposit cap), `colToken1MinMax = 1e24` (USDC deposit cap) — effectively unbounded; the Reserve approval and the vault's own share drift are the real ceilings.
+   - `debtToken0MinMax = 0`, `debtToken1MinMax = 0` — **skip the borrow side**.
+4. **Remove from allow-list**: `FLUID_RESERVE.updateRebalancer(TIMELOCK, false)`.
+5. **Revoke**: `FLUID_RESERVE.revoke([169 × PST], [169 × USDC])` clears the leftover allowance.
+
+**Prerequisite**: the Reserve must hold the PST + USDC at execution. The **USDC leg is self-funded** — Action 1 retains `3,400 USDC` in the Reserve (it runs before Action 3), covering the ~3,132 USDC drift. **PST must still be funded into the Reserve separately** (PST is not a revenue token), with ≥ ~2,270 PST (the `2,400` buffer) deposited during the timelock window. The supply deposit is bounded by the approval and the share drift; if the Reserve is underfunded the deposit reverts internally and, with the borrow side skipped, the rebalance reverts (`Vault__NothingToRebalance`).
+
+**Borrow side**: `debt*MinMax = 0` is valid only when the borrow-side drift is zero — there is no borrow-side reward/magnifier on this vault, so borrow supply tracks the Liquidity layer exactly. A non-zero borrow drift combined with `0` MinMax would revert the rebalance (`Vault__InvalidMinMaxInRebalance`).
+
 ## Description
 
 Both the iETHv2 treasury and the Liquidity Layer revenue collector are set to the Fluid Reserve, so each `collectRevenue` call lands the funds in the Reserve. A single `withdrawFunds` then forwards the swept balances to Team Multisig, leaving minimal operational dust behind. The Liquidity Layer token set is the set of tokens with more than $5k of uncollected revenue at preparation time; tokens below the $5k threshold (e.g. wstETH at ~$4.5k, USDe at ~$3.2k) are intentionally excluded.
@@ -56,4 +77,4 @@ Action 2 migrates the 8 live sUSDai vaults to the newly deployed capped-rate ora
 
 ## Conclusion
 
-IGP-136 (1) collects iETHv2 (Lite) stETH revenue and the Liquidity Layer revenue for tokens accruing more than $5k (USDC, USDT, ETH, GHO, weETH) into the Fluid Reserve and forwards the proceeds to Team Multisig, and (2) migrates the 8 live sUSDai vault oracles (171–173, 175–179) to the newly deployed oracles referencing CappedRateChainlink_SUSDAI and re-points the sUSDai-USDC (DEX 46) and sUSDai-USDT (DEX 48) center prices to the same capped rate.
+IGP-136 (1) collects iETHv2 (Lite) stETH revenue and the Liquidity Layer revenue for tokens accruing more than $5k (USDC, USDT, ETH, GHO, weETH) into the Fluid Reserve and forwards the proceeds to Team Multisig, (2) migrates the 8 live sUSDai vault oracles (171–173, 175–179) to the newly deployed oracles referencing CappedRateChainlink_SUSDAI and re-points the sUSDai-USDC (DEX 46) and sUSDai-USDT (DEX 48) center prices to the same capped rate, and (3) rebalances the PST T4 vault (169) supply-side drift from the Reserve (approve → supply-only rebalance → revoke).
