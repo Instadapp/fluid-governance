@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 import {IERC20} from "../common/interfaces/IERC20.sol";
 import {IFluidReserveContractV2} from "../common/interfaces/IFluidReserveContract.sol";
 import {IFluidVault, IFluidVaultT1} from "../common/interfaces/IFluidVault.sol";
-import {IFluidDex} from "../common/interfaces/IFluidDex.sol";
+import {IFluidDex, IFluidAdminDex} from "../common/interfaces/IFluidDex.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
 /// @notice IGP136: Collect accrued protocol revenue into the Reserve Contract
@@ -31,6 +31,11 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         Action 3 rebalances the PST T4 vault (169) supply-side drift from the
 ///         Reserve: approve PST + USDC, allow-list the Timelock as rebalancer,
 ///         run a supply-only `rebalanceDexVaults` (borrow skipped), then revoke.
+///
+///         Action 4 launches reUSD DEX 44 and vaults 170 (T4) + 181 (T3) from
+///         dust limits to launch limits (DEX max supply / LL limits / fee /
+///         range, vault withdrawal & borrow caps) and removes Team Multisig
+///         auth. Vault risk params (CF/LT/LML/LP) are configured via MS1.
 contract PayloadIGP136 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 136;
 
@@ -47,6 +52,13 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
     // --- sUSDai DEX ids whose center price tracks the sUSDai rate ---
     uint256 public constant SUSDAI_USDC_DEX_ID = 46; // sUSDai / USDC
     uint256 public constant SUSDAI_USDT_DEX_ID = 48; // sUSDai / USDT
+
+    // --- reUSD vault ids (verified on-chain via getVaultAddress) ---
+    uint256 public constant REUSD_USDT_DEX_ID = 44; // reUSD-USDT
+    uint256 public constant USDC_USDT_DEX_ID = 2; // USDC-USDT
+    uint256 public constant GHO_USDC_DEX_ID = 4; // GHO-USDC
+    uint256 public constant VAULT_REUSD_USDT__USDC_USDT_ID = 170; // T4: reUSD-USDT / USDC-USDT
+    uint256 public constant VAULT_REUSD__GHO_USDC_ID = 181; // T3: reUSD / GHO-USDC
 
     // --- Shared capped sUSDai rate (CappedRateChainlink_SUSDAI) ---
     // DeployerFactory nonce, used as the DEX center-price address.
@@ -81,6 +93,9 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
 
         // Action 3: Rebalance the PST T4 vault (169) supply-side drift from the Reserve.
         action3();
+
+        // Action 4: Raise reUSD vaults 170 + 181 from dust to launch limits.
+        action4();
     }
 
     function verifyProposal() public view override {}
@@ -272,6 +287,113 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
         }
     }
 
+    /// @notice Action 4: Launch reUSD-USDT DEX (44) + vault 170 (T4) and vault
+    ///         181 (T3) from dust limits (IGP-135), then remove Team Multisig
+    ///         auth. Vault risk params (CF/LT/LML/LP) are configured via MS1.
+    function action4() internal isActionSkippable(4) {
+        // DEX 44: reUSD-USDT — $24M max supply shares, $10M/token LL limits.
+        // Fee (2 bps), range (0.3% symmetric), and Team MS auth are already
+        // set on-chain via MS1; only limits that still need raising are here.
+        {
+            address REUSD_USDT_DEX = getDexAddress(REUSD_USDT_DEX_ID);
+
+            DexConfig memory DEX_REUSD_USDT = DexConfig({
+                dex: REUSD_USDT_DEX,
+                tokenA: REUSD_ADDRESS,
+                tokenB: USDT_ADDRESS,
+                smartCollateral: true,
+                smartDebt: false,
+                baseWithdrawalLimitInUSD: 10_000_000, // $10M per token
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
+            });
+            setDexLimits(DEX_REUSD_USDT);
+
+            IFluidDex(REUSD_USDT_DEX).updateMaxSupplyShares(
+                12_100_000 * 1e18 // ~$24M at ~$1.98/share (from ~6M on-chain)
+            );
+        }
+
+        // Vault 170: reUSD-USDT / USDC-USDT (TYPE_4) — $8M col / $5M–$10M debt
+        {
+            address REUSD_USDT_DEX = getDexAddress(REUSD_USDT_DEX_ID);
+            address USDC_USDT_DEX = getDexAddress(USDC_USDT_DEX_ID);
+            address REUSD_USDT__USDC_USDT_VAULT = getVaultAddress(
+                VAULT_REUSD_USDT__USDC_USDT_ID
+            );
+
+            {
+                IFluidAdminDex.UserSupplyConfig[]
+                    memory supplyConfigs_ = new IFluidAdminDex.UserSupplyConfig[](
+                        1
+                    );
+                supplyConfigs_[0] = IFluidAdminDex.UserSupplyConfig({
+                    user: REUSD_USDT__USDC_USDT_VAULT,
+                    expandPercent: 35 * 1e2, // 35%
+                    expandDuration: 6 hours,
+                    baseWithdrawalLimit: 4_000_000 * 1e18 // ~$8M DEX 44 shares
+                });
+                IFluidDex(REUSD_USDT_DEX).updateUserSupplyConfigs(
+                    supplyConfigs_
+                );
+            }
+
+            setDexBorrowProtocolLimitsInShares(
+                DexBorrowProtocolConfigInShares({
+                    dex: USDC_USDT_DEX,
+                    protocol: REUSD_USDT__USDC_USDT_VAULT,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours,
+                    baseBorrowLimit: 2_500_000 * 1e18, // ~$5M DEX 2 shares
+                    maxBorrowLimit: 5_000_000 * 1e18 // ~$10M DEX 2 shares
+                })
+            );
+
+            VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
+                REUSD_USDT__USDC_USDT_VAULT,
+                TEAM_MULTISIG,
+                false
+            );
+        }
+
+        // Vault 181: reUSD / GHO-USDC (TYPE_3) — $8M REUSD supply;
+        // GHO-USDC DEX (id 4) borrow ~$5M / ~$10M
+        {
+            address GHO_USDC_DEX = getDexAddress(GHO_USDC_DEX_ID);
+            address REUSD__GHO_USDC_VAULT = getVaultAddress(
+                VAULT_REUSD__GHO_USDC_ID
+            );
+
+            VaultConfig memory VAULT_REUSD__GHO_USDC = VaultConfig({
+                vault: REUSD__GHO_USDC_VAULT,
+                vaultType: VAULT_TYPE.TYPE_3,
+                supplyToken: REUSD_ADDRESS,
+                borrowToken: address(0),
+                baseWithdrawalLimitInUSD: 8_000_000, // $8M REUSD supply
+                baseBorrowLimitInUSD: 0,
+                maxBorrowLimitInUSD: 0
+            });
+            setVaultLimits(VAULT_REUSD__GHO_USDC);
+
+            setDexBorrowProtocolLimitsInShares(
+                DexBorrowProtocolConfigInShares({
+                    dex: GHO_USDC_DEX,
+                    protocol: REUSD__GHO_USDC_VAULT,
+                    expandPercent: 30 * 1e2, // 30%
+                    expandDuration: 6 hours,
+                    baseBorrowLimit: 2_500_000 * 1e18, // ~$5M DEX 4 shares
+                    maxBorrowLimit: 5_000_000 * 1e18 // ~$10M DEX 4 shares
+                })
+            );
+
+            VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
+                REUSD__GHO_USDC_VAULT,
+                TEAM_MULTISIG,
+                false
+            );
+        }
+    }
+
     /**
      * |
      * |     Payload Actions End Here      |
@@ -279,5 +401,8 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
      */
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
+    // fetched: 2026-07-09T09:37:37.467Z, source: coingecko
+    function REUSD_USD_PRICE()  public pure override returns (uint256) { return 1.09 * 1e2; }
+    function STABLE_USD_PRICE() public pure override returns (uint256) { return 1 * 1e2; }
     // --- END AUTO-GENERATED PRICES ---
 }

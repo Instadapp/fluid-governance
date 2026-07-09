@@ -2,11 +2,12 @@
 
 ## Summary
 
-This proposal performs three Ethereum actions:
+This proposal performs four Ethereum actions:
 
 1. Collects accrued protocol revenue into the Fluid Reserve Contract and forwards it to Team Multisig. Specifically, it collects the **iETHv2 (Fluid Lite ETH) stETH revenue** and the **Liquidity Layer revenue for every token currently accruing more than $5k of uncollected revenue** (USDC, USDT, ETH, GHO, weETH), then withdraws the swept balances from the Reserve to Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`).
 2. Migrates the **8 live sUSDai vault oracles** (vaults 171–173, 175–179) from the raw exchange-rate contract to newly deployed oracles referencing **CappedRateChainlink_SUSDAI** (`0xC5D27C5d356479b681328351F1583c63051E76a0`, DF nonce 258), and re-points the **sUSDai-USDC (DEX 46)** and **sUSDai-USDT (DEX 48)** DEX center prices to the same capped rate (DF nonce 258).
 3. Rebalances the supply-side drift on the **PST T4 vault** (`169`, smart col `Dex_PST_USDC` / smart debt `Dex_USDC_USDT`, `0x04F461756D3799Bfa05f1a367c41FaBa09743791`) from the Reserve: approve PST + USDC, run a supply-only `rebalanceDexVaults`, then revoke the allowance.
+4. Raises **reUSD vault 170** (T4 reUSD-USDT / USDC-USDT) and **vault 181** (T3 reUSD / GHO-USDC) from dust limits (IGP-135) to launch limits and removes Team Multisig auth on both. Oracle / rebalancer / core settings are configured separately via MS1.
 
 ## Code Changes
 
@@ -69,6 +70,35 @@ Self-contained in-payload flow (matching the IGP-131 pattern):
 
 **Borrow side**: `debt*MinMax = 0` is valid only when the borrow-side drift is zero — there is no borrow-side reward/magnifier on this vault, so borrow supply tracks the Liquidity layer exactly. A non-zero borrow drift combined with `0` MinMax would revert the rebalance (`Vault__InvalidMinMaxInRebalance`).
 
+### Action 4: reUSD DEX 44 + Vaults 170 + 181 Launch Limits + Remove Team MS Auth
+
+Raises the reUSD market from dust limits (IGP-135) to launch limits and removes Team Multisig auth. Vault risk params (CF 87% / LT 90% / LML 93% / LP 3.5%) are configured via MS1, not in this action.
+
+**DEX 44** (reUSD-USDT, smart col) — only limits that still need raising (fee `2 bps`, range `0.3%` symmetric, and Team MS auth are already set on-chain via MS1):
+
+| Setting | Value |
+| --- | --- |
+| Max supply shares | ~$24M (`12.1M` shares @ ~$1.98/share; from ~`6M` on-chain) |
+| Token LL limits | `$10M` base withdrawal per token (reUSD + USDT) |
+
+**Vault 170** (T4 reUSD-USDT / USDC-USDT, `0x18aE…ED55`):
+
+| Leg | Where | Launch limit |
+| --- | --- | --- |
+| Collateral | DEX 44 | `~$8M` base withdrawal (`4M` shares), **35%** / 6h |
+| Debt | DEX 2 USDC-USDT | `~$5M` / `~$10M` base/max borrow (`2.5M` / `5M` shares), **30%** / 6h |
+| Auth | vault | Team MS removed (currently `true`) |
+
+**Vault 181** (T3 reUSD / GHO-USDC, `0x1e3a…c53`):
+
+| Leg | Where | Launch limit |
+| --- | --- | --- |
+| Supply | REUSD at Liquidity | `$8M` base withdrawal (**35%** / 6h via `setVaultLimits` TYPE_3) |
+| Debt | DEX 4 GHO-USDC | `~$5M` / `~$10M` base/max borrow (`2.5M` / `5M` shares), **30%** / 6h |
+| Auth | vault | Team MS removed (currently `true`) |
+
+GHO-USDC DEX (id 4) on-chain max borrow shares (`~21.6M`) already comfortably covers the vault's `$10M` borrow cap; no DEX-level cap change needed.
+
 ## Description
 
 Both the iETHv2 treasury and the Liquidity Layer revenue collector are set to the Fluid Reserve, so each `collectRevenue` call lands the funds in the Reserve. A single `withdrawFunds` then forwards the swept balances to Team Multisig, leaving minimal operational dust behind. The Liquidity Layer token set is the set of tokens with more than $5k of uncollected revenue at preparation time; tokens below the $5k threshold (e.g. wstETH at ~$4.5k, USDe at ~$3.2k) are intentionally excluded.
@@ -77,4 +107,4 @@ Action 2 migrates the 8 live sUSDai vaults to the newly deployed capped-rate ora
 
 ## Conclusion
 
-IGP-136 (1) collects iETHv2 (Lite) stETH revenue and the Liquidity Layer revenue for tokens accruing more than $5k (USDC, USDT, ETH, GHO, weETH) into the Fluid Reserve and forwards the proceeds to Team Multisig, (2) migrates the 8 live sUSDai vault oracles (171–173, 175–179) to the newly deployed oracles referencing CappedRateChainlink_SUSDAI and re-points the sUSDai-USDC (DEX 46) and sUSDai-USDT (DEX 48) center prices to the same capped rate, and (3) rebalances the PST T4 vault (169) supply-side drift from the Reserve (approve → supply-only rebalance → revoke).
+IGP-136 (1) collects iETHv2 (Lite) stETH revenue and the Liquidity Layer revenue for tokens accruing more than $5k (USDC, USDT, ETH, GHO, weETH) into the Fluid Reserve and forwards the proceeds to Team Multisig, (2) migrates the 8 live sUSDai vault oracles (171–173, 175–179) to the newly deployed oracles referencing CappedRateChainlink_SUSDAI and re-points the sUSDai-USDC (DEX 46) and sUSDai-USDT (DEX 48) center prices to the same capped rate, (3) rebalances the PST T4 vault (169) supply-side drift from the Reserve (approve → supply-only rebalance → revoke), and (4) raises reUSD vaults 170 and 181 from dust to launch limits and removes Team Multisig auth on both.
