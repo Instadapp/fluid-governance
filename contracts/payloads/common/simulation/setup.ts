@@ -159,7 +159,9 @@ async function setupFluidProtocol(provider: JsonRpcProvider): Promise<void> {
 
   // Example: Set up admin permissions
   try {
-    const adminData = ethers.Interface.encodeFunctionData('setAdmin', [
+    const adminData = new ethers.Interface([
+      'function setAdmin(address admin, bool isAdmin)'
+    ]).encodeFunctionData('setAdmin', [
       '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', // Admin address
       true // Is admin
     ]);

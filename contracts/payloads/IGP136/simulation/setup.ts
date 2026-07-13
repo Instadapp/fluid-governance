@@ -20,6 +20,13 @@ const PROPOSER = "0xA45f7bD6A5Ff45D31aaCE6bCD3d426D9328cea01";
 const IGP136_PROPOSAL_ID = 136;
 const TARGET_PROPOSAL_COUNT = IGP136_PROPOSAL_ID - 1; // 135
 
+// Action 3 (PST T4 vault 169 rebalance) pulls funds from the Reserve at execution:
+//   - 2,400 PST  → must be funded into the Reserve SEPARATELY before mainnet execution
+//   - 3,400 USDC → self-funded by Action 1 (it retains 3,400 USDC from collected revenue)
+const FLUID_RESERVE = "0x264786EF916af64a1DB19F513F24a3681734ce92";
+const PST = "0x22aE3D9a738471f405169Af055d31c687087d4c7"; // 6 decimals
+const PST_REQUIRED = 2_400n * 10n ** 6n;
+
 async function getProposalCount(provider: JsonRpcProvider): Promise<number> {
   const iface = new ethers.Interface([
     "function proposalCount() view returns (uint256)",
@@ -128,6 +135,68 @@ async function ensureGovernorProposalId(provider: JsonRpcProvider): Promise<void
   }
 }
 
+async function erc20Balance(
+  provider: JsonRpcProvider,
+  token: string,
+  holder: string,
+): Promise<bigint> {
+  const iface = new ethers.Interface([
+    "function balanceOf(address) view returns (uint256)",
+  ]);
+  const result = await provider.send("eth_call", [
+    { to: token, data: iface.encodeFunctionData("balanceOf", [holder]) },
+    "latest",
+  ]);
+  return BigInt(result);
+}
+
+/**
+ * Action 3 requires the Reserve to hold 2,400 PST at execution — this is an
+ * OUT-OF-BAND funding step on mainnet (not part of the payload). On the fork we
+ * detect the shortfall and top the Reserve up via the Tenderly admin cheat so
+ * the rebalance simulates against the funded state.
+ *
+ * If this logs a shortfall, the same shortfall exists on mainnet: 2,400 PST
+ * must be transferred into the Reserve before the proposal is executed.
+ */
+async function ensureReservePstFunding(
+  provider: JsonRpcProvider,
+): Promise<void> {
+  const balance = await erc20Balance(provider, PST, FLUID_RESERVE);
+  console.log(
+    `[SETUP] Reserve PST balance = ${ethers.formatUnits(balance, 6)} (required for Action 3: ${ethers.formatUnits(PST_REQUIRED, 6)})`,
+  );
+
+  if (balance >= PST_REQUIRED) {
+    console.log("[SETUP] Reserve already holds enough PST — no funding needed.");
+    return;
+  }
+
+  const shortfall = PST_REQUIRED - balance;
+  console.warn(
+    `[SETUP] ⚠️  MAINNET ACTION REQUIRED: Reserve is short ${ethers.formatUnits(shortfall, 6)} PST — ` +
+      `fund 2,400 PST into the Reserve (${FLUID_RESERVE}) BEFORE executing IGP-136, or Action 3 will revert.`,
+  );
+
+  // Fork-only cheat: set the Reserve's PST balance to the required amount.
+  await provider.send("tenderly_setErc20Balance", [
+    PST,
+    FLUID_RESERVE,
+    ethers.toBeHex(PST_REQUIRED),
+  ]);
+
+  const after = await erc20Balance(provider, PST, FLUID_RESERVE);
+  if (after < PST_REQUIRED) {
+    throw new Error(
+      `PST funding cheat failed: Reserve balance ${ethers.formatUnits(after, 6)} < required 2,400`,
+    );
+  }
+  console.log(
+    `[SETUP] Funded Reserve with PST on fork (balance now ${ethers.formatUnits(after, 6)}). ` +
+      "Remember: this is a simulation cheat — mainnet still needs the real 2,400 PST transfer.",
+  );
+}
+
 export async function preSetup(
   provider: JsonRpcProvider,
   _payloadAddress?: string,
@@ -136,6 +205,7 @@ export async function preSetup(
 
   try {
     await ensureGovernorProposalId(provider);
+    await ensureReservePstFunding(provider);
 
     console.log("[SETUP] Pre-setup completed successfully");
   } catch (error: any) {
