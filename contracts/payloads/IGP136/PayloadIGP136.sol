@@ -30,7 +30,8 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///
 ///         Action 3 rebalances the PST T4 vault (169) supply-side drift from the
 ///         Reserve: approve PST + USDC, allow-list the Timelock as rebalancer,
-///         run a supply-only `rebalanceDexVaults` (borrow skipped), then revoke.
+///         rebalance the supply drift and allow positive debt drift to flow into
+///         the Reserve, then revoke.
 ///
 ///         Action 4 launches reUSD DEX 44 and vaults 170 (T4) + 181 (T3) from
 ///         dust limits to launch limits (DEX max supply / LL limits / fee /
@@ -224,8 +225,8 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
     }
 
     /// @notice Action 3: Rebalance the PST T4 vault (169) supply-side drift from
-    ///         the Reserve. Borrow side is skipped (debt MinMax = 0); the Reserve
-    ///         must hold the PST + USDC at execution.
+    ///         the Reserve. Any positive debt drift is sent to the Reserve; the
+    ///         Reserve must hold the PST + USDC at execution.
     function action3() internal isActionSkippable(3) {
         address vault_ = getVaultAddress(169);
 
@@ -246,8 +247,7 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
             FLUID_RESERVE.approve(protocols_, tokens_, amounts_);
         }
 
-        // Allow-list the Timelock as rebalancer, run the supply-only rebalance,
-        // then remove it.
+        // Allow-list the Timelock as rebalancer, run the rebalance, then remove it.
         FLUID_RESERVE.updateRebalancer(address(TIMELOCK), true);
         {
             address[] memory protocols_ = new address[](1);
@@ -260,6 +260,10 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
             protocols_[0] = vault_;
             colToken0MinMax_[0] = 1e24; // PST deposit cap
             colToken1MinMax_[0] = 1e24; // USDC deposit cap
+            // Permit positive smart-debt drift to be borrowed from the DEX into
+            // the Reserve. One raw unit per token is the minimum accepted output.
+            debtToken0MinMax_[0] = 1;
+            debtToken1MinMax_[0] = 1;
 
             FLUID_RESERVE.rebalanceDexVaults(
                 protocols_,

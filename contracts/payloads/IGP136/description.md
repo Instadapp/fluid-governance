@@ -6,7 +6,7 @@ This proposal performs four Ethereum actions:
 
 1. Collects accrued protocol revenue into the Fluid Reserve Contract and forwards it to Team Multisig. Specifically, it collects the **iETHv2 (Fluid Lite ETH) stETH revenue** and the **Liquidity Layer revenue for every token currently accruing more than $5k of uncollected revenue** (USDC, USDT, ETH, GHO, weETH), then withdraws the swept balances from the Reserve to Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`).
 2. Migrates the **8 live sUSDai vault oracles** (vaults 171–173, 175–179) from the raw exchange-rate contract to newly deployed oracles referencing **CappedRateChainlink_SUSDAI** (`0xC5D27C5d356479b681328351F1583c63051E76a0`, DF nonce 258), and re-points the **sUSDai-USDC (DEX 46)** and **sUSDai-USDT (DEX 48)** DEX center prices to the same capped rate (DF nonce 258).
-3. Rebalances the supply-side drift on the **PST T4 vault** (`169`, smart col `Dex_PST_USDC` / smart debt `Dex_USDC_USDT`, `0x04F461756D3799Bfa05f1a367c41FaBa09743791`) from the Reserve: approve PST + USDC, run a supply-only `rebalanceDexVaults`, then revoke the allowance.
+3. Rebalances the supply-side drift on the **PST T4 vault** (`169`, smart col `Dex_PST_USDC` / smart debt `Dex_USDC_USDT`, `0x04F461756D3799Bfa05f1a367c41FaBa09743791`) from the Reserve: approve PST + USDC, run `rebalanceDexVaults`, allow any positive smart-debt drift to flow into the Reserve, then revoke the allowance.
 4. Raises **reUSD vault 170** (T4 reUSD-USDT / USDC-USDT) and **vault 181** (T3 reUSD / GHO-USDC) from dust limits (IGP-135) to launch limits and removes Team Multisig auth on both. Oracle / rebalancer / core settings are configured separately via MS1.
 
 ## Code Changes
@@ -60,15 +60,15 @@ Self-contained in-payload flow (matching the IGP-131 pattern):
    - PST (6 dec): `2,400 PST`
    - USDC (6 dec): `3,400 USDC`
 2. **Allow-list**: `FLUID_RESERVE.updateRebalancer(TIMELOCK, true)` temporarily authorizes the Timelock as a rebalancer.
-3. **Rebalance (supply only)**: `FLUID_RESERVE.rebalanceDexVaults([169], [0], colToken0MinMax, colToken1MinMax, debtToken0MinMax, debtToken1MinMax)` with:
+3. **Rebalance**: `FLUID_RESERVE.rebalanceDexVaults([169], [0], colToken0MinMax, colToken1MinMax, debtToken0MinMax, debtToken1MinMax)` with:
    - `colToken0MinMax = 1e24` (PST deposit cap), `colToken1MinMax = 1e24` (USDC deposit cap) — effectively unbounded; the Reserve approval and the vault's own share drift are the real ceilings.
-   - `debtToken0MinMax = 0`, `debtToken1MinMax = 0` — **skip the borrow side**.
+   - `debtToken0MinMax = 1`, `debtToken1MinMax = 1` — if positive smart-debt drift exists, borrow it from the DEX into the Reserve while requiring at least one raw unit of each debt token.
 4. **Remove from allow-list**: `FLUID_RESERVE.updateRebalancer(TIMELOCK, false)`.
 5. **Revoke**: `FLUID_RESERVE.revoke([169 × PST], [169 × USDC])` clears the leftover allowance.
 
-**Prerequisite**: the Reserve must hold the PST + USDC at execution. The **USDC leg is self-funded** — Action 1 retains `3,400 USDC` in the Reserve (it runs before Action 3), covering the ~3,132 USDC drift. **PST must still be funded into the Reserve separately** (PST is not a revenue token), with ≥ ~2,270 PST (the `2,400` buffer) deposited during the timelock window. The supply deposit is bounded by the approval and the share drift; if the Reserve is underfunded the deposit reverts internally and, with the borrow side skipped, the rebalance reverts (`Vault__NothingToRebalance`).
+**Prerequisite**: the Reserve must hold the PST + USDC at execution. The **USDC leg is self-funded** — Action 1 retains `3,400 USDC` in the Reserve (it runs before Action 3), covering the ~3,132 USDC drift. **PST must still be funded into the Reserve separately** (PST is not a revenue token), with ≥ ~2,270 PST (the `2,400` buffer) deposited during the timelock window. The supply deposit is bounded by the approval and the share drift; if the Reserve is underfunded the deposit reverts internally and, if no debt drift is moved, the rebalance reverts (`Vault__NothingToRebalance`).
 
-**Borrow side**: `debt*MinMax = 0` is valid only when the borrow-side drift is zero — there is no borrow-side reward/magnifier on this vault, so borrow supply tracks the Liquidity layer exactly. A non-zero borrow drift combined with `0` MinMax would revert the rebalance (`Vault__InvalidMinMaxInRebalance`).
+**Borrow side**: even without a configured borrow reward or magnifier, small positive drift can accrue between the vault and DEX accounting. Positive one-unit minimums avoid `Vault__InvalidMinMaxInRebalance` and allow the resulting USDC/USDT amounts to flow into the Reserve.
 
 ### Action 4: reUSD DEX 44 + Vaults 170 + 181 Launch Limits + Remove Team MS Auth
 
@@ -107,4 +107,4 @@ Action 2 migrates the 8 live sUSDai vaults to the newly deployed capped-rate ora
 
 ## Conclusion
 
-IGP-136 (1) collects iETHv2 (Lite) stETH revenue and the Liquidity Layer revenue for tokens accruing more than $5k (USDC, USDT, ETH, GHO, weETH) into the Fluid Reserve and forwards the proceeds to Team Multisig, (2) migrates the 8 live sUSDai vault oracles (171–173, 175–179) to the newly deployed oracles referencing CappedRateChainlink_SUSDAI and re-points the sUSDai-USDC (DEX 46) and sUSDai-USDT (DEX 48) center prices to the same capped rate, (3) rebalances the PST T4 vault (169) supply-side drift from the Reserve (approve → supply-only rebalance → revoke), and (4) raises reUSD vaults 170 and 181 from dust to launch limits and removes Team Multisig auth on both.
+IGP-136 (1) collects iETHv2 (Lite) stETH revenue and the Liquidity Layer revenue for tokens accruing more than $5k (USDC, USDT, ETH, GHO, weETH) into the Fluid Reserve and forwards the proceeds to Team Multisig, (2) migrates the 8 live sUSDai vault oracles (171–173, 175–179) to the newly deployed oracles referencing CappedRateChainlink_SUSDAI and re-points the sUSDai-USDC (DEX 46) and sUSDai-USDT (DEX 48) center prices to the same capped rate, (3) rebalances the PST T4 vault (169) supply-side drift from the Reserve while allowing positive smart-debt drift to flow into the Reserve, and (4) raises reUSD vaults 170 and 181 from dust to launch limits and removes Team Multisig auth on both.
