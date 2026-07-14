@@ -8,17 +8,16 @@ import {IFluidVault, IFluidVaultT1} from "../common/interfaces/IFluidVault.sol";
 import {IFluidDex, IFluidAdminDex} from "../common/interfaces/IFluidDex.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
-/// @notice IGP136: Collect accrued protocol revenue into the Reserve Contract
+/// @notice IGP136: Collect Liquidity Layer revenue into the Reserve Contract
 ///         and forward it to Team Multisig, then migrate the sUSDai vault
 ///         oracles to the newly deployed capped-rate oracles.
 ///
-///         Action 1 collects the iETHv2 (Fluid Lite ETH) stETH revenue plus the
-///         Liquidity Layer revenue for every token currently accruing more than
-///         $5k of uncollected revenue (USDC, USDT, ETH, GHO, weETH) into the
-///         Fluid Reserve, then forwards the swept balances to Team Multisig.
-///         Both the iETHv2 treasury and the Liquidity Layer revenue collector
-///         are the Fluid Reserve, so each `collectRevenue` lands the funds in
-///         the Reserve before the single `withdrawFunds` forward.
+///         Action 1 collects the Liquidity Layer revenue for every token
+///         currently accruing more than $5k of uncollected revenue (USDC,
+///         USDT, ETH, GHO, weETH) into the Fluid Reserve, then forwards the
+///         swept balances to Team Multisig. The Liquidity Layer revenue
+///         collector is the Fluid Reserve, so `collectRevenue` lands the
+///         funds in the Reserve before the single `withdrawFunds` forward.
 ///
 ///         Action 2 points the 8 live sUSDai vaults (171–173, 175–179) at the
 ///         newly deployed oracles that reference CappedRateChainlink_SUSDAI
@@ -78,8 +77,8 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Collect iETHv2 (Lite) + Liquidity Layer revenue (>$5k tokens)
-        // into the Reserve and forward it to Team Multisig.
+        // Action 1: Collect Liquidity Layer revenue (>$5k tokens) into the
+        // Reserve and forward it to Team Multisig.
         action1();
 
         // Action 2: Migrate the 8 sUSDai vault oracles to the new capped-rate oracles.
@@ -104,18 +103,13 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
      * |__________________________________
      */
 
-    /// @notice Action 1: Collect iETHv2 (Lite) stETH revenue and the Liquidity
-    ///         Layer revenue for tokens accruing >$5k (USDC, USDT, ETH, GHO,
-    ///         weETH) into the Reserve, then forward the balances to Team
-    ///         Multisig.
+    /// @notice Action 1: Collect the Liquidity Layer revenue for tokens
+    ///         accruing >$5k (USDC, USDT, ETH, GHO, weETH) into the Reserve,
+    ///         then forward the balances to Team Multisig.
     function action1() internal isActionSkippable(1) {
         address reserve_ = address(FLUID_RESERVE);
 
-        // Step 1: Collect all iETHv2 (Lite) stETH revenue to its treasury
-        // (Reserve). Lite resolves type(uint256).max to the live revenue amount.
-        IETHV2.collectRevenue(type(uint256).max);
-
-        // Step 2: Collect Liquidity Layer revenue (>$5k tokens) to the revenue
+        // Step 1: Collect Liquidity Layer revenue (>$5k tokens) to the revenue
         // collector (Reserve).
         address[] memory liquidityTokens_ = new address[](5);
         liquidityTokens_[0] = USDC_ADDRESS; // ~$84.7k
@@ -126,29 +120,26 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
 
         LIQUIDITY.collectRevenue(liquidityTokens_);
 
-        // Step 3: Forward the swept balances (collected revenue + pre-existing
+        // Step 2: Forward the swept balances (collected revenue + pre-existing
         // dust) from the Reserve to Team Multisig, leaving operational dust.
-        address[] memory tokens_ = new address[](6);
-        uint256[] memory amounts_ = new uint256[](6);
+        address[] memory tokens_ = new address[](5);
+        uint256[] memory amounts_ = new uint256[](5);
 
-        tokens_[0] = stETH_ADDRESS;
-        amounts_[0] = IERC20(stETH_ADDRESS).balanceOf(reserve_) - 0.1 ether;
-
-        tokens_[1] = USDC_ADDRESS;
+        tokens_[0] = USDC_ADDRESS;
         // Retain 3,400 USDC for the Action 3 rebalance; forward the rest.
-        amounts_[1] = IERC20(USDC_ADDRESS).balanceOf(reserve_) - 3_400 * 1e6;
+        amounts_[0] = IERC20(USDC_ADDRESS).balanceOf(reserve_) - 3_400 * 1e6;
 
-        tokens_[2] = USDT_ADDRESS;
-        amounts_[2] = IERC20(USDT_ADDRESS).balanceOf(reserve_) - 10;
+        tokens_[1] = USDT_ADDRESS;
+        amounts_[1] = IERC20(USDT_ADDRESS).balanceOf(reserve_) - 10;
 
-        tokens_[3] = ETH_ADDRESS;
-        amounts_[3] = reserve_.balance - 0.1 ether;
+        tokens_[2] = ETH_ADDRESS;
+        amounts_[2] = reserve_.balance - 0.1 ether;
 
-        tokens_[4] = GHO_ADDRESS;
-        amounts_[4] = IERC20(GHO_ADDRESS).balanceOf(reserve_) - 0.1 ether;
+        tokens_[3] = GHO_ADDRESS;
+        amounts_[3] = IERC20(GHO_ADDRESS).balanceOf(reserve_) - 0.1 ether;
 
-        tokens_[5] = weETH_ADDRESS;
-        amounts_[5] = IERC20(weETH_ADDRESS).balanceOf(reserve_) - 0.1 ether;
+        tokens_[4] = weETH_ADDRESS;
+        amounts_[4] = IERC20(weETH_ADDRESS).balanceOf(reserve_) - 0.1 ether;
 
         IFluidReserveContractV2(address(FLUID_RESERVE)).withdrawFunds(
             tokens_,

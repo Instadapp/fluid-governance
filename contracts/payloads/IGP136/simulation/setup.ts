@@ -4,8 +4,8 @@
  * Governor proposalCount bump: create a throwaway IGP-135 placeholder proposal so
  * the real IGP-136 lands on id 136 (PayloadIGP136 hard-codes PROPOSAL_ID = 136).
  *
- * No oracle mocks are required: IGP-136 only collects revenue (iETHv2 Lite +
- * Liquidity Layer) into the Reserve and forwards it to Team Multisig.
+ * No oracle mocks are required: IGP-136 collects Liquidity Layer revenue
+ * into the Reserve and forwards it to Team Multisig.
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
