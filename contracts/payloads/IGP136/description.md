@@ -1,4 +1,4 @@
-# Collect Liquidity Layer Revenue and Migrate sUSDai Vault Oracles
+# Collect Liquidity Layer Revenue, Migrate sUSDai Vault Oracles, Rebalance PST Vault 169, and Set reUSD Launch Limits
 
 ## Summary
 
