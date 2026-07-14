@@ -13,7 +13,7 @@ This proposal performs four Ethereum actions:
 
 ### Action 1: Collect Revenue and Forward to Team Multisig
 
-- **iETHv2 (Lite) revenue**: `IETHV2.collectRevenue(33.9 ether)` sends ~33.9 stETH of accrued Lite revenue to the iETHv2 treasury, which is the Fluid Reserve. `ILite.revenue()` reported `33.909507713113132477` stETH collectable at preparation time (2026-06-26); the collected amount is held a touch below the live value to stay within the collectable balance at execution, as Lite revenue accrues over time.
+- **iETHv2 (Lite) revenue**: `IETHV2.collectRevenue(type(uint256).max)` collects all stETH revenue available at execution and sends it to the iETHv2 treasury, which is the Fluid Reserve. Lite resolves the max sentinel to its live `revenue()` balance, so no accrued revenue is intentionally left behind.
 - **Liquidity Layer revenue**: `LIQUIDITY.collectRevenue` across the tokens with >$5k uncollected revenue, sent to the revenue collector (the Fluid Reserve):
   - `USDC` — ~$84.7k
   - `USDT` — ~$50.8k

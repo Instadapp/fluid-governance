@@ -75,13 +75,6 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
     address public constant ORACLE_SUSDAI_GHO =
         0x0327cBbBFd3BfF6F32EB0A832F00c7B382b863B4; // DF 261
 
-    /// @dev iETHv2 (Lite) collectable stETH revenue at preparation time
-    ///      (`ILite.revenue()` = 33.909507713113132477 stETH on 2026-06-26).
-    ///      Lite revenue accrues over time, so the collected amount is held a
-    ///      touch below the live value to stay within the collectable balance
-    ///      at execution.
-    uint256 public constant LITE_STETH_REVENUE = 33.9 ether;
-
     function execute() public virtual override {
         super.execute();
 
@@ -118,8 +111,9 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
     function action1() internal isActionSkippable(1) {
         address reserve_ = address(FLUID_RESERVE);
 
-        // Step 1: Collect iETHv2 (Lite) stETH revenue to its treasury (Reserve).
-        IETHV2.collectRevenue(LITE_STETH_REVENUE);
+        // Step 1: Collect all iETHv2 (Lite) stETH revenue to its treasury
+        // (Reserve). Lite resolves type(uint256).max to the live revenue amount.
+        IETHV2.collectRevenue(type(uint256).max);
 
         // Step 2: Collect Liquidity Layer revenue (>$5k tokens) to the revenue
         // collector (Reserve).
