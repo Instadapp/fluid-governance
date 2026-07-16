@@ -14,7 +14,7 @@ This proposal:
 
 ### Action 1: Collect Liquidity Layer Revenue and Forward to Team Multisig for Residual Debt Repayment
 
-- `LIQUIDITY.collectRevenue` into the Reserve (`0x264786EF916af64a1DB19F513F24a3681734ce92`) for the >$5k tokens: USDC ~$84.7k, USDT ~$50.8k, ETH ~$36.5k, GHO ~$8.8k, weETH ~$5.4k. Tokens below $5k (wstETH ~$4.5k, USDe ~$3.2k) are excluded.
+- `LIQUIDITY.collectRevenue` into the Reserve (`0x264786EF916af64a1DB19F513F24a3681734ce92`) for the tokens accruing >$5k: USDC, USDT, ETH, GHO, and weETH. Tokens below $5k (wstETH, USDe) are excluded.
 - `withdrawFunds` forwards each balance minus operational dust (`-10` for 6-decimal tokens, `-0.1 ether` for 18-decimal and native ETH) to Team Multisig toward repayment of the residual (Resolv-related) debt, reason `"REVENUE COLLECTION"`. **USDC retains `3,400` in the Reserve** to self-fund the Action 3 rebalance's USDC leg.
 
 ### Action 2: Migrate sUSDai Vault Oracles to the Capped Chainlink Rate
@@ -36,7 +36,7 @@ Center prices for DEX 46 (`0xA2E3A4e2A08b5714FA974Ce88466D736BD8b39d9`) and DEX 
 
 ### Action 3: Rebalance PST T4 Vault (169) Supply Drift from the Reserve
 
-Vault 169 (smart col `Dex_PST_USDC` / smart debt `Dex_USDC_USDT`, `0x04F461756D3799Bfa05f1a367c41FaBa09743791`) has drifted **+2,809 col shares ≈ ~2,268 PST + ~3,132 USDC (~$5.4k)** above its Liquidity-layer supply position (supply rewards). Flow (IGP-131 pattern):
+Vault 169 (smart col `Dex_PST_USDC` / smart debt `Dex_USDC_USDT`, `0x04F461756D3799Bfa05f1a367c41FaBa09743791`) has drifted above its Liquidity-layer supply position (supply rewards). Flow (IGP-131 pattern):
 
 1. Approve the vault to pull `2,400 PST` + `3,400 USDC` from the Reserve.
 2. Temporarily allow-list the Timelock as rebalancer and run `rebalanceDexVaults` on vault 169 — the supply drift is deposited back into the collateral DEX (bounded by the approvals and the vault's own share drift), and any positive smart-debt drift (USDC/USDT) flows into the Reserve — then remove the allow-list entry.
