@@ -28,6 +28,39 @@ const execAsync = promisify(exec);
 // Global timeout configuration (10 minutes)
 const GLOBAL_TIMEOUT_MS = 10 * 60 * 1000;
 
+// Tenderly VNet RPC URLs are capability URLs: anyone holding one can send
+// transactions to the Virtual TestNet. They must never appear in logs,
+// GitHub comments, or GITHUB_OUTPUT. Matches e.g.
+// https://virtual.mainnet.rpc.tenderly.co/<uuid> and rpc.vnet.tenderly.co URLs.
+const TENDERLY_RPC_URL_REGEX = /https?:\/\/[a-z0-9.-]*rpc[a-z0-9.-]*\.tenderly\.co\/[^\s"'<>)\]}]*/gi;
+
+function redactRpcUrls(value: unknown): string {
+  let text: string | undefined;
+  if (typeof value === 'string') {
+    text = value;
+  } else if (value instanceof Error) {
+    text = value.stack || value.message;
+  } else {
+    try {
+      text = JSON.stringify(value);
+    } catch {
+      text = undefined;
+    }
+  }
+  if (text === undefined) {
+    text = String(value);
+  }
+  return text.replace(TENDERLY_RPC_URL_REGEX, '[REDACTED_RPC_URL]');
+}
+
+// Register a runtime secret with the GitHub Actions log masker so that any
+// accidental future print of it is replaced with *** in the workflow logs.
+function maskInGitHubActions(secret: string | undefined): void {
+  if (process.env.GITHUB_ACTIONS === 'true' && secret) {
+    console.log(`::add-mask::${secret}`);
+  }
+}
+
 interface VNetConfig {
   id: string;
   adminRpc: string;
@@ -153,7 +186,8 @@ class TenderlyGovernanceSimulator {
         return 'failed';
       }
     } catch (error: any) {
-      console.warn(`[WARN]  Could not verify transaction ${txHash}: ${error.message}`);
+      // ethers v6 error messages can embed the request URL (the admin RPC).
+      console.warn(`[WARN]  Could not verify transaction ${txHash}: ${redactRpcUrls(error.message)}`);
       return 'failed';
     }
   }
@@ -181,7 +215,7 @@ class TenderlyGovernanceSimulator {
         summary += `| ${tx.step} | ${status} | ${txLink} |\n`;
 
         if (tx.error) {
-          summary += `| | | **Error:** ${tx.error} |\n`;
+          summary += `| | | **Error:** ${redactRpcUrls(tx.error)} |\n`;
         }
       }
     }
@@ -268,7 +302,7 @@ class TenderlyGovernanceSimulator {
       return newCommentResponse.data.id;
 
     } catch (error: any) {
-      console.warn(`[WARN]  GitHub comment management failed:`, error.response?.data || error.message);
+      console.warn(`[WARN]  GitHub comment management failed:`, redactRpcUrls(error.response?.data || error.message));
       return null;
     }
   }
@@ -294,7 +328,7 @@ class TenderlyGovernanceSimulator {
 
       console.log(`[INFO]  Updated GitHub comment: ${commentId}`);
     } catch (error: any) {
-      console.warn(`[WARN]  Failed to update GitHub comment:`, error.response?.data || error.message);
+      console.warn(`[WARN]  Failed to update GitHub comment:`, redactRpcUrls(error.response?.data || error.message));
     }
   }
 
@@ -319,7 +353,7 @@ class TenderlyGovernanceSimulator {
 
       console.log(`[INFO]  Created new GitHub comment`);
     } catch (error: any) {
-      console.warn(`[WARN]  Failed to create new GitHub comment:`, error.response?.data || error.message);
+      console.warn(`[WARN]  Failed to create new GitHub comment:`, redactRpcUrls(error.response?.data || error.message));
     }
   }
 
@@ -416,15 +450,32 @@ class TenderlyGovernanceSimulator {
       const slug = data.slug;
       const link = `https://dashboard.tenderly.co/${account_id}/${project_slug}/testnet/${vnetId}`;
 
+      // Mask every RPC URL returned by the API before anything else is logged,
+      // so even accidental future prints are redacted by the Actions runner.
+      if (Array.isArray(data.rpcs)) {
+        for (const rpc of data.rpcs) {
+          maskInGitHubActions(rpc?.url);
+        }
+      }
+      maskInGitHubActions(data.admin_rpc_url);
+      maskInGitHubActions(adminRpc);
+      // The admin RPC path segment is the capability token itself and is later
+      // embedded into other URLs (e.g. the Fluid UI link), so mask it too.
+      if (typeof adminRpc === 'string' && adminRpc) {
+        maskInGitHubActions(adminRpc.split('/')[3] || adminRpc.split('/').pop());
+      }
+
       console.log(`[SUCCESS] VNet Created: ${vnetId}`);
-      console.log(`          RPC: ${adminRpc}`);
+      console.log(`          Slug: ${slug}`);
+      console.log('          RPC endpoint acquired (URL redacted)');
       console.log(`          Link: ${link}`);
       console.log('[STAGE:COMPLETED] vnetCreation');
 
       return { id: vnetId, adminRpc, slug, link };
 
     } catch (error: any) {
-      console.error('Failed to create VNet:', error.response?.data || error.message);
+      // The VNet API response/config can contain RPC capability URLs.
+      console.error('Failed to create VNet:', redactRpcUrls(error.response?.data || error.message));
       throw error;
     }
   }
@@ -502,9 +553,9 @@ class TenderlyGovernanceSimulator {
           throw new Error('No contract address in receipt');
         }
       } catch (error: any) {
-        console.error(`[ERROR] Could not get deployment receipt: ${error.message}`);
+        console.error(`[ERROR] Could not get deployment receipt: ${redactRpcUrls(error.message)}`);
         console.error('[ERROR] Deployment failed - cannot proceed without contract address');
-        throw new Error(`Deployment failed: ${error.message}`);
+        throw new Error(`Deployment failed: ${redactRpcUrls(error.message)}`);
       }
 
       console.log(`[SUCCESS] Payload deployed: ${deployedAddress}`);
@@ -513,7 +564,7 @@ class TenderlyGovernanceSimulator {
       return deployedAddress;
 
     } catch (error: any) {
-      console.error('[ERROR] Deployment failed:', error.message);
+      console.error('[ERROR] Deployment failed:', redactRpcUrls(error.message));
       console.error('[ERROR] Ensure the contract compiles and artifacts are generated');
       throw error;
     }
@@ -547,7 +598,7 @@ class TenderlyGovernanceSimulator {
         console.log('[STAGE:COMPLETED] preSetup');
       }
     } catch (error: any) {
-      console.warn('[WARN]  Pre-setup failed:', error.message);
+      console.warn('[WARN]  Pre-setup failed:', redactRpcUrls(error.message));
       console.warn('[STAGE:SKIPPED] preSetup');
     }
   }
@@ -828,7 +879,7 @@ class TenderlyGovernanceSimulator {
         await provider.send('evm_increaseTime', [86400]); // 1 day = 86400 seconds
         console.log('[INFO]  Time advanced by 86400 seconds (1 day)');
       } catch (timeError: any) {
-        console.warn(`[WARN]  evm_increaseTime failed: ${timeError.message}`);
+        console.warn(`[WARN]  evm_increaseTime failed: ${redactRpcUrls(timeError.message)}`);
         console.log('[INFO]  Attempting alternative: evm_mine with timestamp...');
         try {
           // Fallback: mine block with increased timestamp
@@ -839,7 +890,7 @@ class TenderlyGovernanceSimulator {
             console.log('[INFO]  Mined block with +86400s timestamp');
           }
         } catch (fallbackError: any) {
-          console.warn(`[WARN]  Time advancement failed: ${fallbackError.message}`);
+          console.warn(`[WARN]  Time advancement failed: ${redactRpcUrls(fallbackError.message)}`);
           console.warn('[WARN]  Proceeding without time delay (may affect execution)');
         }
       }
@@ -898,7 +949,7 @@ class TenderlyGovernanceSimulator {
       };
 
     } catch (error: any) {
-      console.error('Simulation failed:', error.message);
+      console.error('Simulation failed:', redactRpcUrls(error.message));
       throw error;
     }
   }
@@ -1065,7 +1116,7 @@ ${this.generateTransactionSummary()}
 
 ### Error Details
 
-**Error Message:** \`${error.message}\`
+**Error Message:** \`${redactRpcUrls(error.message)}\`
 
 ### Troubleshooting
 
@@ -1172,7 +1223,8 @@ ${vnetSection}
       console.log(`VNet ID: ${vnetConfig.id}`);
       console.log(`Execution TX Hash: ${result.transactionHash}`);
       console.log(`Tenderly Execution: ${executionTenderlyUrl}`);
-      console.log(`Fluid UI: ${fluidUiLink}\n`);
+      // fluidUiLink embeds the admin RPC capability token; do not print it.
+      console.log('Fluid UI: link generated (contains RPC token, redacted from logs; see PR comment)\n');
 
       // Generate comprehensive GitHub comment
       const commentContent = this.generateGitHubComment(result, vnetConfig, executionTenderlyUrl, fluidUiLink, proposalTenderlyUrl);
@@ -1191,7 +1243,7 @@ ${vnetSection}
       }
 
     } catch (error: any) {
-      console.error(`\n[ERROR] Simulation Failed: ${error.message}`);
+      console.error(`\n[ERROR] Simulation Failed: ${redactRpcUrls(error.message)}`);
 
       // Update GitHub comment with error information - with timeout protection
       if (githubCommentId) {
@@ -1246,7 +1298,7 @@ ${vnetSection}
       // Output error details for GitHub Actions
       if (process.env.GITHUB_OUTPUT) {
         fs.appendFileSync(process.env.GITHUB_OUTPUT, `simulation_status=failed\n`);
-        fs.appendFileSync(process.env.GITHUB_OUTPUT, `error_message=${error.message}\n`);
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `error_message=${redactRpcUrls(error.message)}\n`);
         if (vnetConfig) {
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `vnet_id=${vnetConfig.id}\n`);
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `vnet_link=${vnetConfig.link}\n`);
@@ -1286,7 +1338,10 @@ const __dirname = dirname(__filename);
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((error) => {
-    console.error('Fatal error:', error);
+    // Do not dump the raw error object: axios errors include the request
+    // config (headers with the Tenderly access key) and ethers errors can
+    // include the admin RPC URL.
+    console.error('Fatal error:', redactRpcUrls(error));
     process.exit(1);
   });
 }
