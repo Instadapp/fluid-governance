@@ -36,6 +36,10 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         dust limits to launch limits (DEX max supply / LL limits / fee /
 ///         range, vault withdrawal & borrow caps) and removes Team Multisig
 ///         auth. Vault risk params (CF/LT/LML/LP) are configured via MS1.
+///
+///         Action 5 raises the PST / USDC (165) and PST / USDT (166) T1 vault
+///         max borrow limits to $15.1M (from $10M). Base borrow ($5M),
+///         withdrawal ($8M) and borrow expansion (50% / 6h) are unchanged.
 contract PayloadIGP136 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 136;
 
@@ -59,6 +63,10 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
     uint256 public constant GHO_USDC_DEX_ID = 4; // GHO-USDC
     uint256 public constant VAULT_REUSD_USDT__USDC_USDT_ID = 170; // T4: reUSD-USDT / USDC-USDT
     uint256 public constant VAULT_REUSD__GHO_USDC_ID = 181; // T3: reUSD / GHO-USDC
+
+    // --- PST T1 vault ids (verified on-chain via getVaultAddress) ---
+    uint256 public constant VAULT_PST_USDC_ID = 165; // T1: PST / USDC
+    uint256 public constant VAULT_PST_USDT_ID = 166; // T1: PST / USDT
 
     // --- Shared capped sUSDai rate (CappedRateChainlink_SUSDAI) ---
     // DeployerFactory nonce, used as the DEX center-price address.
@@ -89,6 +97,9 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
 
         // Action 4: Raise reUSD vaults 170 + 181 from dust to launch limits.
         action4();
+
+        // Action 5: Raise PST/USDC (165) + PST/USDT (166) max borrow to $15.1M.
+        action5();
     }
 
     function verifyProposal() public view override {}
@@ -381,6 +392,37 @@ contract PayloadIGP136 is PayloadIGPPriceHelpers {
                 false
             );
         }
+    }
+
+    /// @notice Action 5: Raise the PST / USDC (165) and PST / USDT (166) T1
+    ///         vault max borrow limits to $15.1M (from $10M). The base borrow
+    ///         limit ($5M), withdrawal limit ($8M) and borrow expansion
+    ///         (50% / 6h) set in IGP-131 are left unchanged — only the max debt
+    ///         ceiling is raised.
+    function action5() internal isActionSkippable(5) {
+        // Vault 165: PST / USDC (TYPE_1) — USDC LL borrow
+        setBorrowProtocolLimits(
+            BorrowProtocolConfig({
+                protocol: getVaultAddress(VAULT_PST_USDC_ID),
+                borrowToken: USDC_ADDRESS,
+                expandPercent: 50 * 1e2, // 50% (unchanged)
+                expandDuration: 6 hours, // (unchanged)
+                baseBorrowLimitInUSD: 5_000_000, // $5M (unchanged)
+                maxBorrowLimitInUSD: 15_100_000 // $15.1M (from $10M)
+            })
+        );
+
+        // Vault 166: PST / USDT (TYPE_1) — USDT LL borrow
+        setBorrowProtocolLimits(
+            BorrowProtocolConfig({
+                protocol: getVaultAddress(VAULT_PST_USDT_ID),
+                borrowToken: USDT_ADDRESS,
+                expandPercent: 50 * 1e2, // 50% (unchanged)
+                expandDuration: 6 hours, // (unchanged)
+                baseBorrowLimitInUSD: 5_000_000, // $5M (unchanged)
+                maxBorrowLimitInUSD: 15_100_000 // $15.1M (from $10M)
+            })
+        );
     }
 
     /**

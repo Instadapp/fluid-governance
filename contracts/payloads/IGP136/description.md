@@ -1,4 +1,4 @@
-# Collect Liquidity Layer Revenue, Migrate sUSDai Vault Oracles, Rebalance PST Vault 169, and Set reUSD Launch Limits
+# Collect Liquidity Layer Revenue, Migrate sUSDai Vault Oracles, Rebalance PST Vault 169, Set reUSD Launch Limits, and Raise PST/USDC + PST/USDT Max Borrow
 
 ## Summary
 
@@ -8,6 +8,7 @@ This proposal:
 2. Migrates the **8 live sUSDai vault oracles** (vaults 171–173, 175–179) to newly deployed oracles referencing **CappedRateChainlink_SUSDAI** (`0xC5D27C5d356479b681328351F1583c63051E76a0`, DF nonce 258) and re-points the sUSDai-USDC (DEX **46**) and sUSDai-USDT (DEX **48**) center prices to the same capped rate.
 3. Rebalances the supply-side drift on the **PST T4 vault 169** from the Reserve.
 4. Raises **reUSD vault 170** (T4) and **vault 181** (T3) from dust limits (IGP-135) to launch limits and removes Team Multisig auth on both.
+5. Raises the **PST / USDC (165)** and **PST / USDT (166)** T1 vault max borrow limits to **$15.1M** (from $10M).
 
 ## Code Changes
 
@@ -53,6 +54,15 @@ Raises the reUSD market from dust limits (IGP-135) to launch limits. Vault risk 
 
 GHO-USDC DEX (id 4) max borrow shares (`~21.6M`) already cover the vault's `$10M` borrow cap; no DEX-level cap change needed.
 
+### Action 5: Raise PST / USDC (165) + PST / USDT (166) Max Borrow to $15.1M
+
+Both markets were launched in IGP-131 at `$8M` withdraw / `$5M` base borrow / `$10M` max borrow (TYPE_1, 50% / 6h borrow expansion). This action raises only the **max debt ceiling** to `$15.1M`; the base borrow limit (`$5M`), withdrawal limit (`$8M`) and expansion (50% / 6h) are unchanged.
+
+| Market | Id | Type | Change |
+| --- | --- | --- | --- |
+| PST / USDC | 165 | TYPE_1 | Max borrow `$10M → $15.1M` (USDC LL) |
+| PST / USDT | 166 | TYPE_1 | Max borrow `$10M → $15.1M` (USDT LL) |
+
 ## Conclusion
 
-IGP-136 collects the >$5k Liquidity Layer revenue (USDC, USDT, ETH, GHO, weETH) into the Fluid Reserve and forwards it to Team Multisig, migrates the 8 sUSDai vault oracles and the DEX 46/48 center prices to CappedRateChainlink_SUSDAI, rebalances the PST T4 vault (169) supply drift from the Reserve, and raises reUSD vaults 170 and 181 to launch limits with Team Multisig auth removed.
+IGP-136 collects the >$5k Liquidity Layer revenue (USDC, USDT, ETH, GHO, weETH) into the Fluid Reserve and forwards it to Team Multisig, migrates the 8 sUSDai vault oracles and the DEX 46/48 center prices to CappedRateChainlink_SUSDAI, rebalances the PST T4 vault (169) supply drift from the Reserve, raises reUSD vaults 170 and 181 to launch limits with Team Multisig auth removed, and raises the PST/USDC (165) and PST/USDT (166) max borrow limits to $15.1M.
