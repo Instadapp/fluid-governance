@@ -4,7 +4,7 @@
 
 This proposal:
 
-1. Collects the **Liquidity Layer revenue** for every token accruing >$5k (USDC, USDT, ETH, GHO, weETH) into the Fluid Reserve and forwards it to Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`).
+1. Collects the **Liquidity Layer revenue** for every token accruing >$5k (USDC, USDT, ETH, GHO, weETH) into the Fluid Reserve and forwards it to Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`) to clear the remaining residual (Resolv-related) debt.
 2. Migrates the **8 live sUSDai vault oracles** (vaults 171–173, 175–179) to newly deployed oracles referencing **CappedRateChainlink_SUSDAI** (`0xC5D27C5d356479b681328351F1583c63051E76a0`, DF nonce 258) and re-points the sUSDai-USDC (DEX **46**) and sUSDai-USDT (DEX **48**) center prices to the same capped rate.
 3. Rebalances the supply-side drift on the **PST T4 vault 169** from the Reserve.
 4. Raises **reUSD vault 170** (T4) and **vault 181** (T3) from dust limits (IGP-135) to launch limits and removes Team Multisig auth on both.
@@ -12,10 +12,10 @@ This proposal:
 
 ## Code Changes
 
-### Action 1: Collect Liquidity Layer Revenue and Forward to Team Multisig
+### Action 1: Collect Liquidity Layer Revenue and Forward to Team Multisig for Residual Debt Repayment
 
 - `LIQUIDITY.collectRevenue` into the Reserve (`0x264786EF916af64a1DB19F513F24a3681734ce92`) for the >$5k tokens: USDC ~$84.7k, USDT ~$50.8k, ETH ~$36.5k, GHO ~$8.8k, weETH ~$5.4k. Tokens below $5k (wstETH ~$4.5k, USDe ~$3.2k) are excluded.
-- `withdrawFunds` forwards each balance minus operational dust (`-10` for 6-decimal tokens, `-0.1 ether` for 18-decimal and native ETH) to Team Multisig, reason `"REVENUE COLLECTION"`. **USDC retains `3,400` in the Reserve** to self-fund the Action 3 rebalance's USDC leg.
+- `withdrawFunds` forwards each balance minus operational dust (`-10` for 6-decimal tokens, `-0.1 ether` for 18-decimal and native ETH) to Team Multisig toward repayment of the residual (Resolv-related) debt, reason `"REVENUE COLLECTION"`. **USDC retains `3,400` in the Reserve** to self-fund the Action 3 rebalance's USDC leg.
 
 ### Action 2: Migrate sUSDai Vault Oracles to the Capped Chainlink Rate
 
@@ -65,4 +65,4 @@ Both markets were launched in IGP-131 at `$8M` withdraw / `$5M` base borrow / `$
 
 ## Conclusion
 
-IGP-136 collects the >$5k Liquidity Layer revenue (USDC, USDT, ETH, GHO, weETH) into the Fluid Reserve and forwards it to Team Multisig, migrates the 8 sUSDai vault oracles and the DEX 46/48 center prices to CappedRateChainlink_SUSDAI, rebalances the PST T4 vault (169) supply drift from the Reserve, raises reUSD vaults 170 and 181 to launch limits with Team Multisig auth removed, and raises the PST/USDC (165) and PST/USDT (166) max borrow limits to $15.1M.
+IGP-136 collects the >$5k Liquidity Layer revenue (USDC, USDT, ETH, GHO, weETH) into the Fluid Reserve and forwards it to Team Multisig to clear the remaining residual (Resolv-related) debt, migrates the 8 sUSDai vault oracles and the DEX 46/48 center prices to CappedRateChainlink_SUSDAI, rebalances the PST T4 vault (169) supply drift from the Reserve, raises reUSD vaults 170 and 181 to launch limits with Team Multisig auth removed, and raises the PST/USDC (165) and PST/USDT (166) max borrow limits to $15.1M.
