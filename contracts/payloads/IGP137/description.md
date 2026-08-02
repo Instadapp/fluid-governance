@@ -11,6 +11,7 @@ This proposal reduces borrow surface area on legacy collateral vaults, updates t
 5. Trims the **reUSD-USDT DEX (44)** range to upper **0.15%** / lower **0.4%** over **4 days**.
 6. Widens the **osETH-ETH DEX (43)** upper range to **0.5%** over **12 days** (lower stays **0.3%**).
 7. Launches **USDT/USDC DEX (49)** with **$12M** max supply shares, **$5M**/token LL limits, **0.3%/0.1%** range, **0.01%** fee, and **$8M** smart-lending base withdrawal.
+8. Swaps the **weETH-ETH DEX (9)** fee-handler auth from `0xD43d…B44a` (IGP-113) to `0x5346…FB6E`.
 
 Withdrawal limits on all vaults in Actions 1–4 are unchanged — only borrow ceilings are tightened.
 
@@ -78,6 +79,17 @@ Assumes DEX **49** (USDT/USDC) and its smart-lending wrapper (`fSL49`) are deplo
 | Smart-lending rebalancer | Fluid Reserve |
 | Team MS auth | removed |
 
+### Action 8: weETH-ETH DEX (9) Fee-Handler Auth Swap
+
+IGP-113 added `0xD43d85f4F4eEDdA3ed3BbE2Ca7351eE32b8bB44a` as fee-handler auth on the weETH-ETH DEX (id **9**), replacing `0x8eaE…3100`. This action completes the next rotation:
+
+| | Address |
+| --- | --- |
+| Old handler (revoked) | `0xD43d85f4F4eEDdA3ed3BbE2Ca7351eE32b8bB44a` |
+| New handler (granted) | `0x534633b92E67e59D90FBCb73fb6F28CbB8c5FB6E` |
+
+Calls: `setDexAuth(dex, old, false)` then `setDexAuth(dex, new, true)` on DEX 9 (IGP-103 / IGP-113 pattern).
+
 ## Conclusion
 
-IGP-137 tightens borrow exposure across osETH, tBTC, eBTC, LBTC, and ezETH collateral vaults, trims the reUSD-USDT DEX range, widens the osETH-ETH DEX upper range, and launches the USDT/USDC smart-lending pool at operational limits. Limits can be raised in future proposals if demand returns.
+IGP-137 tightens borrow exposure across osETH, tBTC, eBTC, LBTC, and ezETH collateral vaults, trims the reUSD-USDT DEX range, widens the osETH-ETH DEX upper range, launches the USDT/USDC smart-lending pool at operational limits, and rotates the weETH-ETH DEX fee-handler auth to the new handler.

@@ -16,7 +16,8 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         Actions 1–4 cap borrow exposure on legacy collateral vaults so
 ///         limits can be raised later if demand returns. Action 5 trims the
 ///         reUSD-USDT DEX (44) range; Action 6 widens the osETH-ETH DEX (43)
-///         upper range; Action 7 sets launch limits on the new USDT/USDC pool.
+///         upper range; Action 7 launches the USDT/USDC pool; Action 8 swaps
+///         the weETH-ETH DEX (9) fee-handler auth to the new handler.
 contract PayloadIGP137 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 137;
 
@@ -47,6 +48,12 @@ contract PayloadIGP137 is PayloadIGPPriceHelpers {
     uint256 public constant USDC_USDT_DEX_ID = 2; // USDC-USDT
     uint256 public constant USDC_USDT_CONC_DEX_ID = 34; // USDC-USDT concentrated
     uint256 public constant USDT_USDC_DEX_ID = 49; // USDT-USDC (new smart-lending pool)
+    uint256 public constant WEETH_ETH_DEX_ID = 9; // weETH-ETH
+
+    address public constant OLD_DEX_FEE_HANDLER =
+        0xD43d85f4F4eEDdA3ed3BbE2Ca7351eE32b8bB44a;
+    address public constant NEW_DEX_FEE_HANDLER =
+        0x534633b92E67e59D90FBCb73fb6F28CbB8c5FB6E;
 
     function execute() public virtual override {
         super.execute();
@@ -71,6 +78,9 @@ contract PayloadIGP137 is PayloadIGPPriceHelpers {
 
         // Action 7: Launch USDT/USDC DEX (49) limits + smart lending.
         action7();
+
+        // Action 8: Swap weETH-ETH DEX (9) fee-handler auth old → new.
+        action8();
     }
 
     function verifyProposal() public view override {}
@@ -342,6 +352,16 @@ contract PayloadIGP137 is PayloadIGPPriceHelpers {
         );
 
         DEX_FACTORY.setDexAuth(usdtUsdcDex_, TEAM_MULTISIG, false);
+    }
+
+    /// @notice Action 8: Swap the weETH-ETH DEX (9) fee-handler auth from the
+    ///         old handler (added in IGP-113) to the new handler, revoking the
+    ///         old address.
+    function action8() internal isActionSkippable(8) {
+        address weethEthDex_ = getDexAddress(WEETH_ETH_DEX_ID);
+
+        DEX_FACTORY.setDexAuth(weethEthDex_, OLD_DEX_FEE_HANDLER, false);
+        DEX_FACTORY.setDexAuth(weethEthDex_, NEW_DEX_FEE_HANDLER, true);
     }
 
     /**
