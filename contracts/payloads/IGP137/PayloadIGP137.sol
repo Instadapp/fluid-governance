@@ -129,8 +129,8 @@ contract PayloadIGP137 is PayloadIGPPriceHelpers {
                 protocol: getVaultAddress(VAULT_OSETH__USDC_USDT_ID),
                 expandPercent: 25 * 1e2, // 25% (unchanged)
                 expandDuration: 3 hours, // (unchanged)
-                baseBorrowLimit: 45_081_612_774_820_804_684_671, // $100K in shares
-                maxBorrowLimit: 45_081_612_774_820_804_684_671 // $100K in shares
+                baseBorrowLimit: 45_000 * 1e18, // $100K in shares
+                maxBorrowLimit: 45_000 * 1e18 // $100K in shares
             })
         );
 
@@ -141,8 +141,8 @@ contract PayloadIGP137 is PayloadIGPPriceHelpers {
                 protocol: getVaultAddress(VAULT_OSETH__USDC_USDT_CONC_ID),
                 expandPercent: 25 * 1e2, // 25% (unchanged)
                 expandDuration: 3 hours, // (unchanged)
-                baseBorrowLimit: 47_229_014_870_180_791_529_401, // $100K in shares
-                maxBorrowLimit: 47_229_014_870_180_791_529_401 // $100K in shares
+                baseBorrowLimit: 47_000 * 1e18, // $100K in shares
+                maxBorrowLimit: 47_000 * 1e18 // $100K in shares
             })
         );
     }
