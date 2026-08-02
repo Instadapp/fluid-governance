@@ -1,8 +1,8 @@
 /**
- * Pre-Setup Script for IGP137 Payload Simulation
+ * Pre-Setup Script for IGP138 Payload Simulation
  *
- * 1. Governor proposalCount bump: create a throwaway IGP-136 placeholder
- *    proposal so the real IGP-137 lands on id 137.
+ * 1. Governor proposalCount bump: create a throwaway IGP-137 placeholder
+ *    proposal so the real IGP-138 lands on id 138.
  * 2. Deploy USDT/USDC DEX 49 if the fork predates it (Action 7).
  */
 
@@ -25,8 +25,8 @@ const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
 
 const USDT_USDC_DEX_ID = 49;
 
-const IGP137_PROPOSAL_ID = 137;
-const TARGET_PROPOSAL_COUNT = IGP137_PROPOSAL_ID - 1; // 136
+const IGP138_PROPOSAL_ID = 138;
+const TARGET_PROPOSAL_COUNT = IGP138_PROPOSAL_ID - 1; // 137
 
 async function getProposalCount(provider: JsonRpcProvider): Promise<number> {
   const iface = new ethers.Interface([
@@ -74,7 +74,7 @@ async function createDummyProposal(provider: JsonRpcProvider): Promise<void> {
     DELEGATOR,
     INST,
     delegateData,
-    "delegate INST (delegator -> proposer) for dummy IGP-136",
+    "delegate INST (delegator -> proposer) for dummy IGP-137",
   );
 
   const targets = [TIMELOCK];
@@ -82,7 +82,7 @@ async function createDummyProposal(provider: JsonRpcProvider): Promise<void> {
   const signatures = [""];
   const calldatas = ["0x"];
   const description =
-    "IGP-136 placeholder (simulation only): consumes governor proposal id 136 so IGP-137 lands on id 137.";
+    "IGP-137 placeholder (simulation only): consumes governor proposal id 137 so IGP-138 lands on id 138.";
 
   const proposeData = new ethers.Interface([
     "function propose(address[] targets, uint256[] values, string[] signatures, bytes[] calldatas, string description) returns (uint256)",
@@ -98,7 +98,7 @@ async function createDummyProposal(provider: JsonRpcProvider): Promise<void> {
     PROPOSER,
     GOVERNOR,
     proposeData,
-    "create dummy IGP-136 proposal",
+    "create dummy IGP-137 proposal",
   );
 }
 
@@ -113,7 +113,7 @@ async function ensureGovernorProposalId(
   if (needed <= 0) {
     console.log(
       `[SETUP] proposalCount (${count}) already >= ${TARGET_PROPOSAL_COUNT}; ` +
-        `IGP-137 will land on id ${count + 1}. No dummy proposal created.`,
+        `IGP-138 will land on id ${count + 1}. No dummy proposal created.`,
     );
     return;
   }
@@ -131,9 +131,9 @@ async function ensureGovernorProposalId(
   console.log(
     `[SETUP] proposalCount after dummy = ${after} (next proposal -> id ${after + 1})`,
   );
-  if (after + 1 !== IGP137_PROPOSAL_ID) {
+  if (after + 1 !== IGP138_PROPOSAL_ID) {
     throw new Error(
-      `After dummy proposal the next id would be ${after + 1}, expected ${IGP137_PROPOSAL_ID}.`,
+      `After dummy proposal the next id would be ${after + 1}, expected ${IGP138_PROPOSAL_ID}.`,
     );
   }
 }
@@ -210,7 +210,7 @@ async function ensureUsdtUsdcDex(
 }
 
 export async function preSetup(provider: JsonRpcProvider): Promise<void> {
-  console.log("[SETUP] Running pre-setup for IGP137...");
+  console.log("[SETUP] Running pre-setup for IGP138...");
 
   try {
     await ensureGovernorProposalId(provider);

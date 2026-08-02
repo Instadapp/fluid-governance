@@ -92,4 +92,4 @@ Calls: `setDexAuth(dex, old, false)` then `setDexAuth(dex, new, true)` on DEX 9 
 
 ## Conclusion
 
-IGP-137 tightens borrow exposure across osETH, tBTC, eBTC, LBTC, and ezETH collateral vaults, trims the reUSD-USDT DEX range, widens the osETH-ETH DEX upper range, launches the USDT/USDC smart-lending pool at operational limits, and rotates the weETH-ETH DEX fee-handler auth to the new handler.
+IGP-138 tightens borrow exposure across osETH, tBTC, eBTC, LBTC, and ezETH collateral vaults, trims the reUSD-USDT DEX range, widens the osETH-ETH DEX upper range, launches the USDT/USDC smart-lending pool at operational limits, and rotates the weETH-ETH DEX fee-handler auth to the new handler.

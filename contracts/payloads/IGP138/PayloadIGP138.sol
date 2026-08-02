@@ -9,7 +9,7 @@ import {IFluidDex, IFluidAdminDex} from "../common/interfaces/IFluidDex.sol";
 import {ISmartLendingAdmin} from "../common/interfaces/ISmartLending.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
-/// @notice IGP137: Tighten borrow surface area on osETH, tBTC, eBTC, LBTC,
+/// @notice IGP138: Tighten borrow surface area on osETH, tBTC, eBTC, LBTC,
 ///         and ezETH vaults; update reUSD and osETH-ETH DEX ranges; and launch
 ///         the USDT/USDC smart-lending DEX (id 49).
 ///
@@ -18,8 +18,8 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         reUSD-USDT DEX (44) range; Action 6 widens the osETH-ETH DEX (43)
 ///         upper range; Action 7 launches the USDT/USDC pool; Action 8 swaps
 ///         the weETH-ETH DEX (9) fee-handler auth to the new handler.
-contract PayloadIGP137 is PayloadIGPPriceHelpers {
-    uint256 public constant PROPOSAL_ID = 137;
+contract PayloadIGP138 is PayloadIGPPriceHelpers {
+    uint256 public constant PROPOSAL_ID = 138;
 
     // --- osETH vault ids (verified on-chain via getVaultAddress) ---
     uint256 public constant VAULT_OSETH_USDC_ID = 153; // T1: osETH / USDC
