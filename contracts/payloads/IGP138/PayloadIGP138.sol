@@ -19,7 +19,7 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         upper range; Action 7 launches the USDT/USDC pool; Action 8 swaps
 ///         the weETH-ETH DEX (9) fee-handler auth to the new handler; Action 9
 ///         raises the legacy ETH/USDC vault (1) ETH base withdrawal limit to
-///         1 ETH to unstick a supplier caught above the wind-down limit.
+///         1 ETH to unblock suppliers stuck above the wind-down limit.
 contract PayloadIGP138 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 138;
 
@@ -88,7 +88,7 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
         action8();
 
         // Action 9: Raise legacy ETH/USDC vault (1) ETH base withdrawal
-        // limit to 1 ETH to unstick a supplier.
+        // limit to 1 ETH to unblock stuck suppliers.
         action9();
     }
 
@@ -375,11 +375,12 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
 
     /// @notice Action 9: Raise the legacy ETH/USDC vault (id 1) ETH base
     ///         withdrawal limit to 1 ETH. The vault was wound down with the
-    ///         base limit at/below the currently supplied balance, leaving a
-    ///         supplier unable to withdraw (expansion is frozen at 0.01% over
-    ///         max duration). A 1 ETH base limit sits above the vault's total
-    ///         supplied ETH so the position can exit in full; the frozen
-    ///         expansion config is kept so the vault stays deprecated.
+    ///         base limit at/below the currently supplied balance, leaving
+    ///         suppliers stuck and unable to withdraw (expansion is frozen at
+    ///         0.01% over max duration). A 1 ETH base limit sits above the
+    ///         vault's total supplied ETH so stuck positions can exit in full;
+    ///         the frozen expansion config is kept so the vault stays
+    ///         deprecated.
     function action9() internal isActionSkippable(9) {
         FluidLiquidityAdminStructs.UserSupplyConfig[]
             memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
