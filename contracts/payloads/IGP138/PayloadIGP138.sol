@@ -17,9 +17,14 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         limits can be raised later if demand returns. Action 5 trims the
 ///         reUSD-USDT DEX (44) range; Action 6 widens the osETH-ETH DEX (43)
 ///         upper range; Action 7 launches the USDT/USDC pool; Action 8 swaps
-///         the weETH-ETH DEX (9) fee-handler auth to the new handler.
+///         the weETH-ETH DEX (9) fee-handler auth to the new handler; Action 9
+///         raises the legacy ETH/USDC vault (1) ETH base withdrawal limit to
+///         1 ETH to unstick a supplier caught above the wind-down limit.
 contract PayloadIGP138 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 138;
+
+    // --- legacy vault ids ---
+    uint256 public constant VAULT_ETH_USDC_ID = 1; // T1: ETH / USDC (legacy, wound down)
 
     // --- osETH vault ids (verified on-chain via getVaultAddress) ---
     uint256 public constant VAULT_OSETH_USDC_ID = 153; // T1: osETH / USDC
@@ -81,6 +86,10 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
 
         // Action 8: Swap weETH-ETH DEX (9) fee-handler auth old → new.
         action8();
+
+        // Action 9: Raise legacy ETH/USDC vault (1) ETH base withdrawal
+        // limit to 1 ETH to unstick a supplier.
+        action9();
     }
 
     function verifyProposal() public view override {}
@@ -362,6 +371,31 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
 
         DEX_FACTORY.setDexAuth(weethEthDex_, OLD_DEX_FEE_HANDLER, false);
         DEX_FACTORY.setDexAuth(weethEthDex_, NEW_DEX_FEE_HANDLER, true);
+    }
+
+    /// @notice Action 9: Raise the legacy ETH/USDC vault (id 1) ETH base
+    ///         withdrawal limit to 1 ETH. The vault was wound down with the
+    ///         base limit at/below the currently supplied balance, leaving a
+    ///         supplier unable to withdraw (expansion is frozen at 0.01% over
+    ///         max duration). A 1 ETH base limit sits above the vault's total
+    ///         supplied ETH so the position can exit in full; the frozen
+    ///         expansion config is kept so the vault stays deprecated.
+    function action9() internal isActionSkippable(9) {
+        FluidLiquidityAdminStructs.UserSupplyConfig[]
+            memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
+                1
+            );
+
+        configs_[0] = FluidLiquidityAdminStructs.UserSupplyConfig({
+            user: getVaultAddress(VAULT_ETH_USDC_ID),
+            token: ETH_ADDRESS,
+            mode: 1,
+            expandPercent: 1, // 0.01% -> minimum (unchanged, vault stays wound down)
+            expandDuration: 16777215, // max time (unchanged)
+            baseWithdrawalLimit: getRawAmount(ETH_ADDRESS, 1 ether, 0, true)
+        });
+
+        LIQUIDITY.updateUserSupplyConfigs(configs_);
     }
 
     /**

@@ -12,6 +12,7 @@ This proposal reduces borrow surface area on legacy collateral vaults, updates t
 6. Widens the **osETH-ETH DEX (43)** upper range to **0.5%** over **12 days** (lower stays **0.3%**).
 7. Launches **USDT/USDC DEX (49)** with **$12M** max supply shares, **$5M**/token LL limits, **0.3%/0.1%** range, **0.01%** fee, and **$8M** smart-lending base withdrawal.
 8. Swaps the **weETH-ETH DEX (9)** fee-handler auth from `0xD43d…B44a` (IGP-113) to `0x5346…FB6E`.
+9. Raises the **legacy ETH/USDC vault (1)** ETH base withdrawal limit to **1 ETH** to unstick a supplier.
 
 Withdrawal limits on all vaults in Actions 1–4 are unchanged — only borrow ceilings are tightened.
 
@@ -90,6 +91,17 @@ IGP-113 added `0xD43d85f4F4eEDdA3ed3BbE2Ca7351eE32b8bB44a` as fee-handler auth o
 
 Calls: `setDexAuth(dex, old, false)` then `setDexAuth(dex, new, true)` on DEX 9 (IGP-103 / IGP-113 pattern).
 
+### Action 9: Legacy ETH/USDC Vault (1) ETH Base Withdrawal Limit → 1 ETH
+
+The legacy ETH/USDC vault (id **1**) was wound down with a frozen withdrawal-limit expansion (**0.01%** expand over **max duration**, i.e. 16777215s ≈ 194 days) and its ETH base withdrawal limit ended up at/below the vault's currently supplied balance (~0.737 ETH base vs ~0.754 ETH supplied), leaving a supplier unable to withdraw.
+
+| Parameter | Value |
+| --- | --- |
+| Base withdrawal limit | `1 ETH` (from ~0.737 ETH) |
+| Expand % / duration | **0.01%** / max — unchanged (vault stays deprecated) |
+
+Since 1 ETH exceeds the vault's total supplied ETH, the stuck position can exit in full without re-enabling the vault.
+
 ## Conclusion
 
-IGP-138 tightens borrow exposure across osETH, tBTC, eBTC, LBTC, and ezETH collateral vaults, trims the reUSD-USDT DEX range, widens the osETH-ETH DEX upper range, launches the USDT/USDC smart-lending pool at operational limits, and rotates the weETH-ETH DEX fee-handler auth to the new handler.
+IGP-138 tightens borrow exposure across osETH, tBTC, eBTC, LBTC, and ezETH collateral vaults, trims the reUSD-USDT DEX range, widens the osETH-ETH DEX upper range, launches the USDT/USDC smart-lending pool at operational limits, rotates the weETH-ETH DEX fee-handler auth to the new handler, and raises the legacy ETH/USDC vault's ETH base withdrawal limit so a stuck supplier can exit.
