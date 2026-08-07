@@ -4,7 +4,7 @@
 
 This proposal raises the Fluid Foundation's monthly grant from **$250,000** to **$350,000** per month, effective immediately upon approval per the [forum proposal](https://gov.fluid.io/t/increase-foundation-monthly-grant-from-250-000-to-350-000/1787), and executes the first disbursement at the new rate.
 
-The $250,000/month grant approved in February ([Snapshot](https://snapshot.org/#/s:instadapp-gov.eth/proposal/0xde0d55050ef945d3d756219a9ee2cf29ef97c3f5625b107a65e9fd39937d6c5e)) was never drawn: IGP-124, the payload that would have transferred the first tranche, expired without execution while the treasury was absorbing Resolv-incident costs. The disbursement is funded in stETH from the Fluid Reserve rather than the GHO used in IGP-124.
+The $250,000/month grant approved in February ([Snapshot](https://snapshot.org/#/s:instadapp-gov.eth/proposal/0xde0d55050ef945d3d756219a9ee2cf29ef97c3f5625b107a65e9fd39937d6c5e)) was never drawn: IGP-124, the payload that would have transferred the first tranche, expired without execution while the treasury was absorbing Resolv-incident costs.
 
 ## Code Changes
 
