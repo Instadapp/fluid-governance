@@ -5,18 +5,18 @@ pragma experimental ABIEncoderV2;
 import {
     AdminModuleStructs as FluidLiquidityAdminStructs
 } from "../common/interfaces/IFluidLiquidity.sol";
-import {IFluidDex, IFluidAdminDex} from "../common/interfaces/IFluidDex.sol";
-import {ISmartLendingAdmin} from "../common/interfaces/ISmartLending.sol";
+import {IFluidDex} from "../common/interfaces/IFluidDex.sol";
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
 /// @notice IGP138: Tighten borrow surface area on osETH, tBTC, eBTC, LBTC,
-///         and ezETH vaults; update reUSD and osETH-ETH DEX ranges; and launch
-///         the USDT/USDC smart-lending DEX (id 49).
+///         and ezETH vaults; update reUSD and osETH-ETH DEX ranges; and set
+///         initial limits for the USDat/USDC smart-lending DEX (id 49).
 ///
 ///         Actions 1–4 cap borrow exposure on legacy collateral vaults so
 ///         limits can be raised later if demand returns. Action 5 trims the
 ///         reUSD-USDT DEX (44) range; Action 6 widens the osETH-ETH DEX (43)
-///         upper range; Action 7 launches the USDT/USDC pool; Action 8 swaps
+///         upper range; Action 7 sets USDat/USDC pool limits and grants Team
+///         Multisig dex auth; Action 8 swaps
 ///         the weETH-ETH DEX (9) fee-handler auth to the new handler; Action 9
 ///         raises the legacy ETH/USDC vault (1) ETH base withdrawal limit to
 ///         1 ETH to unblock suppliers stuck above the wind-down limit.
@@ -52,7 +52,7 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
     uint256 public constant REUSD_USDT_DEX_ID = 44; // reUSD-USDT
     uint256 public constant USDC_USDT_DEX_ID = 2; // USDC-USDT
     uint256 public constant USDC_USDT_CONC_DEX_ID = 34; // USDC-USDT concentrated
-    uint256 public constant USDT_USDC_DEX_ID = 49; // USDT-USDC (new smart-lending pool)
+    uint256 public constant USDAT_USDC_DEX_ID = 49; // USDat-USDC (new smart-lending pool)
     uint256 public constant WEETH_ETH_DEX_ID = 9; // weETH-ETH
 
     address public constant OLD_DEX_FEE_HANDLER =
@@ -81,7 +81,7 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
         // Action 6: Widen osETH-ETH DEX (43) upper range.
         action6();
 
-        // Action 7: Launch USDT/USDC DEX (49) limits + smart lending.
+        // Action 7: Set USDat/USDC DEX (49) limits + grant Team MS auth.
         action7();
 
         // Action 8: Swap weETH-ETH DEX (9) fee-handler auth old → new.
@@ -307,16 +307,15 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
         );
     }
 
-    /// @notice Action 7: Launch the USDT/USDC DEX (id 49) with $12M max supply
-    ///         shares, $5M/token LL withdrawal limits, 0.3%/0.1% range, 0.01%
-    ///         fee, and $8M smart-lending base withdrawal limit. Assumes the
-    ///         DEX and fSL49 smart-lending wrapper are deployed via MS1.
+    /// @notice Action 7: Set initial limits for the USDat/USDC DEX (id 49) —
+    ///         $12M max supply shares, $5M/token LL withdrawal limits — and
+    ///         grant Team Multisig dex auth.
     function action7() internal isActionSkippable(7) {
-        address usdtUsdcDex_ = getDexAddress(USDT_USDC_DEX_ID);
+        address usdatUsdcDex_ = getDexAddress(USDAT_USDC_DEX_ID);
 
-        DexConfig memory DEX_USDT_USDC = DexConfig({
-            dex: usdtUsdcDex_,
-            tokenA: USDT_ADDRESS,
+        DexConfig memory DEX_USDAT_USDC = DexConfig({
+            dex: usdatUsdcDex_,
+            tokenA: USDAT_ADDRESS,
             tokenB: USDC_ADDRESS,
             smartCollateral: true,
             smartDebt: false,
@@ -324,43 +323,13 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
             baseBorrowLimitInUSD: 0,
             maxBorrowLimitInUSD: 0
         });
-        setDexLimits(DEX_USDT_USDC);
+        setDexLimits(DEX_USDAT_USDC);
 
-        IFluidDex(usdtUsdcDex_).updateMaxSupplyShares(
+        IFluidDex(usdatUsdcDex_).updateMaxSupplyShares(
             6_000_000 * 1e18 // ~$12M at ~$2/share
         );
 
-        IFluidDex(usdtUsdcDex_).updateRangePercents(
-            0.1 * 1e4, // upper range: 0.1%
-            0.3 * 1e4, // lower range: 0.3%
-            4 days
-        );
-
-        IFluidDex(usdtUsdcDex_).updateFeeAndRevenueCut(
-            0.01 * 1e4, // 0.01%
-            25 * 1e4 // 25% revenue cut
-        );
-
-        address usdtUsdcSmartLending_ = getSmartLendingAddress(
-            USDT_USDC_DEX_ID
-        );
-        {
-            IFluidAdminDex.UserSupplyConfig[]
-                memory slConfigs_ = new IFluidAdminDex.UserSupplyConfig[](1);
-            slConfigs_[0] = IFluidAdminDex.UserSupplyConfig({
-                user: usdtUsdcSmartLending_,
-                expandPercent: 50 * 1e2, // 50%
-                expandDuration: 6 hours,
-                baseWithdrawalLimit: 4_000_000 * 1e18 // ~$8M in shares @ ~$2/share
-            });
-            IFluidDex(usdtUsdcDex_).updateUserSupplyConfigs(slConfigs_);
-        }
-
-        ISmartLendingAdmin(usdtUsdcSmartLending_).setRebalancer(
-            address(FLUID_RESERVE)
-        );
-
-        DEX_FACTORY.setDexAuth(usdtUsdcDex_, TEAM_MULTISIG, false);
+        DEX_FACTORY.setDexAuth(usdatUsdcDex_, TEAM_MULTISIG, true);
     }
 
     /// @notice Action 8: Swap the weETH-ETH DEX (9) fee-handler auth from the
@@ -430,9 +399,9 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
     }
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
-    // fetched: placeholder — re-run prepare-prices.ts before deploy
-    function BTC_USD_PRICE()    public pure override returns (uint256) { return 64_000 * 1e2; }
+    // fetched: 2026-08-08T07:23:15.440Z, source: coingecko
+    function BTC_USD_PRICE()    public pure override returns (uint256) { return 65_000 * 1e2; }
     function STABLE_USD_PRICE() public pure override returns (uint256) { return 1 * 1e2; }
-    function wstETH_USD_PRICE() public pure override returns (uint256) { return 2_160 * 1e2; }
+    function wstETH_USD_PRICE() public pure override returns (uint256) { return 2_380 * 1e2; }
     // --- END AUTO-GENERATED PRICES ---
 }

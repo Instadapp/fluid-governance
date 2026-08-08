@@ -183,6 +183,15 @@ export const TOKENS: readonly TokenEntry[] = [
     rounding: "exactOneDollar",
   },
   {
+    symbol: "USDat",
+    address: "0x23238f20b894f29041f48D88eE91131C395Aaa71",
+    constantName: "USDAT_ADDRESS",
+    decimals: 6,
+    coingeckoId: "saturn-dollar",
+    priceVarName: "STABLE_USD_PRICE",
+    rounding: "exactOneDollar",
+  },
+  {
     symbol: "GHO",
     address: "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
     constantName: "GHO_ADDRESS",

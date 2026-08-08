@@ -3,7 +3,7 @@
  *
  * 1. Governor proposalCount bump: create a throwaway IGP-137 placeholder
  *    proposal so the real IGP-138 lands on id 138.
- * 2. Deploy USDT/USDC DEX 49 if the fork predates it (Action 7).
+ * 2. Deploy USDat/USDC DEX 49 if the fork predates it (Action 7).
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
@@ -16,14 +16,16 @@ const DELEGATOR = "0x5AAB0630aaCa6d0bf1c310aF6C2BB3826A951cFb";
 const PROPOSER = "0xA45f7bD6A5Ff45D31aaCE6bCD3d426D9328cea01";
 
 const TEAM_MULTISIG = "0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e";
-const DEX_FACTORY = "0x91716C4ED4501fe759D925A6362C00952BF5D91d";
+const DEX_FACTORY = "0x91716C4EDA1Fb55e84Bf8b4c7085f84285c19085";
 const DEX_T1_DEPLOYMENT_LOGIC =
   "0x3FB3FE857C1eE52e7002196E295a7ADfFeD80819";
 
 const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
+const USDAT_ADDRESS = "0x23238f20b894f29041f48D88eE91131C395Aaa71";
 
-const USDT_USDC_DEX_ID = 49;
+const USDAT_USDC_DEX_ID = 49;
+// mirrors fluid-contracts mainnet-deploy-usdat-usdc-dex.ts (~1 day at 12s blocks)
+const ORACLE_MAPPING = 1024;
 
 const IGP138_PROPOSAL_ID = 138;
 const TARGET_PROPOSAL_COUNT = IGP138_PROPOSAL_ID - 1; // 137
@@ -170,7 +172,7 @@ function getDeployDexT1Calldata(
   );
   const dexDeploymentData = new ethers.Interface([
     "function dexT1(address token0_, address token1_, uint256 oracleMapping_) external returns (bytes memory)",
-  ]).encodeFunctionData("dexT1", [sorted0, sorted1, 0]);
+  ]).encodeFunctionData("dexT1", [sorted0, sorted1, ORACLE_MAPPING]);
   return new ethers.Interface([
     "function deployDex(address dexDeploymentLogic_, bytes calldata dexDeploymentData_) external returns (address)",
   ]).encodeFunctionData("deployDex", [
@@ -179,32 +181,32 @@ function getDeployDexT1Calldata(
   ]);
 }
 
-async function ensureUsdtUsdcDex(
+async function ensureUsdatUsdcDex(
   provider: JsonRpcProvider,
 ): Promise<void> {
-  const dex49 = await getDexAddress(provider, USDT_USDC_DEX_ID);
+  const dex49 = await getDexAddress(provider, USDAT_USDC_DEX_ID);
   if (await hasCode(provider, dex49)) {
     console.log(
-      `[SETUP] DEX ${USDT_USDC_DEX_ID} already deployed at ${dex49}`,
+      `[SETUP] DEX ${USDAT_USDC_DEX_ID} already deployed at ${dex49}`,
     );
     return;
   }
 
   console.log(
-    `[SETUP] Deploying USDT/USDC DEX ${USDT_USDC_DEX_ID} at ${dex49}`,
+    `[SETUP] Deploying USDat/USDC DEX ${USDAT_USDC_DEX_ID} at ${dex49}`,
   );
   await sendTx(
     provider,
     TEAM_MULTISIG,
     DEX_FACTORY,
-    getDeployDexT1Calldata(USDT_ADDRESS, USDC_ADDRESS),
-    `deploy DEX ${USDT_USDC_DEX_ID} (USDT-USDC)`,
+    getDeployDexT1Calldata(USDAT_ADDRESS, USDC_ADDRESS),
+    `deploy DEX ${USDAT_USDC_DEX_ID} (USDat-USDC)`,
   );
 
-  const after = await getDexAddress(provider, USDT_USDC_DEX_ID);
+  const after = await getDexAddress(provider, USDAT_USDC_DEX_ID);
   if (!(await hasCode(provider, after))) {
     throw new Error(
-      `DEX ${USDT_USDC_DEX_ID} deployment did not create code at ${after}`,
+      `DEX ${USDAT_USDC_DEX_ID} deployment did not create code at ${after}`,
     );
   }
 }
@@ -214,7 +216,7 @@ export async function preSetup(provider: JsonRpcProvider): Promise<void> {
 
   try {
     await ensureGovernorProposalId(provider);
-    await ensureUsdtUsdcDex(provider);
+    await ensureUsdatUsdcDex(provider);
     console.log("[SETUP] Pre-setup completed successfully");
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
