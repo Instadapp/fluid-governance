@@ -56,7 +56,7 @@ async function sendTx(
       to,
       data,
       value: "0x0",
-      gas: "0x3938700", // 60M — block gas limit; DexT1 deploy alone needs ~15M
+      gas: "0x1000000", // 16,777,216 — EIP-7825 per-tx gas cap; DexT1 deploy needs ~15M
       gasPrice: "0x0",
     },
   ]);
