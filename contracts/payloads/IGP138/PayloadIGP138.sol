@@ -18,8 +18,8 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         upper range; Action 7 sets USDat/USDC pool limits and grants Team
 ///         Multisig dex auth; Action 8 swaps the weETH-ETH DEX (9) fee-handler
 ///         auth to the new handler; Action 9 raises the legacy ETH/USDC vault
-///         (1) ETH base withdrawal limit to 1 ETH to unblock suppliers stuck
-///         above the wind-down limit.
+///         (1) ETH base withdrawal limit to 2 ETH (10% / 12h expansion) to
+///         unblock suppliers stuck above the wind-down limit.
 contract PayloadIGP138 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 138;
 
@@ -88,7 +88,7 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
         action8();
 
         // Action 9: Raise legacy ETH/USDC vault (1) ETH base withdrawal
-        // limit to 1 ETH to unblock stuck suppliers.
+        // limit to 2 ETH (10% / 12h expansion) to unblock stuck suppliers.
         action9();
     }
 
@@ -338,13 +338,12 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
     }
 
     /// @notice Action 9: Raise the legacy ETH/USDC vault (id 1) ETH base
-    ///         withdrawal limit to 1 ETH. The vault was wound down with the
-    ///         base limit at/below the currently supplied balance, leaving
-    ///         suppliers stuck and unable to withdraw (expansion is frozen at
-    ///         0.01% over max duration). A 1 ETH base limit sits above the
-    ///         vault's total supplied ETH so stuck positions can exit in full;
-    ///         the frozen expansion config is kept so the vault stays
-    ///         deprecated.
+    ///         withdrawal limit to 2 ETH and restore a normal 10% / 12h
+    ///         withdrawal-limit expansion. The vault was wound down with the
+    ///         base limit at/below the currently supplied balance and
+    ///         expansion frozen at 0.01% over max duration, leaving suppliers
+    ///         stuck and unable to withdraw. A 2 ETH base limit sits above the
+    ///         vault's total supplied ETH so stuck positions can exit in full.
     function action9() internal isActionSkippable(9) {
         FluidLiquidityAdminStructs.UserSupplyConfig[]
             memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
@@ -355,9 +354,9 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
             user: getVaultAddress(VAULT_ETH_USDC_ID),
             token: ETH_ADDRESS,
             mode: 1,
-            expandPercent: 1, // 0.01% -> minimum (unchanged, vault stays wound down)
-            expandDuration: 16777215, // max time (unchanged)
-            baseWithdrawalLimit: getRawAmount(ETH_ADDRESS, 1 ether, 0, true)
+            expandPercent: 10 * 1e2, // 10% (from frozen 0.01%)
+            expandDuration: 12 hours, // (from max duration)
+            baseWithdrawalLimit: getRawAmount(ETH_ADDRESS, 2 ether, 0, true)
         });
 
         LIQUIDITY.updateUserSupplyConfigs(configs_);

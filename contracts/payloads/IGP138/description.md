@@ -12,7 +12,7 @@ This proposal reduces borrow surface area on legacy collateral vaults, updates t
 6. Widens the **osETH-ETH DEX (43)** upper range to **0.5%** over **12 days** (lower stays **0.0001%**).
 7. Sets **$5M**/token LL withdrawal limits for **USDat/USDC DEX (49)** and grants **Team Multisig** dex auth (initialization, max supply shares, fee, ranges, and smart-lending config handled via MS).
 8. Swaps the **weETH-ETH DEX (9)** fee-handler auth from `0xD43d…B44a` (IGP-113) to `0x5346…FB6E`.
-9. Raises the **legacy ETH/USDC vault (1)** ETH base withdrawal limit to **1 ETH** to unblock stuck suppliers.
+9. Raises the **legacy ETH/USDC vault (1)** ETH base withdrawal limit to **2 ETH** with a **10% / 12h** expansion to unblock stuck suppliers.
 
 Withdrawal limits on all vaults in Actions 1–4 are unchanged — only borrow ceilings are tightened.
 
@@ -86,16 +86,16 @@ IGP-113 added `0xD43d85f4F4eEDdA3ed3BbE2Ca7351eE32b8bB44a` as fee-handler auth o
 
 Calls: `setDexAuth(dex, old, false)` then `setDexAuth(dex, new, true)` on DEX 9 (IGP-103 / IGP-113 pattern).
 
-### Action 9: Legacy ETH/USDC Vault (1) ETH Base Withdrawal Limit → 1 ETH
+### Action 9: Legacy ETH/USDC Vault (1) ETH Base Withdrawal Limit → 2 ETH
 
-The legacy ETH/USDC vault (id **1**) was wound down with a frozen withdrawal-limit expansion (**0.01%** expand over **max duration**, i.e. 16777215s ≈ 194 days) and its ETH base withdrawal limit ended up at/below the vault's currently supplied balance (~0.737 ETH base vs ~0.754 ETH supplied), leaving suppliers stuck and unable to withdraw.
+The legacy ETH/USDC vault (id **1**) was wound down with a frozen withdrawal-limit expansion (**0.01%** expand over **max duration**, i.e. 16777215s ≈ 194 days) and its ETH base withdrawal limit ended up at/below the vault's currently supplied balance (~0.737 ETH base vs ~0.96 ETH supplied), leaving suppliers stuck and unable to withdraw.
 
 | Parameter | Value |
 | --- | --- |
-| Base withdrawal limit | `1 ETH` (from ~0.737 ETH) |
-| Expand % / duration | **0.01%** / max — unchanged (vault stays deprecated) |
+| Base withdrawal limit | `2 ETH` (from ~0.737 ETH) |
+| Expand % / duration | **10%** / **12h** (from frozen 0.01% / max) |
 
-Since 1 ETH exceeds the vault's total supplied ETH, stuck suppliers can exit in full without re-enabling the vault.
+Since 2 ETH exceeds the vault's total supplied ETH, stuck suppliers can exit in full.
 
 ## Conclusion
 
