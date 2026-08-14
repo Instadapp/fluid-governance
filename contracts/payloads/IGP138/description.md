@@ -10,7 +10,7 @@ This proposal reduces borrow surface area on legacy collateral vaults, updates t
 4. Caps **ezETH T1** vault (103) at **$100k** and **ezETH-ETH T2** vault (104) at **$1M** borrow.
 5. Trims the **reUSD-USDT DEX (44)** range to upper **0.15%** / lower **0.4%** over **4 days**.
 6. Widens the **osETH-ETH DEX (43)** upper range to **0.5%** over **12 days** (lower stays **0.0001%**).
-7. Sets initial limits for **USDat/USDC DEX (49)** — **$12M** max supply shares, **$5M**/token LL limits — and grants **Team Multisig** dex auth (initialization, fee, ranges, and smart-lending config handled via MS).
+7. Sets **$5M**/token LL withdrawal limits for **USDat/USDC DEX (49)** and grants **Team Multisig** dex auth (initialization, max supply shares, fee, ranges, and smart-lending config handled via MS).
 8. Swaps the **weETH-ETH DEX (9)** fee-handler auth from `0xD43d…B44a` (IGP-113) to `0x5346…FB6E`.
 9. Raises the **legacy ETH/USDC vault (1)** ETH base withdrawal limit to **1 ETH** to unblock stuck suppliers.
 
@@ -68,11 +68,10 @@ Borrow expansion (25% / 3h) is unchanged.
 
 ### Action 7: USDat/USDC DEX (49) Initial Limits + Team MS Auth
 
-Assumes DEX **49** (USDat/USDC) is deployed via MS1 before execution. USDat (Saturn Dollar, `0x23238f20b894f29041f48D88eE91131C395Aaa71`, 6 decimals) is token0. This action only sets limits and grants dex auth — initialization, fee, ranges, and all smart-lending config (limits + rebalancer) are handled by the Team Multisig.
+Assumes DEX **49** (USDat/USDC) is deployed via MS1 before execution. USDat (Saturn Dollar, `0x23238f20b894f29041f48D88eE91131C395Aaa71`, 6 decimals) is token0. This action only sets Liquidity Layer limits and grants dex auth — initialization, max supply shares (~$12M planned), fee, ranges, and all smart-lending config (limits + rebalancer) are handled by the Team Multisig.
 
 | Parameter | Value |
 | --- | --- |
-| Max supply shares | `6M` (~$12M @ ~$2/share) |
 | Token LL withdrawal limits | `$5M` each (USDat + USDC) |
 | Team MS auth | granted (`setDexAuth` on DexFactory) |
 

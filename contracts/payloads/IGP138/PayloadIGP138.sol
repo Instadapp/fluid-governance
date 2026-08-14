@@ -307,9 +307,8 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
         );
     }
 
-    /// @notice Action 7: Set initial limits for the USDat/USDC DEX (id 49) —
-    ///         $12M max supply shares, $5M/token LL withdrawal limits — and
-    ///         grant Team Multisig dex auth.
+    /// @notice Action 7: Set $5M/token LL withdrawal limits for the
+    ///         USDat/USDC DEX (id 49) and grant Team Multisig dex auth.
     function action7() internal isActionSkippable(7) {
         address usdatUsdcDex_ = getDexAddress(USDAT_USDC_DEX_ID);
 
@@ -324,10 +323,6 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
             maxBorrowLimitInUSD: 0
         });
         setDexLimits(DEX_USDAT_USDC);
-
-        IFluidDex(usdatUsdcDex_).updateMaxSupplyShares(
-            6_000_000 * 1e18 // ~$12M at ~$2/share
-        );
 
         DEX_FACTORY.setDexAuth(usdatUsdcDex_, TEAM_MULTISIG, true);
     }
