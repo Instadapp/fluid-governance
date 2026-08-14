@@ -9,7 +9,7 @@ This proposal reduces borrow surface area on legacy collateral vaults, updates t
 3. Caps **all six LBTC vaults** (107–109, 97, 114, 115) at **$1M** max borrow (base = max).
 4. Caps **ezETH T1** vault (103) at **$100k** and **ezETH-ETH T2** vault (104) at **$1M** borrow.
 5. Trims the **reUSD-USDT DEX (44)** range to upper **0.15%** / lower **0.4%** over **4 days**.
-6. Widens the **osETH-ETH DEX (43)** upper range to **0.5%** over **12 days** (lower stays **0.3%**).
+6. Widens the **osETH-ETH DEX (43)** upper range to **0.5%** over **12 days** (lower stays **0.0001%**).
 7. Sets initial limits for **USDat/USDC DEX (49)** — **$12M** max supply shares, **$5M**/token LL limits — and grants **Team Multisig** dex auth (initialization, fee, ranges, and smart-lending config handled via MS).
 8. Swaps the **weETH-ETH DEX (9)** fee-handler auth from `0xD43d…B44a` (IGP-113) to `0x5346…FB6E`.
 9. Raises the **legacy ETH/USDC vault (1)** ETH base withdrawal limit to **1 ETH** to unblock stuck suppliers.
@@ -64,7 +64,7 @@ Borrow expansion (25% / 3h) is unchanged.
 
 ### Action 6: osETH-ETH DEX (43) Upper Range Increase
 
-- `updateRangePercents(0.5%, 0.3%, 12 days)` — upper **0.5%** (from current on-chain), lower **0.3%** unchanged.
+- `updateRangePercents(0.5%, 0.0001%, 12 days)` — upper **0.5%** (from current **0.15%**), lower **0.0001%** unchanged (current on-chain value).
 
 ### Action 7: USDat/USDC DEX (49) Initial Limits + Team MS Auth
 

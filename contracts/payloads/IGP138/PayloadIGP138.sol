@@ -16,10 +16,10 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         limits can be raised later if demand returns. Action 5 trims the
 ///         reUSD-USDT DEX (44) range; Action 6 widens the osETH-ETH DEX (43)
 ///         upper range; Action 7 sets USDat/USDC pool limits and grants Team
-///         Multisig dex auth; Action 8 swaps
-///         the weETH-ETH DEX (9) fee-handler auth to the new handler; Action 9
-///         raises the legacy ETH/USDC vault (1) ETH base withdrawal limit to
-///         1 ETH to unblock suppliers stuck above the wind-down limit.
+///         Multisig dex auth; Action 8 swaps the weETH-ETH DEX (9) fee-handler
+///         auth to the new handler; Action 9 raises the legacy ETH/USDC vault
+///         (1) ETH base withdrawal limit to 1 ETH to unblock suppliers stuck
+///         above the wind-down limit.
 contract PayloadIGP138 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 138;
 
@@ -297,12 +297,12 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
     }
 
     /// @notice Action 6: Increase the osETH-ETH DEX (43) upper range to 0.5%
-    ///         over 12 days. Lower range is left at the current 0.3% on-chain
-    ///         value (set at deployment via MS1).
+    ///         over 12 days. Lower range is left at the current 0.0001%
+    ///         on-chain value.
     function action6() internal isActionSkippable(6) {
         IFluidDex(getDexAddress(OSETH_ETH_DEX_ID)).updateRangePercents(
             0.5 * 1e4, // upper range: 0.5%
-            0.3 * 1e4, // lower range: 0.3% (unchanged)
+            0.0001 * 1e4, // lower range: 0.0001% (unchanged)
             12 days
         );
     }
