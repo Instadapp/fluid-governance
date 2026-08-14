@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 import {IFluidReserveContractV2} from "../common/interfaces/IFluidReserveContract.sol";
 
-/// @notice IGP138: Increase the Fluid Foundation monthly grant from $250,000
+/// @notice IGP139: Increase the Fluid Foundation monthly grant from $250,000
 ///         to $350,000 and execute the first disbursement at the new rate.
 ///
 ///         Action 1 withdraws 187 stETH from the Fluid Reserve to the Fluid
@@ -17,8 +17,8 @@ import {IFluidReserveContractV2} from "../common/interfaces/IFluidReserveContrac
 ///         without execution while the treasury was absorbing Resolv-incident
 ///         costs. This disbursement is funded in stETH from the Fluid Reserve
 ///         rather than the Treasury fGHO position IGP-124 used.
-contract PayloadIGP138 is PayloadIGPPriceHelpers {
-    uint256 public constant PROPOSAL_ID = 138;
+contract PayloadIGP139 is PayloadIGPPriceHelpers {
+    uint256 public constant PROPOSAL_ID = 139;
 
     /// @notice 187 stETH — ~$350,000 at the 7-day average ETH price of $1,872.43.
     uint256 public constant FOUNDATION_GRANT_AMOUNT = 187 ether;

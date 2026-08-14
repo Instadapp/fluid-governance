@@ -43,4 +43,4 @@ This proposal executes the first disbursement at the new $350,000 rate. Transfer
 
 ## Conclusion
 
-IGP-138 increases the Fluid Foundation's monthly grant from $250,000 to $350,000 effective immediately and transfers 187 stETH from the Fluid Reserve to the Fluid Foundation as the first disbursement. Subsequent monthly transfers continue until the next governance review.
+IGP-139 increases the Fluid Foundation's monthly grant from $250,000 to $350,000 effective immediately and transfers 187 stETH from the Fluid Reserve to the Fluid Foundation as the first disbursement. Subsequent monthly transfers continue until the next governance review.

@@ -1,11 +1,14 @@
 /**
- * Pre-Setup Script for IGP138 Payload Simulation
+ * Pre-Setup Script for IGP139 Payload Simulation
  *
  * Governor proposalCount bump: create throwaway placeholder proposals if the
- * fork's proposalCount has fallen behind, so the real IGP-138 lands on id 138
- * (PayloadIGP138 hard-codes PROPOSAL_ID = 138).
+ * fork's proposalCount has fallen behind, so the real IGP-139 lands on id 139
+ * (PayloadIGP139 hard-codes PROPOSAL_ID = 139).
  *
- * No oracle mocks are required: IGP-138 only withdraws stETH from the Fluid
+ * Mainnet proposalCount is 137, and IGP-138 (borrow caps / DEX ranges) takes
+ * 138, so this script normally creates one placeholder to consume id 138.
+ *
+ * No oracle mocks are required: IGP-139 only withdraws stETH from the Fluid
  * Reserve to the Fluid Foundation. The one execution precondition is that the
  * Reserve holds the 187 stETH being withdrawn, which this script asserts.
  */
@@ -19,8 +22,8 @@ const INST = "0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb";
 const DELEGATOR = "0x5AAB0630aaCa6d0bf1c310aF6C2BB3826A951cFb";
 const PROPOSER = "0xA45f7bD6A5Ff45D31aaCE6bCD3d426D9328cea01";
 
-const IGP138_PROPOSAL_ID = 138;
-const TARGET_PROPOSAL_COUNT = IGP138_PROPOSAL_ID - 1; // 137
+const IGP139_PROPOSAL_ID = 139;
+const TARGET_PROPOSAL_COUNT = IGP139_PROPOSAL_ID - 1; // 138
 
 // Action 1 withdraws a fixed 187 stETH from the Fluid Reserve, which accrues
 // the balance from iETHv2 (Lite) revenue. The margin over 187 is thin (the
@@ -92,7 +95,7 @@ async function createDummyProposal(
     [0],
     [""],
     ["0x"],
-    `IGP-${proposalId} placeholder (simulation only): consumes governor proposal id ${proposalId} so IGP-138 lands on id 138.`,
+    `IGP-${proposalId} placeholder (simulation only): consumes governor proposal id ${proposalId} so IGP-139 lands on id 139.`,
   ]);
   await sendTx(
     provider,
@@ -112,7 +115,7 @@ async function ensureGovernorProposalId(
   if (count >= TARGET_PROPOSAL_COUNT) {
     console.log(
       `[SETUP] proposalCount (${count}) already >= ${TARGET_PROPOSAL_COUNT}; ` +
-        `IGP-138 will land on id ${count + 1}. No dummy proposal created.`,
+        `IGP-139 will land on id ${count + 1}. No dummy proposal created.`,
     );
     return;
   }
@@ -131,9 +134,9 @@ async function ensureGovernorProposalId(
   console.log(
     `[SETUP] proposalCount after placeholders = ${after} (next proposal -> id ${after + 1})`,
   );
-  if (after + 1 !== IGP138_PROPOSAL_ID) {
+  if (after + 1 !== IGP139_PROPOSAL_ID) {
     throw new Error(
-      `After placeholder proposals the next id would be ${after + 1}, expected ${IGP138_PROPOSAL_ID}.`,
+      `After placeholder proposals the next id would be ${after + 1}, expected ${IGP139_PROPOSAL_ID}.`,
     );
   }
 }
@@ -195,7 +198,7 @@ export async function preSetup(
   provider: JsonRpcProvider,
   _payloadAddress?: string,
 ): Promise<void> {
-  console.log("[SETUP] Running pre-setup for IGP138...");
+  console.log("[SETUP] Running pre-setup for IGP139...");
 
   try {
     await ensureGovernorProposalId(provider);
