@@ -1,4 +1,4 @@
-# Tighten Vault Borrow Limits
+# Tighten Vault Borrow Limits, Update reUSD + osETH DEX Ranges, and Launch USDat/USDC && USDC/trUSD Smart Lending
 
 ## Summary
 
@@ -106,6 +106,20 @@ Assumes trUSD is [listed at the Liquidity Layer](https://docs.tori.finance/resou
 | --- | --- |
 | Token LL withdrawal limits | `$5M` each (USDC + trUSD) |
 | Team MS auth | granted (`setDexAuth` on DexFactory) |
+
+## Pre-Execution Requirements
+
+Actions 7 and 10 configure Liquidity Layer limits for two pools that do not exist yet (`totalDexes` is **48** at the time of writing). All three steps below must be completed by the Team Multisig **before** this payload executes, **in this order**:
+
+| # | Step | Why it is required |
+| --- | --- | --- |
+| 1 | List **trUSD** at the Liquidity Layer via `LiquidityTokenAuth.listToken` | `updateUserSupplyConfigs` reverts with `AdminModule__InvalidConfigOrder` for a token with no exchange-price config, failing Action 10 |
+| 2 | Deploy **USDat/USDC** — lands on DEX **49** | Action 7 reverts with `AdminModule__AddressNotAContract` if id 49 has no code |
+| 3 | Deploy **USDC/trUSD** — lands on DEX **50** | Action 10 reverts with `AdminModule__AddressNotAContract` if id 50 has no code |
+
+USDat is already listed at the Liquidity Layer; trUSD is not. Because every action runs in a single `execute()` call, missing any one of these reverts the entire proposal.
+
+Dex ids are assigned sequentially (`dexId_ = ++_totalDexes`), so steps 2 and 3 must run in that order with no other dex deployed in between. If the order is swapped neither action reverts — each pool silently receives the other pool's token limits, and a follow-up proposal would be needed to correct it.
 
 ## Conclusion
 
