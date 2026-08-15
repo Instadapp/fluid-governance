@@ -133,6 +133,12 @@ abstract contract PayloadIGPPriceHelpers is PayloadIGPMain {
         } else if (token == USDT_ADDRESS) {
             usdPrice = STABLE_USD_PRICE();
             decimals = 6;
+        } else if (token == USDAT_ADDRESS) {
+            usdPrice = STABLE_USD_PRICE();
+            decimals = 6;
+        } else if (token == TRUSD_ADDRESS) {
+            usdPrice = STABLE_USD_PRICE();
+            decimals = 18;
         } else if (token == GHO_ADDRESS) {
             usdPrice = STABLE_USD_PRICE();
             decimals = 18;

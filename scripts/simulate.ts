@@ -1008,7 +1008,7 @@ ${proposalTxSection}
 ### Links
 
 - [Tenderly Dashboard](${executionTenderlyUrl})
-- [Fluid UI (Staging)](${fluidUiLink})
+- [Fluid UI (Preprod)](${fluidUiLink})
 - [Virtual Network Dashboard](${vnetConfig.link})
 
 `;
@@ -1210,7 +1210,7 @@ ${vnetSection}
       // Get actual Tenderly URLs from API
       const executionTenderlyUrl = await this.getTenderlyTransactionUrl(result.transactionHash, vnetConfig.id);
       const adminRpcId = vnetConfig.adminRpc.split('/')[3] || vnetConfig.adminRpc.split('/').pop();
-      const fluidUiLink = `https://staging.fluid.io/?isCustomVnet=true&tenderlyId=${adminRpcId}`;
+      const fluidUiLink = `https://preprod.fluid.io/?tenderlyId=${adminRpcId}`;
 
       // Get proposal creation transaction details
       const proposalTxDetails = this.trackedTransactions.get(`proposal-${result.proposalId}`);
