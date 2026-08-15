@@ -5,7 +5,7 @@
  *    proposal so the real IGP-138 lands on id 138.
  * 2. List trUSD at the Liquidity Layer via LiquidityTokenAuth if the fork
  *    predates the MS listing (Action 10 sets LL limits for it).
- * 3. Deploy USDat/USDC DEX 49 and trUSD/USDC DEX 50 — in that order, ids
+ * 3. Deploy USDat/USDC DEX 49 and USDC/trUSD DEX 50 — in that order, ids
  *    are sequential — if the fork predates them (Actions 7 and 10).
  */
 
@@ -31,7 +31,7 @@ const USDAT_ADDRESS = "0x23238f20b894f29041f48D88eE91131C395Aaa71";
 const TRUSD_ADDRESS = "0xd0580192E98eA6CEB9c7b6191Ed2E27560911697";
 
 const USDAT_USDC_DEX_ID = 49;
-const TRUSD_USDC_DEX_ID = 50;
+const USDC_TRUSD_DEX_ID = 50;
 // mirrors fluid-contracts mainnet-deploy-usdat-usdc-dex.ts (~1 day at 12s blocks)
 const ORACLE_MAPPING = 1024;
 
@@ -270,10 +270,10 @@ export async function preSetup(provider: JsonRpcProvider): Promise<void> {
     );
     await ensureDexDeployed(
       provider,
-      TRUSD_USDC_DEX_ID,
-      TRUSD_ADDRESS,
+      USDC_TRUSD_DEX_ID,
       USDC_ADDRESS,
-      "trUSD-USDC",
+      TRUSD_ADDRESS,
+      "USDC-trUSD",
     );
     console.log("[SETUP] Pre-setup completed successfully");
   } catch (error: unknown) {

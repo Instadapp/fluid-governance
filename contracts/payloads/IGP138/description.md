@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal reduces borrow surface area on legacy collateral vaults, updates two DEX trading ranges, and sets initial limits for the new **USDat/USDC** (DEX **49**) and **trUSD/USDC** (DEX **50**) smart-lending pools:
+This proposal reduces borrow surface area on legacy collateral vaults, updates two DEX trading ranges, and sets initial limits for the new **USDat/USDC** (DEX **49**) and **USDC/trUSD** (DEX **50**) smart-lending pools:
 
 1. Caps the **five osETH vaults** (153–157) at **$100k** borrow (base = max).
 2. Caps the **three tBTC vaults** (88–90) and **eBTC/WBTC** vault (94) at **$100k** borrow.
@@ -13,7 +13,7 @@ This proposal reduces borrow surface area on legacy collateral vaults, updates t
 7. Sets **$5M**/token LL withdrawal limits for **USDat/USDC DEX (49)** and grants **Team Multisig** dex auth (initialization, max supply shares, fee, ranges, and smart-lending config handled via MS).
 8. Swaps the **weETH-ETH DEX (9)** fee-handler auth from `0xD43d…B44a` (IGP-113) to `0x5346…FB6E`.
 9. Raises the **legacy ETH/USDC vault (1)** ETH base withdrawal limit to **2 ETH** with a **10% / 12h** expansion to unblock stuck suppliers.
-10. Sets **$5M**/token LL withdrawal limits for **trUSD/USDC DEX (50)** and grants **Team Multisig** dex auth (initialization, max supply shares, fee, ranges, and smart-lending config handled via MS).
+10. Sets **$5M**/token LL withdrawal limits for **USDC/trUSD DEX (50)** and grants **Team Multisig** dex auth (initialization, max supply shares, fee, ranges, and smart-lending config handled via MS).
 
 Withdrawal limits on all vaults in Actions 1–4 are unchanged — only borrow ceilings are tightened.
 
@@ -98,15 +98,15 @@ The legacy ETH/USDC vault (id **1**) was wound down with a frozen withdrawal-lim
 
 Since 2 ETH exceeds the vault's total supplied ETH, stuck suppliers can exit in full.
 
-### Action 10: trUSD/USDC DEX (50) Initial Limits + Team MS Auth
+### Action 10: USDC/trUSD DEX (50) Initial Limits + Team MS Auth
 
-Assumes trUSD is [listed at the Liquidity Layer](https://docs.tori.finance/resources/contracts) and DEX **50** (trUSD/USDC) is deployed via MS1 before execution — and that it is deployed **after** USDat/USDC so the ids land as 49/50. trUSD (Tori Finance, `0xd0580192E98eA6CEB9c7b6191Ed2E27560911697`, 18 decimals) sorts above USDC, so USDC is token0. This action only sets Liquidity Layer limits and grants dex auth — initialization, max supply shares (~$10M planned), fee (0.01%), ranges (0.15%/0.15%), and smart-lending config ($8M base withdraw) are handled by the Team Multisig.
+Assumes trUSD is [listed at the Liquidity Layer](https://docs.tori.finance/resources/contracts) and DEX **50** (USDC/trUSD) is deployed via MS1 before execution — and that it is deployed **after** USDat/USDC so the ids land as 49/50. trUSD (Tori Finance, `0xd0580192E98eA6CEB9c7b6191Ed2E27560911697`, 18 decimals) sorts above USDC, so USDC is token0. This action only sets Liquidity Layer limits and grants dex auth — initialization, max supply shares (~$10M planned), fee (0.01%), ranges (0.15%/0.15%), and smart-lending config ($8M base withdraw) are handled by the Team Multisig.
 
 | Parameter | Value |
 | --- | --- |
-| Token LL withdrawal limits | `$5M` each (trUSD + USDC) |
+| Token LL withdrawal limits | `$5M` each (USDC + trUSD) |
 | Team MS auth | granted (`setDexAuth` on DexFactory) |
 
 ## Conclusion
 
-IGP-138 tightens borrow exposure across osETH, tBTC, eBTC, LBTC, and ezETH collateral vaults, trims the reUSD-USDT DEX range, widens the osETH-ETH DEX upper range, sets initial limits for the USDat/USDC and trUSD/USDC smart-lending pools and grants Team Multisig dex auth for their rollout, rotates the weETH-ETH DEX fee-handler auth to the new handler, and raises the legacy ETH/USDC vault's ETH base withdrawal limit to unblock stuck suppliers.
+IGP-138 tightens borrow exposure across osETH, tBTC, eBTC, LBTC, and ezETH collateral vaults, trims the reUSD-USDT DEX range, widens the osETH-ETH DEX upper range, sets initial limits for the USDat/USDC and USDC/trUSD smart-lending pools and grants Team Multisig dex auth for their rollout, rotates the weETH-ETH DEX fee-handler auth to the new handler, and raises the legacy ETH/USDC vault's ETH base withdrawal limit to unblock stuck suppliers.

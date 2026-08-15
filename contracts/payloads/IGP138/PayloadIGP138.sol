@@ -10,7 +10,7 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 
 /// @notice IGP138: Tighten borrow surface area on osETH, tBTC, eBTC, LBTC,
 ///         and ezETH vaults; update reUSD and osETH-ETH DEX ranges; and set
-///         initial limits for the USDat/USDC (id 49) and trUSD/USDC (id 50)
+///         initial limits for the USDat/USDC (id 49) and USDC/trUSD (id 50)
 ///         smart-lending DEXes.
 ///
 ///         Actions 1–4 cap borrow exposure on legacy collateral vaults so
@@ -21,7 +21,7 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         auth to the new handler; Action 9 raises the legacy ETH/USDC vault
 ///         (1) ETH base withdrawal limit to 2 ETH (10% / 12h expansion) to
 ///         unblock suppliers stuck above the wind-down limit; Action 10 sets
-///         trUSD/USDC pool (id 50) limits and grants Team Multisig dex auth.
+///         USDC/trUSD pool (id 50) limits and grants Team Multisig dex auth.
 contract PayloadIGP138 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 138;
 
@@ -55,7 +55,7 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
     uint256 public constant USDC_USDT_DEX_ID = 2; // USDC-USDT
     uint256 public constant USDC_USDT_CONC_DEX_ID = 34; // USDC-USDT concentrated
     uint256 public constant USDAT_USDC_DEX_ID = 49; // USDat-USDC (new smart-lending pool)
-    uint256 public constant TRUSD_USDC_DEX_ID = 50; // trUSD-USDC (new smart-lending pool, deployed after USDat-USDC)
+    uint256 public constant USDC_TRUSD_DEX_ID = 50; // USDC-trUSD (new smart-lending pool, deployed after USDat-USDC)
     uint256 public constant WEETH_ETH_DEX_ID = 9; // weETH-ETH
 
     address public constant OLD_DEX_FEE_HANDLER =
@@ -94,7 +94,7 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
         // limit to 2 ETH (10% / 12h expansion) to unblock stuck suppliers.
         action9();
 
-        // Action 10: Set trUSD/USDC DEX (50) limits + grant Team MS auth.
+        // Action 10: Set USDC/trUSD DEX (50) limits + grant Team MS auth.
         action10();
     }
 
@@ -369,23 +369,23 @@ contract PayloadIGP138 is PayloadIGPPriceHelpers {
     }
 
     /// @notice Action 10: Set $5M/token LL withdrawal limits for the
-    ///         trUSD/USDC DEX (id 50) and grant Team Multisig dex auth.
+    ///         USDC/trUSD DEX (id 50) and grant Team Multisig dex auth.
     function action10() internal isActionSkippable(10) {
-        address trusdUsdcDex_ = getDexAddress(TRUSD_USDC_DEX_ID);
+        address usdcTrusdDex_ = getDexAddress(USDC_TRUSD_DEX_ID);
 
-        DexConfig memory DEX_TRUSD_USDC = DexConfig({
-            dex: trusdUsdcDex_,
-            tokenA: TRUSD_ADDRESS,
-            tokenB: USDC_ADDRESS,
+        DexConfig memory DEX_USDC_TRUSD = DexConfig({
+            dex: usdcTrusdDex_,
+            tokenA: USDC_ADDRESS,
+            tokenB: TRUSD_ADDRESS,
             smartCollateral: true,
             smartDebt: false,
             baseWithdrawalLimitInUSD: 5_000_000, // $5M per token
             baseBorrowLimitInUSD: 0,
             maxBorrowLimitInUSD: 0
         });
-        setDexLimits(DEX_TRUSD_USDC);
+        setDexLimits(DEX_USDC_TRUSD);
 
-        DEX_FACTORY.setDexAuth(trusdUsdcDex_, TEAM_MULTISIG, true);
+        DEX_FACTORY.setDexAuth(usdcTrusdDex_, TEAM_MULTISIG, true);
     }
 
     /**
