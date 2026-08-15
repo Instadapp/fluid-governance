@@ -3,7 +3,10 @@
  *
  * 1. Governor proposalCount bump: create a throwaway IGP-137 placeholder
  *    proposal so the real IGP-138 lands on id 138.
- * 2. Deploy USDat/USDC DEX 49 if the fork predates it (Action 7).
+ * 2. List trUSD at the Liquidity Layer via LiquidityTokenAuth if the fork
+ *    predates the MS listing (Action 10 sets LL limits for it).
+ * 3. Deploy USDat/USDC DEX 49 and trUSD/USDC DEX 50 — in that order, ids
+ *    are sequential — if the fork predates them (Actions 7 and 10).
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
@@ -20,10 +23,15 @@ const DEX_FACTORY = "0x91716C4EDA1Fb55e84Bf8b4c7085f84285c19085";
 const DEX_T1_DEPLOYMENT_LOGIC =
   "0x3FB3FE857C1eE52e7002196E295a7ADfFeD80819";
 
+const LIQUIDITY = "0x52Aa899454998Be5b000Ad077a46Bbe360F4e497";
+const LIQUIDITY_TOKEN_AUTH = "0x3C27B24E9d7f3F5B9B4914A430C34ac8f8B27006";
+
 const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 const USDAT_ADDRESS = "0x23238f20b894f29041f48D88eE91131C395Aaa71";
+const TRUSD_ADDRESS = "0xd0580192E98eA6CEB9c7b6191Ed2E27560911697";
 
 const USDAT_USDC_DEX_ID = 49;
+const TRUSD_USDC_DEX_ID = 50;
 // mirrors fluid-contracts mainnet-deploy-usdat-usdc-dex.ts (~1 day at 12s blocks)
 const ORACLE_MAPPING = 1024;
 
@@ -181,34 +189,69 @@ function getDeployDexT1Calldata(
   ]);
 }
 
-async function ensureUsdatUsdcDex(
+async function ensureDexDeployed(
   provider: JsonRpcProvider,
+  dexId: number,
+  tokenA: string,
+  tokenB: string,
+  label: string,
 ): Promise<void> {
-  const dex49 = await getDexAddress(provider, USDAT_USDC_DEX_ID);
-  if (await hasCode(provider, dex49)) {
-    console.log(
-      `[SETUP] DEX ${USDAT_USDC_DEX_ID} already deployed at ${dex49}`,
-    );
+  const dex = await getDexAddress(provider, dexId);
+  if (await hasCode(provider, dex)) {
+    console.log(`[SETUP] DEX ${dexId} (${label}) already deployed at ${dex}`);
     return;
   }
 
-  console.log(
-    `[SETUP] Deploying USDat/USDC DEX ${USDAT_USDC_DEX_ID} at ${dex49}`,
-  );
+  console.log(`[SETUP] Deploying ${label} DEX ${dexId} at ${dex}`);
   await sendTx(
     provider,
     TEAM_MULTISIG,
     DEX_FACTORY,
-    getDeployDexT1Calldata(USDAT_ADDRESS, USDC_ADDRESS),
-    `deploy DEX ${USDAT_USDC_DEX_ID} (USDat-USDC)`,
+    getDeployDexT1Calldata(tokenA, tokenB),
+    `deploy DEX ${dexId} (${label})`,
   );
 
-  const after = await getDexAddress(provider, USDAT_USDC_DEX_ID);
+  const after = await getDexAddress(provider, dexId);
   if (!(await hasCode(provider, after))) {
     throw new Error(
-      `DEX ${USDAT_USDC_DEX_ID} deployment did not create code at ${after}`,
+      `DEX ${dexId} deployment did not create code at ${after}`,
     );
   }
+}
+
+async function ensureTokenListedAtLiquidity(
+  provider: JsonRpcProvider,
+  token: string,
+  label: string,
+): Promise<void> {
+  // exchangePriceAndConfig mapping lives at Liquidity storage slot 5;
+  // zero config means the token was never listed.
+  const slot = ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(
+      ["address", "uint256"],
+      [token, 5],
+    ),
+  );
+  const config = await provider.send("eth_getStorageAt", [
+    LIQUIDITY,
+    slot,
+    "latest",
+  ]);
+  if (BigInt(config) !== 0n) {
+    console.log(`[SETUP] ${label} already listed at Liquidity Layer`);
+    return;
+  }
+
+  const listData = new ethers.Interface([
+    "function listToken(address token_)",
+  ]).encodeFunctionData("listToken", [token]);
+  await sendTx(
+    provider,
+    TEAM_MULTISIG,
+    LIQUIDITY_TOKEN_AUTH,
+    listData,
+    `list ${label} at Liquidity via LiquidityTokenAuth`,
+  );
 }
 
 export async function preSetup(provider: JsonRpcProvider): Promise<void> {
@@ -216,7 +259,22 @@ export async function preSetup(provider: JsonRpcProvider): Promise<void> {
 
   try {
     await ensureGovernorProposalId(provider);
-    await ensureUsdatUsdcDex(provider);
+    await ensureTokenListedAtLiquidity(provider, TRUSD_ADDRESS, "trUSD");
+    // deploy order matters: dex ids are assigned sequentially
+    await ensureDexDeployed(
+      provider,
+      USDAT_USDC_DEX_ID,
+      USDAT_ADDRESS,
+      USDC_ADDRESS,
+      "USDat-USDC",
+    );
+    await ensureDexDeployed(
+      provider,
+      TRUSD_USDC_DEX_ID,
+      TRUSD_ADDRESS,
+      USDC_ADDRESS,
+      "trUSD-USDC",
+    );
     console.log("[SETUP] Pre-setup completed successfully");
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);

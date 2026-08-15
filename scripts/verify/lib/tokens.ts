@@ -192,6 +192,15 @@ export const TOKENS: readonly TokenEntry[] = [
     rounding: "exactOneDollar",
   },
   {
+    symbol: "trUSD",
+    address: "0xd0580192E98eA6CEB9c7b6191Ed2E27560911697",
+    constantName: "TRUSD_ADDRESS",
+    decimals: 18,
+    coingeckoId: "tori-trusd",
+    priceVarName: "STABLE_USD_PRICE",
+    rounding: "exactOneDollar",
+  },
+  {
     symbol: "GHO",
     address: "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
     constantName: "GHO_ADDRESS",
