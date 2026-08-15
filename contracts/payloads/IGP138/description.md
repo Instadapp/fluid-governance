@@ -1,4 +1,4 @@
-# Tighten Collateral Borrow Limits, Update reUSD + osETH DEX Ranges, and Launch USDat/USDC Smart Lending
+# Tighten Vault Borrow Limits
 
 ## Summary
 
