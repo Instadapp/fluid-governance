@@ -1,8 +1,8 @@
-# Increase Foundation Monthly Grant from $250,000 to $350,000 and Launch weETH/ETH Vault with Dust Limits
+# Increase Foundation Monthly Grant from $250,000 to $350,000
 
 ## Summary
 
-This proposal raises the Fluid Foundation's monthly grant from **$250,000** to **$350,000** per month, effective immediately upon approval per the [forum proposal](https://gov.fluid.io/t/increase-foundation-monthly-grant-from-250-000-to-350-000/1787), and executes the first disbursement at the new rate. It also sets dust limits for the new **weETH/ETH** T1 vault (id **182**).
+This proposal raises the Fluid Foundation's monthly grant from **$250,000** to **$350,000** per month, effective immediately upon approval per the [forum proposal](https://gov.fluid.io/t/increase-foundation-monthly-grant-from-250-000-to-350-000/1787), and executes the first disbursement at the new rate.
 
 The $250,000/month grant approved in February ([Snapshot](https://snapshot.org/#/s:instadapp-gov.eth/proposal/0xde0d55050ef945d3d756219a9ee2cf29ef97c3f5625b107a65e9fd39937d6c5e)) was never drawn: IGP-124, the payload that would have transferred the first tranche, expired without execution while the treasury was absorbing Resolv-incident costs.
 
@@ -15,17 +15,6 @@ The $250,000/month grant approved in February ([Snapshot](https://snapshot.org/#
 - **Token**: stETH (`0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84`)
 - **Amount**: `187 stETH` — ~$350,000 at the 7-day average ETH price of $1,872.43
 - **Recipient**: Fluid Foundation (`0xde0377eF25aD02dBcFbc87D632E46bf1972A0Dc3`)
-
-### Action 2: Set Dust Limits for the weETH/ETH T1 Vault (id 182)
-
-Assumes the vault is deployed via the Team Multisig before execution (`totalVaults` is 181 at authoring time, so the new vault lands on id 182).
-
-| Vault | Type | Market | Limits |
-| --- | --- | --- | --- |
-| 182 | T1 | weETH / ETH | Withdrawal base `$7k`, Borrow `$7k / $9k` (LL) |
-
-- Limits set at the Liquidity Layer via `setVaultLimits` (50% expansion, 6h duration — standard dust-limit config).
-- Team Multisig is granted vault auth (`setVaultAuth(vault, TEAM_MULTISIG, true)`) so limits can be scaled up post-launch.
 
 ## Description
 
@@ -54,4 +43,4 @@ This proposal executes the first disbursement at the new $350,000 rate. Transfer
 
 ## Conclusion
 
-IGP-139 increases the Fluid Foundation's monthly grant from $250,000 to $350,000 effective immediately and transfers 187 stETH from the Fluid Reserve to the Fluid Foundation as the first disbursement. Subsequent monthly transfers continue until the next governance review. It also launches the new weETH/ETH T1 vault at dust limits with Team Multisig auth for post-launch scaling.
+IGP-139 increases the Fluid Foundation's monthly grant from $250,000 to $350,000 effective immediately and transfers 187 stETH from the Fluid Reserve to the Fluid Foundation as the first disbursement. Subsequent monthly transfers continue until the next governance review.
