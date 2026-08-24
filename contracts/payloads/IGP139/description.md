@@ -11,9 +11,9 @@ The $250,000/month grant approved in February ([Snapshot](https://snapshot.org/#
 ### Action 1: Transfer the Monthly Grant to the Fluid Foundation
 
 - **Source**: Fluid Reserve (`0x264786EF916af64a1DB19F513F24a3681734ce92`)
-- **Method**: `withdrawFunds([stETH], [187000000000000000000], FLUID_FOUNDATION, "FOUNDATION GRANT")`
+- **Method**: `withdrawFunds([stETH], [154500000000000000000], FLUID_FOUNDATION, "FOUNDATION GRANT")`
 - **Token**: stETH (`0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84`)
-- **Amount**: `187 stETH` — ~$350,000 at the 7-day average ETH price of $1,872.43
+- **Amount**: `154.5 stETH` — ~$350,000 at the 7-day average ETH price of $2,265.16 (CoinGecko hourly, 17–24 Aug 2026; cross-checked against Binance ETHUSDT hourly at $2,267.75 and CoinGecko stETH at $2,263.17)
 - **Recipient**: Fluid Foundation (`0xde0377eF25aD02dBcFbc87D632E46bf1972A0Dc3`)
 
 ## Description
@@ -43,4 +43,4 @@ This proposal executes the first disbursement at the new $350,000 rate. Transfer
 
 ## Conclusion
 
-IGP-139 increases the Fluid Foundation's monthly grant from $250,000 to $350,000 effective immediately and transfers 187 stETH from the Fluid Reserve to the Fluid Foundation as the first disbursement. Subsequent monthly transfers continue until the next governance review.
+IGP-139 increases the Fluid Foundation's monthly grant from $250,000 to $350,000 effective immediately and transfers 154.5 stETH from the Fluid Reserve to the Fluid Foundation as the first disbursement. Subsequent monthly transfers continue until the next governance review.
