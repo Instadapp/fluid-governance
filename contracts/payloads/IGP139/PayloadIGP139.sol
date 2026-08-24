@@ -8,8 +8,8 @@ import {IFluidReserveContractV2} from "../common/interfaces/IFluidReserveContrac
 /// @notice IGP139: Increase the Fluid Foundation monthly grant from $250,000
 ///         to $350,000 and execute the first disbursement at the new rate.
 ///
-///         Action 1 withdraws 154.5 stETH from the Fluid Reserve to the Fluid
-///         Foundation. 154.5 stETH is ~$350,000 at the 7-day average ETH price
+///         Action 1 withdraws 155 stETH from the Fluid Reserve to the Fluid
+///         Foundation. 155 stETH is ~$350,000 at the 7-day average ETH price
 ///         of $2,265.16 (CoinGecko hourly, 17–24 Aug 2026).
 ///
 ///         The $250,000/month grant approved in February was never drawn:
@@ -20,10 +20,10 @@ import {IFluidReserveContractV2} from "../common/interfaces/IFluidReserveContrac
 contract PayloadIGP139 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 139;
 
-    /// @notice 154.5 stETH — ~$350,000 at the 7-day average ETH price of
+    /// @notice 155 stETH — ~$350,000 at the 7-day average ETH price of
     ///         $2,265.16. The amount is fixed in token terms, so the USD value
     ///         actually delivered drifts with ETH until execution.
-    uint256 public constant FOUNDATION_GRANT_AMOUNT = 154.5 ether;
+    uint256 public constant FOUNDATION_GRANT_AMOUNT = 155 ether;
 
     function execute() public virtual override {
         super.execute();
@@ -45,7 +45,7 @@ contract PayloadIGP139 is PayloadIGPPriceHelpers {
      */
 
     /// @notice Action 1: Transfer the monthly grant to the Fluid Foundation.
-    /// @dev Sends 154.5 stETH from the Fluid Reserve to the Foundation via
+    /// @dev Sends 155 stETH from the Fluid Reserve to the Foundation via
     ///      `FLUID_RESERVE.withdrawFunds`, the same V2 entrypoint IGP-134
     ///      Action 4 used for a fixed stETH amount. The Reserve accrues the
     ///      stETH from iETHv2 (Lite) revenue, so no `collectRevenue` is
@@ -55,7 +55,7 @@ contract PayloadIGP139 is PayloadIGPPriceHelpers {
         uint256[] memory amounts_ = new uint256[](1);
 
         tokens_[0] = stETH_ADDRESS;
-        amounts_[0] = FOUNDATION_GRANT_AMOUNT; // 154.5 stETH
+        amounts_[0] = FOUNDATION_GRANT_AMOUNT; // 155 stETH
 
         IFluidReserveContractV2(address(FLUID_RESERVE)).withdrawFunds(
             tokens_,

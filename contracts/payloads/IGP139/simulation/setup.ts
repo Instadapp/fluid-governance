@@ -10,7 +10,7 @@
  *
  * No oracle mocks are required: IGP-139 only withdraws stETH from the Fluid
  * Reserve to the Fluid Foundation. The one execution precondition is that the
- * Reserve holds the 154.5 stETH being withdrawn, which this script asserts.
+ * Reserve holds the 155 stETH being withdrawn, which this script asserts.
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
@@ -25,7 +25,7 @@ const PROPOSER = "0xA45f7bD6A5Ff45D31aaCE6bCD3d426D9328cea01";
 const IGP139_PROPOSAL_ID = 139;
 const TARGET_PROPOSAL_COUNT = IGP139_PROPOSAL_ID - 1; // 138
 
-// Action 1 withdraws a fixed 154.5 stETH from the Fluid Reserve, which accrues
+// Action 1 withdraws a fixed 155 stETH from the Fluid Reserve, which accrues
 // the balance from iETHv2 (Lite) revenue. The Reserve held ~194.8 stETH at the
 // time of writing, so there is ~26% headroom, but the amount is fixed and
 // `withdrawFunds` does no balance check of its own, so the assertion below
@@ -33,7 +33,7 @@ const TARGET_PROPOSAL_COUNT = IGP139_PROPOSAL_ID - 1; // 138
 const STETH_ADDRESS = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
 const FLUID_RESERVE = "0x264786EF916af64a1DB19F513F24a3681734ce92";
 const FLUID_FOUNDATION = "0xde0377eF25aD02dBcFbc87D632E46bf1972A0Dc3";
-const STETH_REQUIRED = 1545n * 10n ** 17n; // 154.5 stETH
+const STETH_REQUIRED = 155n * 10n ** 18n; // 155 stETH
 
 async function getProposalCount(provider: JsonRpcProvider): Promise<number> {
   const iface = new ethers.Interface([
@@ -158,7 +158,7 @@ async function erc20Balance(
 }
 
 /**
- * Action 1 withdraws 154.5 stETH from the Fluid Reserve. We assert rather than
+ * Action 1 withdraws 155 stETH from the Fluid Reserve. We assert rather than
  * pre-fund: if the Reserve is short on the fork it is short on mainnet too,
  * and the payload would revert on execution. Team Multisig tops the Reserve up
  * out of band via Lite revenue collection.
