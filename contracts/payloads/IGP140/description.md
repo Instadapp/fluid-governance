@@ -1,8 +1,8 @@
-# Launch the weETH/ETH Vault at Dust Limits
+# Launch the weETH/ETH Vault at Dust Limits and Reduce USDC-ETH DEX Share Caps
 
 ## Summary
 
-This proposal brings the new **weETH/ETH** T1 vault (id **182**) online by setting its Liquidity Layer limits at dust size and granting the Team Multisig vault auth so limits can be scaled up as the market proves out.
+This proposal brings the new **weETH/ETH** T1 vault (id **182**) online by setting its Liquidity Layer limits at dust size and granting the Team Multisig vault auth so limits can be scaled up as the market proves out. It also reduces the deprecated **USDC-ETH DEX (5)** max supply and max borrow shares to **~$1M** each.
 
 The vault contract was deployed by the Team Multisig at block 25,789,585 and is still unconfigured at the Liquidity Layer, so it cannot be supplied to or borrowed from until this payload executes.
 
@@ -21,6 +21,17 @@ The vault contract was deployed by the Team Multisig at block 25,789,585 and is 
 - Limits are set at the Liquidity Layer via `setVaultLimits` with the standard dust-limit config: 50% expansion over 6 hours.
 - Team Multisig is granted vault auth so it can raise limits post-launch without a further proposal. The call goes through the VaultFactoryOwner wrapper (`0xB031913cB7AD81b8A4Ba412B471c2dA69BEA410B`), which owns the vault factory and which the timelock is authorized on.
 
+### Action 2: Reduce USDC-ETH DEX (5) Max Supply and Borrow Shares to ~$1M
+
+- **DEX**: `0x2886a01a0645390872a9eb99dAe1283664b0c524` (USDC-ETH, id 5)
+
+| Parameter | Current | New |
+| --- | --- | --- |
+| Max supply shares | `7.5M` (~$15M) | `500k` (~$1M at ~$2/share) |
+| Max borrow shares | `5M` (~$10M) | `500k` (~$1M at ~$2/share) |
+
+The DEX has been deprecated since IGP-96 dust-ceilinged its borrow limits and currently holds only dust liquidity (~101 supply / ~100 borrow shares). Calls: `updateMaxSupplyShares(500_000e18)` and `updateMaxBorrowShares(500_000e18)`.
+
 ## Description
 
 weETH/ETH is a correlated-pair leverage market: users supply weETH and borrow ETH to loop into ether.fi staking yield. Fluid already runs weETH markets against stablecoins and wstETH, plus a weETH-ETH DEX (id 9), so both legs are established collateral at the Liquidity Layer.
@@ -31,4 +42,4 @@ This action was originally Action 2 of IGP-139, the Foundation grant payload. It
 
 ## Conclusion
 
-IGP-140 launches the weETH/ETH T1 vault (id 182) with $7k base withdrawal, $7k base borrow, and $9k max borrow limits at the Liquidity Layer, and grants the Team Multisig vault auth for post-launch scaling.
+IGP-140 launches the weETH/ETH T1 vault (id 182) with $7k base withdrawal, $7k base borrow, and $9k max borrow limits at the Liquidity Layer, grants the Team Multisig vault auth for post-launch scaling, and reduces the deprecated USDC-ETH DEX (5) max supply and max borrow shares to ~$1M each.
