@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal brings the new **weETH/ETH** T1 vault (id **182**) online by setting its Liquidity Layer limits at dust size and granting the Team Multisig vault auth so limits can be scaled up as the market proves out. It also reduces the deprecated **USDC-ETH DEX (5)** max supply and max borrow shares to **~$1M** each, fully deprecates the **osETH** markets' borrow side (vaults **153–157**, **159**, and the **ETH-osETH DEX 43**), and removes the Team Multisig dex auth granted in IGP-138 on the **USDat/USDC (49)** and **USDC/trUSD (50)** DEXes.
+This proposal brings the new **weETH/ETH** T1 vault (id **182**) online by setting its Liquidity Layer limits at dust size and granting the Team Multisig vault auth so limits can be scaled up as the market proves out. It also reduces the deprecated **USDC-ETH DEX (5)** max supply and max borrow shares to **~$1M** each, fully deprecates the **osETH** markets' borrow side (vaults **153–157**, **159**, and the **ETH-osETH DEX 43**), removes the Team Multisig dex auth granted in IGP-138 on the **USDat/USDC (49)** and **USDC/trUSD (50)** DEXes, and fully deprecates the **rsETH**, **weETHs**, and **ezETH** markets' borrow side (vaults **78–80**, **103–104**, and DEXes **13**, **14**, **21**).
 
 The vault contract was deployed by the Team Multisig at block 25,789,585 and is still unconfigured at the Liquidity Layer, so it cannot be supplied to or borrowed from until this payload executes.
 
@@ -55,6 +55,21 @@ IGP-138 granted the Team Multisig dex auth when launching the USDat/USDC and USD
 | 49 | USDat / USDC | `setDexAuth(dex, TEAM_MULTISIG, false)` |
 | 50 | USDC / trUSD | `setDexAuth(dex, TEAM_MULTISIG, false)` |
 
+### Action 5: Fully Deprecate the rsETH, weETHs, and ezETH Markets' Borrow Side
+
+Same treatment as Action 3, applied to the rsETH, weETHs, and ezETH markets. All five vaults borrow wstETH at the Liquidity Layer (IGP-138 had already capped the ezETH vaults at $100k / $1M). Existing positions can still repay and withdraw.
+
+| Market | Type | Borrow side | Change |
+| --- | --- | --- | --- |
+| Vault 78 | T2 | rsETH-ETH / wstETH (LL) | Paused: dust ceilings, frozen expansion |
+| Vault 79 | T1 | rsETH / wstETH (LL) | Paused: dust ceilings, frozen expansion |
+| Vault 80 | T2 | weETHs-ETH / wstETH (LL) | Paused: dust ceilings, frozen expansion |
+| Vault 103 | T1 | ezETH / wstETH (LL) | Paused: dust ceilings, frozen expansion |
+| Vault 104 | T2 | ezETH-ETH / wstETH (LL) | Paused: dust ceilings, frozen expansion |
+| DEX 13 | Smart col | rsETH-ETH | Max supply shares → `1` wei (from 3,200; ~1,021 outstanding) |
+| DEX 14 | Smart col | weETHs-ETH | Max supply shares → `1` wei (from 1,600; ~153 outstanding) |
+| DEX 21 | Smart col | ezETH-ETH | Max supply shares → `1` wei (from 3,862; ~141 outstanding) |
+
 ## Description
 
 weETH/ETH is a correlated-pair leverage market: users supply weETH and borrow ETH to loop into ether.fi staking yield. Fluid already runs weETH markets against stablecoins and wstETH, plus a weETH-ETH DEX (id 9), so both legs are established collateral at the Liquidity Layer.
@@ -65,4 +80,4 @@ This action was originally Action 2 of IGP-139, the Foundation grant payload. It
 
 ## Conclusion
 
-IGP-140 launches the weETH/ETH T1 vault (id 182) with $7k base withdrawal, $7k base borrow, and $9k max borrow limits at the Liquidity Layer and grants the Team Multisig vault auth for post-launch scaling. It also reduces the deprecated USDC-ETH DEX (5) max supply and max borrow shares to ~$1M each, fully deprecates the osETH markets' borrow side (vaults 153–157 and 159, plus a 1-wei supply-share cap on the ETH-osETH DEX 43), and removes the Team Multisig dex auth granted in IGP-138 on DEXes 49 and 50.
+IGP-140 launches the weETH/ETH T1 vault (id 182) with $7k base withdrawal, $7k base borrow, and $9k max borrow limits at the Liquidity Layer and grants the Team Multisig vault auth for post-launch scaling. It also reduces the deprecated USDC-ETH DEX (5) max supply and max borrow shares to ~$1M each, fully deprecates the osETH markets' borrow side (vaults 153–157 and 159, plus a 1-wei supply-share cap on the ETH-osETH DEX 43), removes the Team Multisig dex auth granted in IGP-138 on DEXes 49 and 50, and fully deprecates the rsETH, weETHs, and ezETH markets' borrow side (vaults 78–80 and 103–104, plus 1-wei supply-share caps on DEXes 13, 14, and 21).

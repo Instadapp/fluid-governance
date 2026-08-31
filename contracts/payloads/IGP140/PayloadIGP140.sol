@@ -35,6 +35,12 @@ import {IFluidDex} from "../common/interfaces/IFluidDex.sol";
 ///
 ///         Action 4 removes the Team Multisig dex auth that IGP-138 granted
 ///         on the newly launched USDat/USDC (49) and USDC/trUSD (50) DEXes.
+///
+///         Action 5 fully deprecates the rsETH, weETHs, and ezETH markets'
+///         borrow side the same way as Action 3: vaults 78/79 (rsETH),
+///         80 (weETHs), and 103/104 (ezETH) — all wstETH debt — are paused
+///         at the Liquidity Layer, and the rsETH-ETH (13), weETHs-ETH (14),
+///         and ezETH-ETH (21) DEXes drop to 1 wei max supply shares.
 contract PayloadIGP140 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 140;
 
@@ -52,9 +58,19 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     uint256 public constant VAULT_OSETH__USDC_USDT_CONC_ID = 157; // T3: osETH / USDC-USDT concentrated
     uint256 public constant VAULT_ETH_OSETH__WSTETH_ID = 159; // T2: ETH-osETH / wstETH
 
+    // --- rsETH / weETHs / ezETH vault ids (borrow side deprecated in Action 5) ---
+    uint256 public constant VAULT_RSETH_ETH__WSTETH_ID = 78; // T2: rsETH-ETH / wstETH
+    uint256 public constant VAULT_RSETH_WSTETH_ID = 79; // T1: rsETH / wstETH
+    uint256 public constant VAULT_WEETHS_ETH__WSTETH_ID = 80; // T2: weETHs-ETH / wstETH
+    uint256 public constant VAULT_EZETH_WSTETH_ID = 103; // T1: ezETH / wstETH
+    uint256 public constant VAULT_EZETH_ETH__WSTETH_ID = 104; // T2: ezETH-ETH / wstETH
+
     // --- DEX ids ---
     uint256 public constant USDC_USDT_DEX_ID = 2; // USDC-USDT (vault 156 smart debt)
     uint256 public constant USDC_USDT_CONC_DEX_ID = 34; // USDC-USDT concentrated (vault 157 smart debt)
+    uint256 public constant RSETH_ETH_DEX_ID = 13; // rsETH-ETH (vault 78 smart collateral)
+    uint256 public constant WEETHS_ETH_DEX_ID = 14; // weETHs-ETH (vault 80 smart collateral)
+    uint256 public constant EZETH_ETH_DEX_ID = 21; // ezETH-ETH (vault 104 smart collateral)
     uint256 public constant OSETH_ETH_DEX_ID = 43; // ETH-osETH (vault 158/159 smart collateral)
     uint256 public constant USDAT_USDC_DEX_ID = 49; // USDat-USDC (launched in IGP-138)
     uint256 public constant USDC_TRUSD_DEX_ID = 50; // USDC-trUSD (launched in IGP-138)
@@ -73,6 +89,9 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
 
         // Action 4: Remove Team Multisig dex auth granted in IGP-138 (DEXes 49, 50).
         action4();
+
+        // Action 5: Fully deprecate rsETH, weETHs, and ezETH markets' borrow side.
+        action5();
     }
 
     function verifyProposal() public view override {}
@@ -189,6 +208,47 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
             TEAM_MULTISIG,
             false
         );
+    }
+
+    /// @notice Action 5: Fully deprecate the rsETH, weETHs, and ezETH
+    ///         markets' borrow side, mirroring Action 3. All five vaults
+    ///         borrow wstETH at the Liquidity Layer and get paused configs
+    ///         (dust ceilings, 0.01% expansion over max duration); the three
+    ///         smart-collateral DEXes drop to 1 wei max supply shares so no
+    ///         new shares can be minted (rsETH-ETH 13: ~1,021 outstanding /
+    ///         3,200 cap; weETHs-ETH 14: ~153 / 1,600; ezETH-ETH 21: ~141 /
+    ///         3,862). Existing positions can still repay and withdraw.
+    function action5() internal isActionSkippable(5) {
+        // rsETH: T2 vault 78 + T1 vault 79 — pause wstETH borrow at the LL.
+        setBorrowProtocolLimitsPaused(
+            getVaultAddress(VAULT_RSETH_ETH__WSTETH_ID),
+            wstETH_ADDRESS
+        );
+        setBorrowProtocolLimitsPaused(
+            getVaultAddress(VAULT_RSETH_WSTETH_ID),
+            wstETH_ADDRESS
+        );
+
+        // weETHs: T2 vault 80 — pause wstETH borrow at the LL.
+        setBorrowProtocolLimitsPaused(
+            getVaultAddress(VAULT_WEETHS_ETH__WSTETH_ID),
+            wstETH_ADDRESS
+        );
+
+        // ezETH: T1 vault 103 + T2 vault 104 — pause wstETH borrow at the LL.
+        setBorrowProtocolLimitsPaused(
+            getVaultAddress(VAULT_EZETH_WSTETH_ID),
+            wstETH_ADDRESS
+        );
+        setBorrowProtocolLimitsPaused(
+            getVaultAddress(VAULT_EZETH_ETH__WSTETH_ID),
+            wstETH_ADDRESS
+        );
+
+        // Smart-collateral DEXes: block new supply shares (withdrawals unaffected).
+        IFluidDex(getDexAddress(RSETH_ETH_DEX_ID)).updateMaxSupplyShares(1);
+        IFluidDex(getDexAddress(WEETHS_ETH_DEX_ID)).updateMaxSupplyShares(1);
+        IFluidDex(getDexAddress(EZETH_ETH_DEX_ID)).updateMaxSupplyShares(1);
     }
 
     /**
