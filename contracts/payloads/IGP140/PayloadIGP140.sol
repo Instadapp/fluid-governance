@@ -5,6 +5,12 @@ pragma experimental ABIEncoderV2;
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 import {IFluidDex} from "../common/interfaces/IFluidDex.sol";
 
+/// @notice Schedule contract the CLX stock oracles read US equity session state from.
+///         `updateAuth` writes auth classes 0-3 and is Liquidity governance only.
+interface IFluidUsEquityMarketHours {
+    function updateAuth(address auth_, uint256 authClass_) external;
+}
+
 /// @notice IGP140: Launch the weETH/ETH T1 vault (id 182) at dust limits.
 ///
 ///         Action 1 sets the vault's Liquidity Layer supply and borrow limits
@@ -46,6 +52,12 @@ import {IFluidDex} from "../common/interfaces/IFluidDex.sol";
 ///         $10k with a normal 10% / 6h expansion, replacing the per-vault
 ///         supply-pinned limits set in IGP-132 so remaining suppliers can
 ///         exit without limit friction.
+///
+///         Action 7 moves the US equity market hours schedule appointer from
+///         Team Multisig to the 24h FluidTimelockController. Appointing a
+///         schedule writer stops being an instant multisig action and gains a
+///         24h delay; Team Multisig keeps class 2, so it can still correct a
+///         session inside the 5h pinned window without waiting.
 contract PayloadIGP140 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 140;
 
@@ -80,6 +92,14 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     uint256 public constant USDAT_USDC_DEX_ID = 49; // USDat-USDC (launched in IGP-138)
     uint256 public constant USDC_TRUSD_DEX_ID = 50; // USDC-trUSD (launched in IGP-138)
 
+    /// @notice US equity market hours schedule; UUPS, Liquidity governance owned.
+    IFluidUsEquityMarketHours public constant US_EQUITY_MARKET_HOURS =
+        IFluidUsEquityMarketHours(0xde51F64b1c94dc60AA1284741F19e2f9f425Fc67);
+
+    /// @notice 24h delay controller. Team Multisig proposes, 0x196Ed45e executes.
+    address public constant FLUID_TIMELOCK_CONTROLLER =
+        0x4d6CE4F4498d59Eed397bCbC687805a07f9b2346;
+
     function execute() public virtual override {
         super.execute();
 
@@ -100,6 +120,9 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
 
         // Action 6: Set legacy vault 1-10 base withdrawal to $10k, 10% / 6h expansion.
         action6();
+
+        // Action 7: Move market hours schedule appointer to the 24h timelock.
+        action7();
     }
 
     function verifyProposal() public view override {}
@@ -303,6 +326,18 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
                 baseWithdrawalLimitInUSD: 10_000 // $10k
             })
         );
+    }
+
+    /// @notice Action 7: Hand the US equity market hours schedule appointer
+    ///         (auth class 3) to the 24h FluidTimelockController and drop Team
+    ///         Multisig to class 2.
+    /// @dev Ordered grant-then-demote so the contract is never left without an
+    ///      appointer. Class 2 keeps Team Multisig able to rewrite sessions
+    ///      inside the 5h pinned window; only appointing a class-1 schedule
+    ///      writer moves behind the timelock.
+    function action7() internal isActionSkippable(7) {
+        US_EQUITY_MARKET_HOURS.updateAuth(FLUID_TIMELOCK_CONTROLLER, 3);
+        US_EQUITY_MARKET_HOURS.updateAuth(TEAM_MULTISIG, 2);
     }
 
     /**
