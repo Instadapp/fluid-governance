@@ -41,6 +41,11 @@ import {IFluidDex} from "../common/interfaces/IFluidDex.sol";
 ///         80 (weETHs), and 103/104 (ezETH) — all wstETH debt — are paused
 ///         at the Liquidity Layer, and the rsETH-ETH (13), weETHs-ETH (14),
 ///         and ezETH-ETH (21) DEXes drop to 1 wei max supply shares.
+///
+///         Action 6 sets the legacy vault 1-10 base withdrawal limits to
+///         $10k with a normal 10% / 6h expansion, replacing the per-vault
+///         supply-pinned limits set in IGP-132 so remaining suppliers can
+///         exit without limit friction.
 contract PayloadIGP140 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 140;
 
@@ -92,6 +97,9 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
 
         // Action 5: Fully deprecate rsETH, weETHs, and ezETH markets' borrow side.
         action5();
+
+        // Action 6: Set legacy vault 1-10 base withdrawal to $10k, 10% / 6h expansion.
+        action6();
     }
 
     function verifyProposal() public view override {}
@@ -251,6 +259,52 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
         IFluidDex(getDexAddress(EZETH_ETH_DEX_ID)).updateMaxSupplyShares(1);
     }
 
+    /// @notice Action 6: Set the legacy vault 1-10 base withdrawal limits to
+    ///         $10k with a 10% / 6h expansion. IGP-132 had pinned each base
+    ///         limit to the vault's then-current supply, which leaves any
+    ///         remaining suppliers exiting against a tight, slow-expanding
+    ///         cap; a flat $10k floor comfortably covers the dust supplies
+    ///         left in these vaults.
+    function action6() internal isActionSkippable(6) {
+        // Vault 1: ETH / USDC
+        _legacyVaultWithdrawalLimitUSD(1, ETH_ADDRESS);
+        // Vault 2: ETH / USDT
+        _legacyVaultWithdrawalLimitUSD(2, ETH_ADDRESS);
+        // Vault 3: wstETH / ETH
+        _legacyVaultWithdrawalLimitUSD(3, wstETH_ADDRESS);
+        // Vault 4: wstETH / USDC
+        _legacyVaultWithdrawalLimitUSD(4, wstETH_ADDRESS);
+        // Vault 5: wstETH / USDT
+        _legacyVaultWithdrawalLimitUSD(5, wstETH_ADDRESS);
+        // Vault 6: weETH / wstETH
+        _legacyVaultWithdrawalLimitUSD(6, weETH_ADDRESS);
+        // Vault 7: sUSDe / USDC
+        _legacyVaultWithdrawalLimitUSD(7, sUSDe_ADDRESS);
+        // Vault 8: sUSDe / USDT
+        _legacyVaultWithdrawalLimitUSD(8, sUSDe_ADDRESS);
+        // Vault 9: weETH / USDC
+        _legacyVaultWithdrawalLimitUSD(9, weETH_ADDRESS);
+        // Vault 10: weETH / USDT
+        _legacyVaultWithdrawalLimitUSD(10, weETH_ADDRESS);
+    }
+
+    /// @dev $10k base withdrawal limit with 10% / 6h expansion for one legacy
+    ///      vault. Named `..USD`-style so prepare-prices detects the token.
+    function _legacyVaultWithdrawalLimitUSD(
+        uint256 vaultId_,
+        address supplyToken_
+    ) internal {
+        setSupplyProtocolLimits(
+            SupplyProtocolConfig({
+                protocol: getVaultAddress(vaultId_),
+                supplyToken: supplyToken_,
+                expandPercent: 10 * 1e2, // 10%
+                expandDuration: 6 hours,
+                baseWithdrawalLimitInUSD: 10_000 // $10k
+            })
+        );
+    }
+
     /**
      * |
      * |     Payload Actions End Here      |
@@ -258,8 +312,10 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
      */
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
-    // fetched: 2026-08-24T19:48:26.071Z, source: coingecko
-    function ETH_USD_PRICE()   public pure override returns (uint256) { return 2_470 * 1e2; }
-    function weETH_USD_PRICE() public pure override returns (uint256) { return 2_720 * 1e2; }
+    // fetched: 2026-09-04T04:16:26.194Z, source: coingecko
+    function ETH_USD_PRICE()    public pure override returns (uint256) { return 2_510 * 1e2; }
+    function sUSDe_USD_PRICE()  public pure override returns (uint256) { return 1.25 * 1e2; }
+    function weETH_USD_PRICE()  public pure override returns (uint256) { return 2_760 * 1e2; }
+    function wstETH_USD_PRICE() public pure override returns (uint256) { return 3_120 * 1e2; }
     // --- END AUTO-GENERATED PRICES ---
 }
