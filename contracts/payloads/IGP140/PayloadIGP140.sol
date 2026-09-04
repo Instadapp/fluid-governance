@@ -32,12 +32,11 @@ interface IFluidUsEquityMarketHours {
 ///         max borrow shares to ~$1M each (500k shares at ~$2/share), down
 ///         from 7.5M / 5M shares (~$15M / $10M).
 ///
-///         Action 3 fully deprecates the osETH markets' borrow side: T1
-///         vaults 153-155 (USDC/USDT/GHO) and the T2 vault 159 (wstETH) are
-///         paused at the Liquidity Layer, T3 vaults 156-157 are paused at the
-///         USDC-USDT (2) and concentrated (34) DEXes, and the ETH-osETH DEX
-///         (43) max supply shares drop to 1 wei so no new shares can be
-///         minted. IGP-138 had already capped the T1 vaults at $100k borrow.
+///         Action 3 fully deprecates the osETH vaults' borrow side: T1
+///         vaults 153-155 (USDC/USDT/GHO) are paused at the Liquidity Layer
+///         and T3 vaults 156-157 are paused at the USDC-USDT (2) and
+///         concentrated (34) DEXes. IGP-138 had already capped the T1 vaults
+///         at $100k borrow.
 ///
 ///         Action 4 removes the Team Multisig dex auth that IGP-138 granted
 ///         on the newly launched USDat/USDC (49) and USDC/trUSD (50) DEXes.
@@ -73,7 +72,6 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     uint256 public constant VAULT_OSETH_GHO_ID = 155; // T1: osETH / GHO
     uint256 public constant VAULT_OSETH__USDC_USDT_ID = 156; // T3: osETH / USDC-USDT
     uint256 public constant VAULT_OSETH__USDC_USDT_CONC_ID = 157; // T3: osETH / USDC-USDT concentrated
-    uint256 public constant VAULT_ETH_OSETH__WSTETH_ID = 159; // T2: ETH-osETH / wstETH
 
     // --- rsETH / weETHs / ezETH vault ids (borrow side deprecated in Action 5) ---
     uint256 public constant VAULT_RSETH_ETH__WSTETH_ID = 78; // T2: rsETH-ETH / wstETH
@@ -88,7 +86,6 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     uint256 public constant RSETH_ETH_DEX_ID = 13; // rsETH-ETH (vault 78 smart collateral)
     uint256 public constant WEETHS_ETH_DEX_ID = 14; // weETHs-ETH (vault 80 smart collateral)
     uint256 public constant EZETH_ETH_DEX_ID = 21; // ezETH-ETH (vault 104 smart collateral)
-    uint256 public constant OSETH_ETH_DEX_ID = 43; // ETH-osETH (vault 158/159 smart collateral)
     uint256 public constant USDAT_USDC_DEX_ID = 49; // USDat-USDC (launched in IGP-138)
     uint256 public constant USDC_TRUSD_DEX_ID = 50; // USDC-trUSD (launched in IGP-138)
 
@@ -109,7 +106,7 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
         // Action 2: Reduce USDC-ETH DEX (5) max supply and borrow shares to ~$1M.
         action2();
 
-        // Action 3: Fully deprecate the osETH vaults' borrow side + ETH-osETH DEX (43).
+        // Action 3: Fully deprecate the osETH vaults' borrow side.
         action3();
 
         // Action 4: Remove Team Multisig dex auth granted in IGP-138 (DEXes 49, 50).
@@ -182,15 +179,13 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
         );
     }
 
-    /// @notice Action 3: Fully deprecate the osETH markets' borrow side.
-    ///         T1 vaults 153-155 and the T2 vault 159 get paused Liquidity
-    ///         Layer borrow configs (dust ceilings, 0.01% expansion over max
-    ///         duration); T3 vaults 156-157 get the same treatment for their
-    ///         smart-debt shares at the USDC-USDT (2) and concentrated (34)
-    ///         DEXes; and the ETH-osETH DEX (43) max supply shares drop to
-    ///         1 wei so no new shares can be minted (3,021 shares outstanding
-    ///         against the old 5,700 cap). Existing positions can still repay
-    ///         and withdraw; only new borrowing / supplying is blocked.
+    /// @notice Action 3: Fully deprecate the osETH vaults' borrow side.
+    ///         T1 vaults 153-155 get paused Liquidity Layer borrow configs
+    ///         (dust ceilings, 0.01% expansion over max duration); T3 vaults
+    ///         156-157 get the same treatment for their smart-debt shares at
+    ///         the USDC-USDT (2) and concentrated (34) DEXes. Existing
+    ///         positions can still repay and withdraw; only new borrowing is
+    ///         blocked.
     function action3() internal isActionSkippable(3) {
         // T1 vaults 153-155: pause LL borrow side (osETH collateral vaults).
         setBorrowProtocolLimitsPaused(
@@ -215,15 +210,6 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
             getDexAddress(USDC_USDT_CONC_DEX_ID),
             getVaultAddress(VAULT_OSETH__USDC_USDT_CONC_ID)
         );
-
-        // T2 vault 159: pause its wstETH borrow side at the LL.
-        setBorrowProtocolLimitsPaused(
-            getVaultAddress(VAULT_ETH_OSETH__WSTETH_ID),
-            wstETH_ADDRESS
-        );
-
-        // ETH-osETH DEX (43): block new supply shares (withdrawals unaffected).
-        IFluidDex(getDexAddress(OSETH_ETH_DEX_ID)).updateMaxSupplyShares(1);
     }
 
     /// @notice Action 4: Remove the Team Multisig dex auth granted in IGP-138
