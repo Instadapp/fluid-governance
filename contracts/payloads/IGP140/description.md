@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal brings the new **weETH/ETH** T1 vault (id **182**) online by setting its Liquidity Layer limits at dust size and granting the Team Multisig vault auth so limits can be scaled up as the market proves out. It also reduces the deprecated **USDC-ETH DEX (5)** max supply and max borrow shares to **~$1M** each, fully deprecates the **osETH** vaults' borrow side (vaults **153–157**), removes the Team Multisig dex auth granted in IGP-138 on the **USDat/USDC (49)** and **USDC/trUSD (50)** DEXes, fully deprecates the **rsETH**, **weETHs**, and **ezETH** markets' borrow side (vaults **78–80**, **103–104**, and DEXes **13**, **14**, **21**), sets the legacy vault **1–10** base withdrawal limits to **$10k** with a **10% / 6h** expansion, and moves the US equity market hours schedule appointer from the Team Multisig to the **24h FluidTimelockController**.
+This proposal brings the new **weETH/ETH** T1 vault (id **182**) online by setting its Liquidity Layer limits at dust size and granting the Team Multisig vault auth so limits can be scaled up as the market proves out. It also reduces the deprecated **USDC-ETH DEX (5)** max supply and max borrow shares to **~$1M** each, fully deprecates the **osETH** vaults' borrow side (vaults **153–157**), removes the Team Multisig dex auth granted in IGP-138 on the **USDat/USDC (49)** and **USDC/trUSD (50)** DEXes, fully deprecates the **rsETH**, **weETHs**, and **ezETH** markets' borrow side (vaults **80**, **103–104**, and DEXes **13**, **14**, **21**), sets the legacy vault **1–10** base withdrawal limits to the greater of **$10k** and the vault's live supply with a **10% / 6h** expansion, and moves the US equity market hours schedule appointer from the Team Multisig to the **24h FluidTimelockController**.
 
 The vault contract was deployed by the Team Multisig at block 25,789,585 and is still unconfigured at the Liquidity Layer, so it cannot be supplied to or borrowed from until this payload executes.
 
@@ -34,15 +34,15 @@ The DEX has been deprecated since IGP-96 dust-ceilinged its borrow limits and cu
 
 ### Action 3: Fully Deprecate the osETH Vaults' Borrow Side
 
-IGP-138 had already capped the osETH T1 vaults at $100k borrow (base = max). This action pauses the borrow side entirely — dust debt ceilings with expansion frozen at the minimum (0.01% over max duration). Existing positions can still repay and withdraw.
+IGP-138 had already capped the osETH T1 vaults at $100k borrow (base = max). This action deprecates the borrow side entirely — dust debt ceilings with expansion frozen at the minimum (0.01% over max duration). The Liquidity Layer only checks the debt ceiling when borrowing, so existing positions can still repay and withdraw.
 
 | Market | Type | Borrow side | Change |
 | --- | --- | --- | --- |
-| Vault 153 | T1 | USDC (LL) | Paused: dust ceilings, frozen expansion |
-| Vault 154 | T1 | USDT (LL) | Paused: dust ceilings, frozen expansion |
-| Vault 155 | T1 | GHO (LL) | Paused: dust ceilings, frozen expansion |
-| Vault 156 | T3 | USDC-USDT DEX (2) shares | Paused: dust ceilings, frozen expansion |
-| Vault 157 | T3 | USDC-USDT conc. DEX (34) shares | Paused: dust ceilings, frozen expansion |
+| Vault 153 | T1 | USDC (LL) | Deprecated: dust ceilings, frozen expansion |
+| Vault 154 | T1 | USDT (LL) | Deprecated: dust ceilings, frozen expansion |
+| Vault 155 | T1 | GHO (LL) | Deprecated: dust ceilings, frozen expansion |
+| Vault 156 | T3 | USDC-USDT DEX (2) shares | Deprecated: dust ceilings, frozen expansion |
+| Vault 157 | T3 | USDC-USDT conc. DEX (34) shares | Deprecated: dust ceilings, frozen expansion |
 
 ### Action 4: Remove Team Multisig Auth on IGP-138 DEXes
 
@@ -55,35 +55,37 @@ IGP-138 granted the Team Multisig dex auth when launching the USDat/USDC and USD
 
 ### Action 5: Fully Deprecate the rsETH, weETHs, and ezETH Markets' Borrow Side
 
-Same treatment as Action 3, applied to the rsETH, weETHs, and ezETH markets. All five vaults borrow wstETH at the Liquidity Layer (IGP-138 had already capped the ezETH vaults at $100k / $1M). Existing positions can still repay and withdraw.
+Same treatment as Action 3, applied to the rsETH, weETHs, and ezETH markets. Vaults 80, 103 and 104 borrow wstETH at the Liquidity Layer (IGP-138 had already capped the ezETH vaults at $100k / $1M). The rsETH vaults 78 and 79 already carry the deprecated borrow config on-chain, so only their DEX is touched here. Existing positions can still repay and withdraw.
 
 | Market | Type | Borrow side | Change |
 | --- | --- | --- | --- |
-| Vault 78 | T2 | rsETH-ETH / wstETH (LL) | Paused: dust ceilings, frozen expansion |
-| Vault 79 | T1 | rsETH / wstETH (LL) | Paused: dust ceilings, frozen expansion |
-| Vault 80 | T2 | weETHs-ETH / wstETH (LL) | Paused: dust ceilings, frozen expansion |
-| Vault 103 | T1 | ezETH / wstETH (LL) | Paused: dust ceilings, frozen expansion |
-| Vault 104 | T2 | ezETH-ETH / wstETH (LL) | Paused: dust ceilings, frozen expansion |
+| Vault 80 | T2 | weETHs-ETH / wstETH (LL) | Deprecated: dust ceilings, frozen expansion |
+| Vault 103 | T1 | ezETH / wstETH (LL) | Deprecated: dust ceilings, frozen expansion |
+| Vault 104 | T2 | ezETH-ETH / wstETH (LL) | Deprecated: dust ceilings, frozen expansion |
 | DEX 13 | Smart col | rsETH-ETH | Max supply shares → `1` wei (from 3,200; ~1,021 outstanding) |
 | DEX 14 | Smart col | weETHs-ETH | Max supply shares → `1` wei (from 1,600; ~153 outstanding) |
 | DEX 21 | Smart col | ezETH-ETH | Max supply shares → `1` wei (from 3,862; ~141 outstanding) |
 
-### Action 6: Set Legacy Vault 1–10 Base Withdrawal Limits to $10k
+### Action 6: Set Legacy Vault 1–10 Base Withdrawal Limits to the Greater of $10k and Live Supply
 
-IGP-132 pinned each legacy vault's base withdrawal limit to its then-current supply, which leaves remaining suppliers exiting against a tight cap. This action sets a flat **$10k** base withdrawal limit with a normal **10% / 6h** expansion on all ten vaults — comfortably above the dust supplies left in them.
+IGP-132 pinned each legacy vault's base withdrawal limit to its then-current supply, which leaves remaining suppliers exiting against a tight cap. This action sets a **$10k** base withdrawal limit with a normal **10% / 6h** expansion on all ten vaults.
 
-| Vault | Market | Supply token |
-| --- | --- | --- |
-| 1 | ETH / USDC | ETH |
-| 2 | ETH / USDT | ETH |
-| 3 | wstETH / ETH | wstETH |
-| 4 | wstETH / USDC | wstETH |
-| 5 | wstETH / USDT | wstETH |
-| 6 | weETH / wstETH | weETH |
-| 7 | sUSDe / USDC | sUSDe |
-| 8 | sUSDe / USDT | sUSDe |
-| 9 | weETH / USDC | weETH |
-| 10 | weETH / USDT | weETH |
+Nine of the ten hold dust (all under $4k) and take the flat $10k floor. Vault 6 still holds **~640 weETH (~$1.77M)**, so a $10k limit would sit far below its live supply and activate the withdrawal rate limit — adding exactly the exit friction this action removes. It therefore takes a token-denominated base limit of **700 weETH**, set above current supply so the limit stays dormant, as it is today.
+
+Base withdrawal limits only gate withdrawals while supply sits above them; below the limit, the full balance is withdrawable at any time.
+
+| Vault | Market | Supply token | Live supply | New base withdrawal limit |
+| --- | --- | --- | --- | --- |
+| 1 | ETH / USDC | ETH | 0.65 ETH | $10k |
+| 2 | ETH / USDT | ETH | 0.95 ETH | $10k |
+| 3 | wstETH / ETH | wstETH | 0.64 wstETH | $10k |
+| 4 | wstETH / USDC | wstETH | 1.04 wstETH | $10k |
+| 5 | wstETH / USDT | wstETH | 0.54 wstETH | $10k |
+| 6 | weETH / wstETH | weETH | **640.10 weETH** | **700 weETH** |
+| 7 | sUSDe / USDC | sUSDe | 3,141.85 sUSDe | $10k |
+| 8 | sUSDe / USDT | sUSDe | 393.96 sUSDe | $10k |
+| 9 | weETH / USDC | weETH | 0.23 weETH | $10k |
+| 10 | weETH / USDT | weETH | 0.20 weETH | $10k |
 
 ### Action 7: Move the Market Hours Schedule Appointer Behind the 24h Timelock
 
@@ -110,4 +112,4 @@ This action was originally Action 2 of IGP-139, the Foundation grant payload. It
 
 ## Conclusion
 
-IGP-140 launches the weETH/ETH T1 vault (id 182) with $7k base withdrawal, $7k base borrow, and $9k max borrow limits at the Liquidity Layer and grants the Team Multisig vault auth for post-launch scaling. It also reduces the deprecated USDC-ETH DEX (5) max supply and max borrow shares to ~$1M each, fully deprecates the osETH vaults' borrow side (vaults 153–157), removes the Team Multisig dex auth granted in IGP-138 on DEXes 49 and 50, fully deprecates the rsETH, weETHs, and ezETH markets' borrow side (vaults 78–80 and 103–104, plus 1-wei supply-share caps on DEXes 13, 14, and 21), sets the legacy vault 1–10 base withdrawal limits to $10k with a 10% / 6h expansion, and moves the US equity market hours schedule appointer from the Team Multisig to the 24h FluidTimelockController, leaving the multisig at class 2.
+IGP-140 launches the weETH/ETH T1 vault (id 182) with $7k base withdrawal, $7k base borrow, and $9k max borrow limits at the Liquidity Layer and grants the Team Multisig vault auth for post-launch scaling. It also reduces the deprecated USDC-ETH DEX (5) max supply and max borrow shares to ~$1M each, fully deprecates the osETH vaults' borrow side (vaults 153–157), removes the Team Multisig dex auth granted in IGP-138 on DEXes 49 and 50, fully deprecates the rsETH, weETHs, and ezETH markets' borrow side (vaults 80 and 103–104, plus 1-wei supply-share caps on DEXes 13, 14, and 21), sets the legacy vault 1–10 base withdrawal limits to the greater of $10k and the vault's live supply (only vault 6 is above the floor, at 700 weETH) with a 10% / 6h expansion, and moves the US equity market hours schedule appointer from the Team Multisig to the 24h FluidTimelockController, leaving the multisig at class 2.

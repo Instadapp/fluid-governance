@@ -4,6 +4,9 @@ pragma experimental ABIEncoderV2;
 
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 import {IFluidDex} from "../common/interfaces/IFluidDex.sol";
+import {
+    AdminModuleStructs as FluidLiquidityAdminStructs
+} from "../common/interfaces/IFluidLiquidity.sol";
 
 /// @notice Schedule contract the CLX stock oracles read US equity session state from.
 ///         `updateAuth` writes auth classes 0-3 and is Liquidity governance only.
@@ -41,16 +44,19 @@ interface IFluidUsEquityMarketHours {
 ///         Action 4 removes the Team Multisig dex auth that IGP-138 granted
 ///         on the newly launched USDat/USDC (49) and USDC/trUSD (50) DEXes.
 ///
-///         Action 5 fully deprecates the rsETH, weETHs, and ezETH markets'
-///         borrow side the same way as Action 3: vaults 78/79 (rsETH),
-///         80 (weETHs), and 103/104 (ezETH) — all wstETH debt — are paused
-///         at the Liquidity Layer, and the rsETH-ETH (13), weETHs-ETH (14),
-///         and ezETH-ETH (21) DEXes drop to 1 wei max supply shares.
+///         Action 5 fully deprecates the weETHs and ezETH markets' borrow
+///         side the same way as Action 3: vaults 80 (weETHs) and 103/104
+///         (ezETH) — all wstETH debt — are deprecated at the Liquidity
+///         Layer, and the rsETH-ETH (13), weETHs-ETH (14), and ezETH-ETH
+///         (21) DEXes drop to 1 wei max supply shares. The rsETH vaults
+///         78/79 already hold the deprecated config, so only their DEX is
+///         touched.
 ///
 ///         Action 6 sets the legacy vault 1-10 base withdrawal limits to
-///         $10k with a normal 10% / 6h expansion, replacing the per-vault
-///         supply-pinned limits set in IGP-132 so remaining suppliers can
-///         exit without limit friction.
+///         the greater of $10k and the vault's live supply, with a normal
+///         10% / 6h expansion, replacing the per-vault supply-pinned limits
+///         set in IGP-132 so remaining suppliers can exit without limit
+///         friction. Only vault 6 (~640 weETH) sits above the $10k floor.
 ///
 ///         Action 7 moves the US equity market hours schedule appointer from
 ///         Team Multisig to the 24h FluidTimelockController. Appointing a
@@ -73,9 +79,7 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     uint256 public constant VAULT_OSETH__USDC_USDT_ID = 156; // T3: osETH / USDC-USDT
     uint256 public constant VAULT_OSETH__USDC_USDT_CONC_ID = 157; // T3: osETH / USDC-USDT concentrated
 
-    // --- rsETH / weETHs / ezETH vault ids (borrow side deprecated in Action 5) ---
-    uint256 public constant VAULT_RSETH_ETH__WSTETH_ID = 78; // T2: rsETH-ETH / wstETH
-    uint256 public constant VAULT_RSETH_WSTETH_ID = 79; // T1: rsETH / wstETH
+    // --- weETHs / ezETH vault ids (borrow side deprecated in Action 5) ---
     uint256 public constant VAULT_WEETHS_ETH__WSTETH_ID = 80; // T2: weETHs-ETH / wstETH
     uint256 public constant VAULT_EZETH_WSTETH_ID = 103; // T1: ezETH / wstETH
     uint256 public constant VAULT_EZETH_ETH__WSTETH_ID = 104; // T2: ezETH-ETH / wstETH
@@ -228,31 +232,24 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     }
 
     /// @notice Action 5: Fully deprecate the rsETH, weETHs, and ezETH
-    ///         markets' borrow side, mirroring Action 3. All five vaults
-    ///         borrow wstETH at the Liquidity Layer and get paused configs
-    ///         (dust ceilings, 0.01% expansion over max duration); the three
-    ///         smart-collateral DEXes drop to 1 wei max supply shares so no
-    ///         new shares can be minted (rsETH-ETH 13: ~1,021 outstanding /
-    ///         3,200 cap; weETHs-ETH 14: ~153 / 1,600; ezETH-ETH 21: ~141 /
-    ///         3,862). Existing positions can still repay and withdraw.
+    ///         markets' borrow side, mirroring Action 3. Vaults 80, 103 and
+    ///         104 borrow wstETH at the Liquidity Layer and get deprecated
+    ///         configs (dust ceilings, 0.01% expansion over max duration);
+    ///         the three smart-collateral DEXes drop to 1 wei max supply
+    ///         shares so no new shares can be minted (rsETH-ETH 13: ~1,021
+    ///         outstanding / 3,200 cap; weETHs-ETH 14: ~153 / 1,600;
+    ///         ezETH-ETH 21: ~141 / 3,862). Existing positions can still
+    ///         repay and withdraw.
     function action5() internal isActionSkippable(5) {
-        // rsETH: T2 vault 78 + T1 vault 79 — pause wstETH borrow at the LL.
-        setBorrowProtocolLimitsPaused(
-            getVaultAddress(VAULT_RSETH_ETH__WSTETH_ID),
-            wstETH_ADDRESS
-        );
-        setBorrowProtocolLimitsPaused(
-            getVaultAddress(VAULT_RSETH_WSTETH_ID),
-            wstETH_ADDRESS
-        );
+        // rsETH vaults 78 and 79 already carry the deprecated borrow config on-chain; only their DEX is left to cap.
 
-        // weETHs: T2 vault 80 — pause wstETH borrow at the LL.
+        // weETHs: T2 vault 80 — deprecate wstETH borrow at the LL.
         setBorrowProtocolLimitsPaused(
             getVaultAddress(VAULT_WEETHS_ETH__WSTETH_ID),
             wstETH_ADDRESS
         );
 
-        // ezETH: T1 vault 103 + T2 vault 104 — pause wstETH borrow at the LL.
+        // ezETH: T1 vault 103 + T2 vault 104 — deprecate wstETH borrow at the LL.
         setBorrowProtocolLimitsPaused(
             getVaultAddress(VAULT_EZETH_WSTETH_ID),
             wstETH_ADDRESS
@@ -269,11 +266,13 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     }
 
     /// @notice Action 6: Set the legacy vault 1-10 base withdrawal limits to
-    ///         $10k with a 10% / 6h expansion. IGP-132 had pinned each base
-    ///         limit to the vault's then-current supply, which leaves any
-    ///         remaining suppliers exiting against a tight, slow-expanding
-    ///         cap; a flat $10k floor comfortably covers the dust supplies
-    ///         left in these vaults.
+    ///         the greater of $10k and the vault's live supply, with a
+    ///         10% / 6h expansion. IGP-132 had pinned each base limit to the
+    ///         vault's then-current supply, which leaves any remaining
+    ///         suppliers exiting against a tight, slow-expanding cap. Nine
+    ///         of the ten vaults hold dust and take the $10k floor; vault 6
+    ///         still holds ~640 weETH and takes a token-denominated limit
+    ///         above that, so its withdrawal limit stays dormant.
     function action6() internal isActionSkippable(6) {
         // Vault 1: ETH / USDC
         _legacyVaultWithdrawalLimitUSD(1, ETH_ADDRESS);
@@ -285,8 +284,9 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
         _legacyVaultWithdrawalLimitUSD(4, wstETH_ADDRESS);
         // Vault 5: wstETH / USDT
         _legacyVaultWithdrawalLimitUSD(5, wstETH_ADDRESS);
-        // Vault 6: weETH / wstETH
-        _legacyVaultWithdrawalLimitUSD(6, weETH_ADDRESS);
+        // Vault 6: weETH / wstETH — ~640 weETH still supplied, so the $10k
+        // floor would cap exits well below the live balance.
+        _legacyVaultWithdrawalLimitRaw(6, weETH_ADDRESS, 700 * 1e18);
         // Vault 7: sUSDe / USDC
         _legacyVaultWithdrawalLimitUSD(7, sUSDe_ADDRESS);
         // Vault 8: sUSDe / USDT
@@ -312,6 +312,38 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
                 baseWithdrawalLimitInUSD: 10_000 // $10k
             })
         );
+    }
+
+    /// @dev Same 10% / 6h expansion, base limit given in token terms instead.
+    ///      For vaults whose live supply is above the $10k floor, where the
+    ///      flat limit would activate the withdrawal rate limit and add the
+    ///      exit friction this action exists to remove. The token amount is
+    ///      set above current supply, so the limit stays dormant.
+    function _legacyVaultWithdrawalLimitRaw(
+        uint256 vaultId_,
+        address supplyToken_,
+        uint256 baseWithdrawalLimit_
+    ) internal {
+        FluidLiquidityAdminStructs.UserSupplyConfig[]
+            memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
+                1
+            );
+
+        configs_[0] = FluidLiquidityAdminStructs.UserSupplyConfig({
+            user: getVaultAddress(vaultId_),
+            token: supplyToken_,
+            mode: 1,
+            expandPercent: 10 * 1e2, // 10%
+            expandDuration: 6 hours,
+            baseWithdrawalLimit: getRawAmount(
+                supplyToken_,
+                baseWithdrawalLimit_,
+                0,
+                true
+            )
+        });
+
+        LIQUIDITY.updateUserSupplyConfigs(configs_);
     }
 
     /// @notice Action 7: Hand the US equity market hours schedule appointer
