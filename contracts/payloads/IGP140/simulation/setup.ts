@@ -13,9 +13,15 @@
  *    it. We assert rather than deploy: the Liquidity Layer rejects supply/borrow
  *    configs for an address with no code, and if the vault is missing the fork
  *    is stale in a way worth surfacing rather than papering over.
+ *
+ * 3. Mock osETH Chainlink feed 0x66ac... — the live feed has a max-age check,
+ *    so after the sim warps voting delay + voting period + 24h timelock,
+ *    getVaultsEntireData reverts and the Fluid vaults API 400s.
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
+import * as fs from "fs";
+import * as path from "path";
 
 const GOVERNOR = "0x0204Cd037B2ec03605CFdFe482D8e257C765fA1B";
 const TIMELOCK = "0x2386DC45AdDed673317eF068992F19421B481F4c";
@@ -38,6 +44,32 @@ const USER_BORROW_SLOT = 9;
 
 const IGP140_PROPOSAL_ID = 140;
 const TARGET_PROPOSAL_COUNT = IGP140_PROPOSAL_ID - 1; // 139
+
+/** osETH Chainlink feed: live contract rejects stale rounds after the sim time warp. */
+const CHAINLINK_FEED_TO_MOCK = "0x66ac817f997efd114edfcccdce99f3268557b32c";
+
+function normalizeHex(raw: string): string {
+  return raw.startsWith("0x") ? raw : `0x${raw}`;
+}
+
+function readArtifactBytecode(relativeArtifactPath: string): string {
+  const artifactPath = path.join(process.cwd(), relativeArtifactPath);
+  if (!fs.existsSync(artifactPath)) {
+    throw new Error(
+      `Artifact not found at ${artifactPath}. Run 'npm run compile' first.`,
+    );
+  }
+
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf-8"));
+  const raw =
+    artifact.deployedBytecode?.object ?? artifact.deployedBytecode ?? "";
+  const bytecode =
+    typeof raw === "string" && raw.length > 0 ? normalizeHex(raw) : "";
+  if (!bytecode) {
+    throw new Error(`${artifactPath} has no deployedBytecode.object`);
+  }
+  return bytecode;
+}
 
 async function getProposalCount(provider: JsonRpcProvider): Promise<number> {
   const iface = new ethers.Interface([
@@ -251,6 +283,14 @@ async function assertVaultDeployed(provider: JsonRpcProvider): Promise<void> {
   }
 }
 
+async function mockChainlinkFeed(provider: JsonRpcProvider): Promise<void> {
+  const bytecode = readArtifactBytecode(
+    "artifacts/contracts/payloads/IGP140/simulation/MockChainlinkFeed.sol/MockChainlinkFeed.json",
+  );
+  await provider.send("tenderly_setCode", [CHAINLINK_FEED_TO_MOCK, bytecode]);
+  console.log("[SETUP] Mocked Chainlink feed for OSETH oracle path");
+}
+
 export async function preSetup(
   provider: JsonRpcProvider,
   _payloadAddress?: string,
@@ -260,6 +300,7 @@ export async function preSetup(
   try {
     await ensureGovernorProposalId(provider);
     await assertVaultDeployed(provider);
+    await mockChainlinkFeed(provider);
 
     console.log("[SETUP] Pre-setup completed successfully");
   } catch (error: unknown) {
