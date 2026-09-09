@@ -31,9 +31,9 @@ interface IFluidUsEquityMarketHours {
 ///         proposal on execution; the grant has no dependency on the vault
 ///         launch.
 ///
-///         Action 2 reduces the deprecated USDC-ETH DEX (5) max supply and
+///         Action 2 reduces the live USDC-ETH DEX (12) max supply and
 ///         max borrow shares to ~$1M each (500k shares at ~$2/share), down
-///         from 7.5M / 5M shares (~$15M / $10M).
+///         from 30M / 20M shares set in IGP-79.
 ///
 ///         Action 3 fully deprecates the osETH vaults' borrow side: T1
 ///         vaults 153-155 (USDC/USDT/GHO) are paused at the Liquidity Layer
@@ -45,12 +45,12 @@ interface IFluidUsEquityMarketHours {
 ///         on the newly launched USDat/USDC (49) and USDC/trUSD (50) DEXes.
 ///
 ///         Action 5 fully deprecates the weETHs and ezETH markets' borrow
-///         side the same way as Action 3: vaults 80 (weETHs) and 103/104
-///         (ezETH) — all wstETH debt — are deprecated at the Liquidity
-///         Layer, and the rsETH-ETH (13), weETHs-ETH (14), and ezETH-ETH
-///         (21) DEXes drop to 1 wei max supply shares. The rsETH vaults
-///         78/79 already hold the deprecated config, so only their DEX is
-///         touched.
+///         side the same way as Action 3: vaults 27 and 80 (weETHs) and
+///         103/104 (ezETH) — all wstETH debt — are deprecated at the
+///         Liquidity Layer, and the rsETH-ETH (13), weETHs-ETH (14), and
+///         ezETH-ETH (21) DEXes drop to 1 wei max supply shares. The rsETH
+///         vaults 78/79 already hold the deprecated config, so only their DEX
+///         is touched.
 ///
 ///         Action 6 sets the legacy vault 1-10 base withdrawal limits to
 ///         the greater of $10k and the vault's live supply, with a normal
@@ -69,8 +69,8 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     /// @notice weETH/ETH T1 vault, deployed via the Team Multisig.
     uint256 public constant VAULT_WEETH_ETH_ID = 182; // T1: weETH / ETH
 
-    /// @notice Deprecated USDC-ETH DEX (dust-ceilinged since IGP-96).
-    uint256 public constant USDC_ETH_DEX_ID = 5;
+    /// @notice Live USDC-ETH DEX (smart col + smart debt).
+    uint256 public constant USDC_ETH_DEX_ID = 12;
 
     // --- osETH vault ids (borrow side deprecated in Action 3) ---
     uint256 public constant VAULT_OSETH_USDC_ID = 153; // T1: osETH / USDC
@@ -80,6 +80,7 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     uint256 public constant VAULT_OSETH__USDC_USDT_CONC_ID = 157; // T3: osETH / USDC-USDT concentrated
 
     // --- weETHs / ezETH vault ids (borrow side deprecated in Action 5) ---
+    uint256 public constant VAULT_WEETHS_WSTETH_ID = 27; // T1: weETHs / wstETH
     uint256 public constant VAULT_WEETHS_ETH__WSTETH_ID = 80; // T2: weETHs-ETH / wstETH
     uint256 public constant VAULT_EZETH_WSTETH_ID = 103; // T1: ezETH / wstETH
     uint256 public constant VAULT_EZETH_ETH__WSTETH_ID = 104; // T2: ezETH-ETH / wstETH
@@ -103,7 +104,7 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
         // Action 1: Set dust limits for weETH/ETH T1 vault.
         action1();
 
-        // Action 2: Reduce USDC-ETH DEX (5) max supply and borrow shares to ~$1M.
+        // Action 2: Reduce USDC-ETH DEX (12) max supply and borrow shares to ~$1M.
         action2();
 
         // Action 3: Fully deprecate the osETH vaults' borrow side.
@@ -163,19 +164,19 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
         );
     }
 
-    /// @notice Action 2: Reduce the deprecated USDC-ETH DEX (5) max supply
-    ///         shares and max borrow shares to ~$1M each. The pool has been
-    ///         dust-ceilinged since IGP-96 and holds only dust liquidity
-    ///         (~101 supply / ~100 borrow shares), so the old 7.5M / 5M share
-    ///         caps (~$15M / $10M) are unnecessary surface area.
+    /// @notice Action 2: Reduce the live USDC-ETH DEX (12) max supply
+    ///         shares and max borrow shares to ~$1M each. IGP-79 set the
+    ///         caps at 30M / 20M shares (~$30M / $20M); 500k shares is
+    ///         below current liquidity, so new supply and borrows stop
+    ///         until outstanding shares fall under the new ceiling.
     function action2() internal isActionSkippable(2) {
         address usdcEthDex_ = getDexAddress(USDC_ETH_DEX_ID);
 
         IFluidDex(usdcEthDex_).updateMaxSupplyShares(
-            500_000 * 1e18 // ~$1M at ~$2/share (from 7.5M shares)
+            500_000 * 1e18 // ~$1M at ~$2/share (from 30M shares)
         );
         IFluidDex(usdcEthDex_).updateMaxBorrowShares(
-            500_000 * 1e18 // ~$1M at ~$2/share (from 5M shares)
+            500_000 * 1e18 // ~$1M at ~$2/share (from 20M shares)
         );
     }
 
@@ -228,18 +229,22 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     }
 
     /// @notice Action 5: Fully deprecate the rsETH, weETHs, and ezETH
-    ///         markets' borrow side, mirroring Action 3. Vaults 80, 103 and
-    ///         104 borrow wstETH at the Liquidity Layer and get deprecated
-    ///         configs (dust ceilings, 0.01% expansion over max duration);
-    ///         the three smart-collateral DEXes drop to 1 wei max supply
-    ///         shares so no new shares can be minted (rsETH-ETH 13: ~1,021
-    ///         outstanding / 3,200 cap; weETHs-ETH 14: ~153 / 1,600;
-    ///         ezETH-ETH 21: ~141 / 3,862). Existing positions can still
-    ///         repay and withdraw.
+    ///         markets' borrow side, mirroring Action 3. Vaults 27, 80,
+    ///         103 and 104 borrow wstETH at the Liquidity Layer and get
+    ///         deprecated configs (dust ceilings, 0.01% expansion over max
+    ///         duration); the three smart-collateral DEXes drop to 1 wei
+    ///         max supply shares so no new shares can be minted (rsETH-ETH
+    ///         13: ~1,021 outstanding / 3,200 cap; weETHs-ETH 14: ~153 /
+    ///         1,600; ezETH-ETH 21: ~141 / 3,862). Existing positions can
+    ///         still repay and withdraw.
     function action5() internal isActionSkippable(5) {
         // rsETH vaults 78 and 79 already carry the deprecated borrow config on-chain; only their DEX is left to cap.
 
-        // weETHs: T2 vault 80 — deprecate wstETH borrow at the LL.
+        // weETHs: T1 vault 27 + T2 vault 80 — deprecate wstETH borrow at the LL.
+        setBorrowProtocolLimitsPaused(
+            getVaultAddress(VAULT_WEETHS_WSTETH_ID),
+            wstETH_ADDRESS
+        );
         setBorrowProtocolLimitsPaused(
             getVaultAddress(VAULT_WEETHS_ETH__WSTETH_ID),
             wstETH_ADDRESS
