@@ -70,6 +70,10 @@ contract PayloadIGPConstants {
     address public constant TEAM_MULTISIG_2 =
         0x1e2e1aeD876f67Fe4Fd54090FD7B8F57Ce234219;
 
+    /// @notice 24h delay controller. Team Multisig proposes, 0x196Ed45e executes.
+    address public constant FLUID_MULTISIG_TIMELOCK_CONTROLLER =
+        0x4d6CE4F4498d59Eed397bCbC687805a07f9b2346;
+
     // Fluid Addresses
     IFluidLiquidityAdmin public constant LIQUIDITY =
         IFluidLiquidityAdmin(0x52Aa899454998Be5b000Ad077a46Bbe360F4e497);

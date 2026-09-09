@@ -97,10 +97,6 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     IFluidUsEquityMarketHours public constant US_EQUITY_MARKET_HOURS =
         IFluidUsEquityMarketHours(0xde51F64b1c94dc60AA1284741F19e2f9f425Fc67);
 
-    /// @notice 24h delay controller. Team Multisig proposes, 0x196Ed45e executes.
-    address public constant FLUID_TIMELOCK_CONTROLLER =
-        0x4d6CE4F4498d59Eed397bCbC687805a07f9b2346;
-
     function execute() public virtual override {
         super.execute();
 
@@ -354,7 +350,7 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     ///      inside the 5h pinned window; only appointing a class-1 schedule
     ///      writer moves behind the timelock.
     function action7() internal isActionSkippable(7) {
-        US_EQUITY_MARKET_HOURS.updateAuth(FLUID_TIMELOCK_CONTROLLER, 3);
+        US_EQUITY_MARKET_HOURS.updateAuth(FLUID_MULTISIG_TIMELOCK_CONTROLLER, 3);
         US_EQUITY_MARKET_HOURS.updateAuth(TEAM_MULTISIG, 2);
     }
 
