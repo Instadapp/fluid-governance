@@ -28,6 +28,11 @@ const execAsync = promisify(exec);
 // Global timeout configuration (10 minutes)
 const GLOBAL_TIMEOUT_MS = 10 * 60 * 1000;
 
+// Preprod resolves vnetId via Fluid's staging API (same path as Avocado's View on Fluid).
+const FLUID_STAGING_API_URL = 'https://api-staging.fluid.io';
+const FLUID_TENDERLY_PROJECT = 'fluid';
+const TEAM_MULTISIG = '0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e';
+
 // Tenderly VNet RPC URLs are capability URLs: anyone holding one can send
 // transactions to the Virtual TestNet. They must never appear in logs,
 // GitHub comments, or GITHUB_OUTPUT. Matches e.g.
@@ -130,10 +135,12 @@ class TenderlyGovernanceSimulator {
   private igpId: string;
   private config: SimulationConfig;
   private trackedTransactions: Map<string, TransactionDetails> = new Map();
+  private dashboardProject: string;
 
   constructor(igpId: string) {
     this.igpId = igpId;
     this.config = this.loadConfig();
+    this.dashboardProject = this.config.tenderly.project_slug;
   }
 
   private async getTenderlyTransactionStatus(txHash: string, vnetId: string): Promise<TenderlyTransactionResponse | null> {
@@ -141,7 +148,7 @@ class TenderlyGovernanceSimulator {
   }
 
   private async getTenderlyTransactionUrl(txHash: string, vnetId: string): Promise<string> {
-    return `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetId}/tx/${txHash}`;
+    return `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.dashboardProject}/testnet/${vnetId}/tx/${txHash}`;
   }
 
   private async trackTransaction(txHash: string, txDetails: Partial<TransactionDetails>, vnetId: string): Promise<void> {
@@ -414,27 +421,34 @@ class TenderlyGovernanceSimulator {
   async createVnet(): Promise<VNetConfig> {
     console.log('\n=== Step 1: Creating Tenderly Virtual Network ===');
 
-    const { access_key, account_id, project_slug } = this.config.tenderly;
+    const { access_key, account_id } = this.config.tenderly;
 
-    if (!access_key || !account_id || !project_slug) {
+    if (!access_key || !account_id) {
       throw new Error('Tenderly credentials not configured');
     }
 
     try {
-      const response = await axios.post(
-        `https://api.tenderly.co/api/v1/account/${account_id}/project/${project_slug}/vnets`,
+      // Preprod looks up vnetId in Fluid's DB; creating through the staging API
+      // (Avocado's path) is what makes /vnets/{id}/rpc and the vaults page work.
+      const fluidResponse = await axios.post(
+        `${FLUID_STAGING_API_URL}/1/users/${TEAM_MULTISIG}/virtual-networks`,
+        { chainId: '1', account: TEAM_MULTISIG },
         {
-          slug: `igp-${this.igpId}-${Date.now()}`,
-          display_name: `IGP ${this.igpId} Simulation`,
-          fork_config: {
-            network_id: 1
-          },
-          virtual_network_config: {
-            chain_config: {
-              chain_id: 1
-            }
-          }
-        },
+          headers: { 'Content-Type': 'application/json' },
+          timeout: GLOBAL_TIMEOUT_MS
+        }
+      );
+
+      const vnetId = fluidResponse.data?.id;
+      const slug = fluidResponse.data?.slug;
+      if (!vnetId) {
+        throw new Error('Fluid API did not return a virtual network id');
+      }
+
+      this.dashboardProject = FLUID_TENDERLY_PROJECT;
+
+      const tenderlyResponse = await axios.get(
+        `https://api.tenderly.co/api/v1/account/${account_id}/project/${FLUID_TENDERLY_PROJECT}/vnets/${vnetId}`,
         {
           headers: {
             'X-Access-Key': access_key,
@@ -444,11 +458,12 @@ class TenderlyGovernanceSimulator {
         }
       );
 
-      const data = response.data;
-      const vnetId = data.id;
+      const data = tenderlyResponse.data;
       const adminRpc = data.rpcs?.find((r: any) => r.name === 'Admin RPC')?.url || data.admin_rpc_url;
-      const slug = data.slug;
-      const link = `https://dashboard.tenderly.co/${account_id}/${project_slug}/testnet/${vnetId}`;
+      if (!adminRpc) {
+        throw new Error(`Tenderly project ${FLUID_TENDERLY_PROJECT} did not return an Admin RPC for ${vnetId}`);
+      }
+      const link = `https://dashboard.tenderly.co/${account_id}/${FLUID_TENDERLY_PROJECT}/testnet/${vnetId}`;
 
       // Mask every RPC URL returned by the API before anything else is logged,
       // so even accidental future prints are redacted by the Actions runner.
@@ -459,8 +474,6 @@ class TenderlyGovernanceSimulator {
       }
       maskInGitHubActions(data.admin_rpc_url);
       maskInGitHubActions(adminRpc);
-      // The admin RPC path segment is the capability token itself and is later
-      // embedded into other URLs (e.g. the Fluid UI link), so mask it too.
       if (typeof adminRpc === 'string' && adminRpc) {
         maskInGitHubActions(adminRpc.split('/')[3] || adminRpc.split('/').pop());
       }
@@ -639,7 +652,7 @@ class TenderlyGovernanceSimulator {
         gasLimit: "0x9896800",
         gasPrice: "0x0",
         status: 'success', // Assume success (Tenderly processes instantly)
-        tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetConfig.id}/tx/${setExecutableTxHash}`,
+        tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.dashboardProject}/testnet/${vnetConfig.id}/tx/${setExecutableTxHash}`,
         step: 'setExecutable',
         description: `Set PayloadIGP${this.igpId} as Executable`
       });
@@ -672,7 +685,7 @@ class TenderlyGovernanceSimulator {
         gasLimit: "0x9896800",
         gasPrice: "0x0",
         status: 'success', // Assume success (Tenderly processes instantly)
-        tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetConfig.id}/tx/${delegateTxHash}`,
+        tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.dashboardProject}/testnet/${vnetConfig.id}/tx/${delegateTxHash}`,
         step: 'delegation',
         description: `Delegate INST Voting Power to PayloadIGP${this.igpId}`
       });
@@ -718,7 +731,7 @@ class TenderlyGovernanceSimulator {
         gasLimit: "0x9896800",
         gasPrice: "0x0",
         status: 'pending', // Will be updated after verification
-        tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetConfig.id}/tx/${proposeTxHash}`,
+        tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.dashboardProject}/testnet/${vnetConfig.id}/tx/${proposeTxHash}`,
         step: 'proposalCreation',
         description: `Create IGP-${this.igpId}`
       });
@@ -818,7 +831,7 @@ class TenderlyGovernanceSimulator {
           gasLimit: "0x989680",
           gasPrice: "0x0",
           status: 'success', // Assume success (Tenderly processes instantly)
-          tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetConfig.id}/tx/${voteTxHash}`,
+          tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.dashboardProject}/testnet/${vnetConfig.id}/tx/${voteTxHash}`,
           step: 'voting',
           description: `Cast Vote for IGP-${this.igpId}`
         });
@@ -864,7 +877,7 @@ class TenderlyGovernanceSimulator {
         gasLimit: "0x989680",
         gasPrice: "0x0",
         status: 'success', // Assume success (Tenderly processes instantly)
-        tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetConfig.id}/tx/${queueTxHash}`,
+        tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.dashboardProject}/testnet/${vnetConfig.id}/tx/${queueTxHash}`,
         step: 'queueing',
         description: `Queue IGP-${this.igpId} Proposal ${proposalId}`
       });
@@ -919,7 +932,7 @@ class TenderlyGovernanceSimulator {
         gasLimit: "0x2625A00",
         gasPrice: "0x0",
         status: 'pending', // Will be updated after verification
-        tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetConfig.id}/tx/${executeTxHash}`,
+        tenderlyUrl: `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.dashboardProject}/testnet/${vnetConfig.id}/tx/${executeTxHash}`,
         step: 'execution',
         description: `Execute IGP-${this.igpId} Proposal ${proposalId}`
       });
@@ -1195,7 +1208,7 @@ ${vnetSection}
       // Update deployment transaction with correct VNet ID and URL
       const deploymentTx = Array.from(this.trackedTransactions.values()).find(tx => tx.step === 'deployment');
       if (deploymentTx) {
-        deploymentTx.tenderlyUrl = `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.config.tenderly.project_slug}/testnet/${vnetConfig.id}/tx/${deploymentTx.hash}`;
+        deploymentTx.tenderlyUrl = `https://dashboard.tenderly.co/${this.config.tenderly.account_id}/${this.dashboardProject}/testnet/${vnetConfig.id}/tx/${deploymentTx.hash}`;
         this.trackedTransactions.set(deploymentTx.hash, deploymentTx);
       }
 
