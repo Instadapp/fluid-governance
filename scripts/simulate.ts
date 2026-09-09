@@ -1209,8 +1209,8 @@ ${vnetSection}
 
       // Get actual Tenderly URLs from API
       const executionTenderlyUrl = await this.getTenderlyTransactionUrl(result.transactionHash, vnetConfig.id);
-      const adminRpcId = vnetConfig.adminRpc.split('/')[3] || vnetConfig.adminRpc.split('/').pop();
-      const fluidUiLink = `https://preprod.fluid.io/?tenderlyId=${adminRpcId}`;
+      // Preprod ignores `tenderlyId` on `/`; Avocado's View on Fluid uses this route + vnetId.
+      const fluidUiLink = `https://preprod.fluid.io/1/stats/vaults?vnetId=${vnetConfig.id}`;
 
       // Get proposal creation transaction details
       const proposalTxDetails = this.trackedTransactions.get(`proposal-${result.proposalId}`);
@@ -1223,8 +1223,7 @@ ${vnetSection}
       console.log(`VNet ID: ${vnetConfig.id}`);
       console.log(`Execution TX Hash: ${result.transactionHash}`);
       console.log(`Tenderly Execution: ${executionTenderlyUrl}`);
-      // fluidUiLink embeds the admin RPC capability token; do not print it.
-      console.log('Fluid UI: link generated (contains RPC token, redacted from logs; see PR comment)\n');
+      console.log(`Fluid UI: ${fluidUiLink}\n`);
 
       // Generate comprehensive GitHub comment
       const commentContent = this.generateGitHubComment(result, vnetConfig, executionTenderlyUrl, fluidUiLink, proposalTenderlyUrl);
