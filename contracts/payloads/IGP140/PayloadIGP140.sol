@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 pragma experimental ABIEncoderV2;
 
 import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
+import {IFluidReserveContractV2} from "../common/interfaces/IFluidReserveContract.sol";
 import {IFluidDex} from "../common/interfaces/IFluidDex.sol";
 import {
     AdminModuleStructs as FluidLiquidityAdminStructs
@@ -63,6 +64,17 @@ interface IFluidUsEquityMarketHours {
 ///         schedule writer stops being an instant multisig action and gains a
 ///         24h delay; Team Multisig keeps class 2, so it can still correct a
 ///         session inside the 5h pinned window without waiting.
+///
+///         Action 8 pays the September tranche of the Fluid Foundation's
+///         $350,000/month grant (raised from $250,000 in IGP-139, whose
+///         August tranche of 155 stETH executed on 30 Aug 2026). Liquidity
+///         Layer revenue in USDC, USDT and ETH is collected into the Fluid
+///         Reserve and 170,000 USDC + 150,000 USDT + 12 ETH (~$350,000 at
+///         the 7-day average ETH price of $2,487.26) is forwarded to the
+///         Foundation. The Reserve holds only ~40 stETH and iETHv2 Lite has
+///         ~65 stETH claimable, so the stETH route IGP-139 used cannot cover
+///         this tranche; the Liquidity Layer holds ~$439k of uncollected
+///         revenue in these three tokens.
 contract PayloadIGP140 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 140;
 
@@ -98,6 +110,16 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     IFluidUsEquityMarketHours public constant US_EQUITY_MARKET_HOURS =
         IFluidUsEquityMarketHours(0xde51F64b1c94dc60AA1284741F19e2f9f425Fc67);
 
+    /// @notice September 2026 tranche of the $350,000/month Foundation grant,
+    ///         paid from collected Liquidity Layer revenue. 170,000 USDC +
+    ///         150,000 USDT + 12 ETH; 12 ETH is ~$29,847 at the 7-day average
+    ///         ETH price of $2,487.26 (CoinGecko hourly, 12–19 Sep 2026), so
+    ///         the total is ~$349,850. Amounts are fixed in token terms, so
+    ///         the USD value of the ETH leg drifts until execution.
+    uint256 public constant FOUNDATION_GRANT_USDC = 170_000 * 1e6;
+    uint256 public constant FOUNDATION_GRANT_USDT = 150_000 * 1e6;
+    uint256 public constant FOUNDATION_GRANT_ETH = 12 ether;
+
     function execute() public virtual override {
         super.execute();
 
@@ -121,6 +143,9 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
 
         // Action 7: Move market hours schedule appointer to the 24h timelock.
         action7();
+
+        // Action 8: Collect Liquidity Layer revenue and pay the Foundation's September grant tranche.
+        action8();
     }
 
     function verifyProposal() public view override {}
@@ -357,6 +382,49 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     function action7() internal isActionSkippable(7) {
         US_EQUITY_MARKET_HOURS.updateAuth(FLUID_MULTISIG_TIMELOCK_CONTROLLER, 3);
         US_EQUITY_MARKET_HOURS.updateAuth(TEAM_MULTISIG, 2);
+    }
+
+    /// @notice Action 8: Collect the Liquidity Layer's USDC, USDT and ETH
+    ///         revenue into the Fluid Reserve and transfer the September
+    ///         tranche of the Foundation's $350,000/month grant.
+    /// @dev Mirrors IGP-139 Action 1 (`FLUID_RESERVE.withdrawFunds` to
+    ///      `FLUID_FOUNDATION`, memo "FOUNDATION GRANT") but is funded from
+    ///      Liquidity Layer revenue via `collectRevenue`, the IGP-136 Action 1
+    ///      pattern, because the Reserve's stETH (~40) plus Lite's claimable
+    ///      revenue (~65) is short of the ~141 stETH the tranche would need.
+    ///      Uncollected revenue at authoring: ~173.5k USDC, ~153.3k USDT,
+    ///      ~36.9 ETH; it only grows until execution. Fixed amounts (not
+    ///      balance sweeps) so the grant is exactly what governance approved
+    ///      and any excess stays in the Reserve.
+    function action8() internal isActionSkippable(8) {
+        // Step 1: Collect Liquidity Layer revenue into the revenue collector
+        // (the Reserve).
+        address[] memory liquidityTokens_ = new address[](3);
+        liquidityTokens_[0] = USDC_ADDRESS; // ~$173.5k uncollected
+        liquidityTokens_[1] = USDT_ADDRESS; // ~$153.3k uncollected
+        liquidityTokens_[2] = ETH_ADDRESS; // ~36.9 ETH uncollected
+
+        LIQUIDITY.collectRevenue(liquidityTokens_);
+
+        // Step 2: Transfer the tranche to the Fluid Foundation.
+        address[] memory tokens_ = new address[](3);
+        uint256[] memory amounts_ = new uint256[](3);
+
+        tokens_[0] = USDC_ADDRESS;
+        amounts_[0] = FOUNDATION_GRANT_USDC; // 170,000 USDC
+
+        tokens_[1] = USDT_ADDRESS;
+        amounts_[1] = FOUNDATION_GRANT_USDT; // 150,000 USDT
+
+        tokens_[2] = ETH_ADDRESS;
+        amounts_[2] = FOUNDATION_GRANT_ETH; // 12 ETH (~$29,847)
+
+        IFluidReserveContractV2(address(FLUID_RESERVE)).withdrawFunds(
+            tokens_,
+            amounts_,
+            FLUID_FOUNDATION,
+            "FOUNDATION GRANT"
+        );
     }
 
     /**
