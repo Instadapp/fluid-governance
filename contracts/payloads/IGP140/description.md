@@ -103,6 +103,14 @@ This action keeps that fast path but places it behind the 24-hour timelock rathe
 
 Existing class-1 schedule writers are unaffected. Only Liquidity governance can restore the Team Multisig to class `3`.
 
+### Action 8: Collect Liquidity Layer Revenue and Send the Foundation's September Grant Tranche
+
+- **Source**: Fluid Liquidity Layer revenue (`collectRevenue([USDC, USDT, ETH])`) → Fluid Reserve (`0x264786EF916af64a1DB19F513F24a3681734ce92`)
+- **Method**: `withdrawFunds([USDC, USDT, ETH], [170000000000, 150000000000, 13000000000000000000], FLUID_FOUNDATION, "FOUNDATION GRANT")`
+- **Amount**: `170,000 USDC` + `150,000 USDT` + `13 ETH` — ~$352,334 total; 13 ETH is ~$32,334 at the 7-day average ETH price of $2,487.26 (CoinGecko hourly, 168 points, 12–19 Sep 2026)
+- **Recipient**: Fluid Foundation (`0xde0377eF25aD02dBcFbc87D632E46bf1972A0Dc3`)
+- **Precedent**: IGP-139 Action 1 (grant transfer, memo `FOUNDATION GRANT`) and IGP-136 Action 1 (`collectRevenue` into the Reserve before `withdrawFunds`)
+
 ## Description
 
 weETH/ETH is a correlated-pair leverage market: users supply weETH and borrow ETH to loop into ether.fi staking yield. Fluid already runs weETH markets against stablecoins and wstETH, plus a weETH-ETH DEX (id 9), so both legs are established collateral at the Liquidity Layer.
@@ -113,4 +121,4 @@ This action was originally Action 2 of IGP-139, the Foundation grant payload. It
 
 ## Conclusion
 
-IGP-140 launches the weETH/ETH T1 vault (id 182) with $7k base withdrawal, $7k base borrow, and $9k max borrow limits at the Liquidity Layer and grants the Team Multisig vault auth for post-launch scaling. It also reduces the live USDC-ETH DEX (12) max supply and max borrow shares to ~$1M each, fully deprecates the osETH vaults' borrow side (vaults 153–157), removes the Team Multisig dex auth granted in IGP-138 on DEXes 49 and 50, fully deprecates the rsETH, weETHs, and ezETH markets' borrow side (vaults 27, 80 and 103–104, plus 1-wei supply-share caps on DEXes 13, 14, and 21), sets the legacy vault 1–10 base withdrawal limits to the greater of $10k and the vault's live supply (only vault 6 is above the floor, at 700 weETH) with a 10% / 6h expansion, and moves the US equity market hours schedule appointer from the Team Multisig to the 24h FluidTimelockController, leaving the multisig at class 2.
+IGP-140 launches the weETH/ETH T1 vault (id 182) with $7k base withdrawal, $7k base borrow, and $9k max borrow limits at the Liquidity Layer and grants the Team Multisig vault auth for post-launch scaling. It also reduces the live USDC-ETH DEX (12) max supply and max borrow shares to ~$1M each, fully deprecates the osETH vaults' borrow side (vaults 153–157), removes the Team Multisig dex auth granted in IGP-138 on DEXes 49 and 50, fully deprecates the rsETH, weETHs, and ezETH markets' borrow side (vaults 27, 80 and 103–104, plus 1-wei supply-share caps on DEXes 13, 14, and 21), sets the legacy vault 1–10 base withdrawal limits to the greater of $10k and the vault's live supply (only vault 6 is above the floor, at 700 weETH) with a 10% / 6h expansion, and moves the US equity market hours schedule appointer from the Team Multisig to the 24h FluidTimelockController, leaving the multisig at class 2. Finally, it collects Liquidity Layer USDC, USDT and ETH revenue into the Reserve and sends the Foundation's September grant tranche of 170,000 USDC + 150,000 USDT + 13 ETH (~$352,334).
