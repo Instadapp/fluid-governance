@@ -168,7 +168,9 @@ export class IGPValidator {
 
   private validateContractStructure(content: string, result: ValidationResult): void {
     const expectedContractName = `PayloadIGP${this.igpId}`;
-    const contractMatch = content.match(/contract\s+(\w+)/);
+    // Anchored to line start so prose in NatSpec ("...the schedule contract the
+    // oracles read from...") can't be mistaken for the declaration.
+    const contractMatch = content.match(/^\s*(?:abstract\s+)?contract\s+(\w+)/m);
 
     if (!contractMatch) {
       result.errors.push('No contract definition found in payload file');
