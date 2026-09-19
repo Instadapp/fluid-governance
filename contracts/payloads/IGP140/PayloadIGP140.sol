@@ -111,7 +111,7 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
         IFluidUsEquityMarketHours(0xde51F64b1c94dc60AA1284741F19e2f9f425Fc67);
 
     /// @notice September 2026 tranche of the $350,000/month Foundation grant,
-    ///         paid from collected Liquidity Layer revenue. 170,000 USDC +
+    ///         sent from collected Liquidity Layer revenue. 170,000 USDC +
     ///         150,000 USDT + 13 ETH; 13 ETH is ~$32,334 at the 7-day average
     ///         ETH price of $2,487.26 (CoinGecko hourly, 12–19 Sep 2026), so
     ///         the total is ~$352,334. Amounts are fixed in token terms, so
