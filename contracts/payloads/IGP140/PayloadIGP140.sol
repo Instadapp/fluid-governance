@@ -65,11 +65,11 @@ interface IFluidUsEquityMarketHours {
 ///         24h delay; Team Multisig keeps class 2, so it can still correct a
 ///         session inside the 5h pinned window without waiting.
 ///
-///         Action 8 pays the September tranche of the Fluid Foundation's
+///         Action 8 sends the September tranche of the Fluid Foundation's
 ///         $350,000/month grant (raised from $250,000 in IGP-139, whose
 ///         August tranche of 155 stETH executed on 30 Aug 2026). Liquidity
 ///         Layer revenue in USDC, USDT and ETH is collected into the Fluid
-///         Reserve and 170,000 USDC + 150,000 USDT + 12 ETH (~$350,000 at
+///         Reserve and 170,000 USDC + 150,000 USDT + 13 ETH (~$352,334 at
 ///         the 7-day average ETH price of $2,487.26) is forwarded to the
 ///         Foundation. The Reserve holds only ~40 stETH and iETHv2 Lite has
 ///         ~65 stETH claimable, so the stETH route IGP-139 used cannot cover
@@ -112,13 +112,13 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
 
     /// @notice September 2026 tranche of the $350,000/month Foundation grant,
     ///         paid from collected Liquidity Layer revenue. 170,000 USDC +
-    ///         150,000 USDT + 12 ETH; 12 ETH is ~$29,847 at the 7-day average
+    ///         150,000 USDT + 13 ETH; 13 ETH is ~$32,334 at the 7-day average
     ///         ETH price of $2,487.26 (CoinGecko hourly, 12–19 Sep 2026), so
-    ///         the total is ~$349,850. Amounts are fixed in token terms, so
+    ///         the total is ~$352,334. Amounts are fixed in token terms, so
     ///         the USD value of the ETH leg drifts until execution.
     uint256 public constant FOUNDATION_GRANT_USDC = 170_000 * 1e6;
     uint256 public constant FOUNDATION_GRANT_USDT = 150_000 * 1e6;
-    uint256 public constant FOUNDATION_GRANT_ETH = 12 ether;
+    uint256 public constant FOUNDATION_GRANT_ETH = 13 ether;
 
     function execute() public virtual override {
         super.execute();
@@ -144,7 +144,7 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
         // Action 7: Move market hours schedule appointer to the 24h timelock.
         action7();
 
-        // Action 8: Collect Liquidity Layer revenue and pay the Foundation's September grant tranche.
+        // Action 8: Collect Liquidity Layer revenue and send the Foundation's September grant tranche.
         action8();
     }
 
@@ -417,7 +417,7 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
         amounts_[1] = FOUNDATION_GRANT_USDT; // 150,000 USDT
 
         tokens_[2] = ETH_ADDRESS;
-        amounts_[2] = FOUNDATION_GRANT_ETH; // 12 ETH (~$29,847)
+        amounts_[2] = FOUNDATION_GRANT_ETH; // 13 ETH (~$32,334)
 
         IFluidReserveContractV2(address(FLUID_RESERVE)).withdrawFunds(
             tokens_,
