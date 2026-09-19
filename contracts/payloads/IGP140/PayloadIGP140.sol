@@ -320,55 +320,6 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
         _legacyVaultWithdrawalLimitUSD(10, weETH_ADDRESS);
     }
 
-    /// @dev $10k base withdrawal limit with 10% / 6h expansion for one legacy
-    ///      vault. Named `..USD`-style so prepare-prices detects the token.
-    function _legacyVaultWithdrawalLimitUSD(
-        uint256 vaultId_,
-        address supplyToken_
-    ) internal {
-        setSupplyProtocolLimits(
-            SupplyProtocolConfig({
-                protocol: getVaultAddress(vaultId_),
-                supplyToken: supplyToken_,
-                expandPercent: 10 * 1e2, // 10%
-                expandDuration: 6 hours,
-                baseWithdrawalLimitInUSD: 10_000 // $10k
-            })
-        );
-    }
-
-    /// @dev Same 10% / 6h expansion, base limit given in token terms instead.
-    ///      For vaults whose live supply is above the $10k floor, where the
-    ///      flat limit would activate the withdrawal rate limit and add the
-    ///      exit friction this action exists to remove. The token amount is
-    ///      set above current supply, so the limit stays dormant.
-    function _legacyVaultWithdrawalLimitRaw(
-        uint256 vaultId_,
-        address supplyToken_,
-        uint256 baseWithdrawalLimit_
-    ) internal {
-        FluidLiquidityAdminStructs.UserSupplyConfig[]
-            memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
-                1
-            );
-
-        configs_[0] = FluidLiquidityAdminStructs.UserSupplyConfig({
-            user: getVaultAddress(vaultId_),
-            token: supplyToken_,
-            mode: 1,
-            expandPercent: 10 * 1e2, // 10%
-            expandDuration: 6 hours,
-            baseWithdrawalLimit: getRawAmount(
-                supplyToken_,
-                baseWithdrawalLimit_,
-                0,
-                true
-            )
-        });
-
-        LIQUIDITY.updateUserSupplyConfigs(configs_);
-    }
-
     /// @notice Action 7: Hand the US equity market hours schedule appointer
     ///         (auth class 3) to the 24h FluidTimelockController and drop Team
     ///         Multisig to class 2.
@@ -429,6 +380,61 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
      * |     Payload Actions End Here      |
      * |__________________________________
      */
+
+    /**
+     * |
+     * |     Helpers                       |
+     * |__________________________________
+     */
+
+    /// @dev $10k base withdrawal limit with 10% / 6h expansion for one legacy
+    ///      vault. Named `..USD`-style so prepare-prices detects the token.
+    function _legacyVaultWithdrawalLimitUSD(
+        uint256 vaultId_,
+        address supplyToken_
+    ) internal {
+        setSupplyProtocolLimits(
+            SupplyProtocolConfig({
+                protocol: getVaultAddress(vaultId_),
+                supplyToken: supplyToken_,
+                expandPercent: 10 * 1e2, // 10%
+                expandDuration: 6 hours,
+                baseWithdrawalLimitInUSD: 10_000 // $10k
+            })
+        );
+    }
+
+    /// @dev Same 10% / 6h expansion, base limit given in token terms instead.
+    ///      For vaults whose live supply is above the $10k floor, where the
+    ///      flat limit would activate the withdrawal rate limit and add the
+    ///      exit friction this action exists to remove. The token amount is
+    ///      set above current supply, so the limit stays dormant.
+    function _legacyVaultWithdrawalLimitRaw(
+        uint256 vaultId_,
+        address supplyToken_,
+        uint256 baseWithdrawalLimit_
+    ) internal {
+        FluidLiquidityAdminStructs.UserSupplyConfig[]
+            memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
+                1
+            );
+
+        configs_[0] = FluidLiquidityAdminStructs.UserSupplyConfig({
+            user: getVaultAddress(vaultId_),
+            token: supplyToken_,
+            mode: 1,
+            expandPercent: 10 * 1e2, // 10%
+            expandDuration: 6 hours,
+            baseWithdrawalLimit: getRawAmount(
+                supplyToken_,
+                baseWithdrawalLimit_,
+                0,
+                true
+            )
+        });
+
+        LIQUIDITY.updateUserSupplyConfigs(configs_);
+    }
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
     // fetched: 2026-09-04T04:16:26.194Z, source: coingecko
