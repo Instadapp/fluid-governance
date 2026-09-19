@@ -71,10 +71,7 @@ interface IFluidUsEquityMarketHours {
 ///         Layer revenue in USDC, USDT and ETH is collected into the Fluid
 ///         Reserve and 170,000 USDC + 150,000 USDT + 13 ETH (~$352,334 at
 ///         the 7-day average ETH price of $2,487.26) is forwarded to the
-///         Foundation. The Reserve holds only ~40 stETH and iETHv2 Lite has
-///         ~65 stETH claimable, so the stETH route IGP-139 used cannot cover
-///         this tranche; the Liquidity Layer holds ~$439k of uncollected
-///         revenue in these three tokens.
+///         Foundation.
 contract PayloadIGP140 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 140;
 

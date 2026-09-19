@@ -111,10 +111,6 @@ Existing class-1 schedule writers are unaffected. Only Liquidity governance can 
 - **Recipient**: Fluid Foundation (`0xde0377eF25aD02dBcFbc87D632E46bf1972A0Dc3`)
 - **Precedent**: IGP-139 Action 1 (grant transfer, memo `FOUNDATION GRANT`) and IGP-136 Action 1 (`collectRevenue` into the Reserve before `withdrawFunds`)
 
-This is the September tranche of the $350,000/month Foundation grant approved in IGP-139. The August tranche of 155 stETH executed on 30 Aug 2026 (tx `0x02448ce12384d887915c075eddecc8ea0f6b5a1dcbf0722e1ec7c9fe5adea021`, block 25,869,800).
-
-The tranche is funded from Liquidity Layer revenue rather than the Reserve's stETH because the stETH route cannot cover it: the Reserve holds ~40 stETH and iETHv2 Lite has ~65 stETH claimable, against the ~141 stETH ($350,000 / $2,487.26) the tranche would need. The Liquidity Layer holds ~173.5k USDC, ~153.3k USDT and ~36.9 ETH (~$439k) of uncollected revenue at authoring, which only grows until execution, so the fixed amounts leave a buffer in every token. Amounts are fixed rather than balance sweeps so the Foundation receives exactly the approved grant and any excess collected revenue stays in the Reserve.
-
 ## Description
 
 weETH/ETH is a correlated-pair leverage market: users supply weETH and borrow ETH to loop into ether.fi staking yield. Fluid already runs weETH markets against stablecoins and wstETH, plus a weETH-ETH DEX (id 9), so both legs are established collateral at the Liquidity Layer.
