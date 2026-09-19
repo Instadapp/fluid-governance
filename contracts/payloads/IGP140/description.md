@@ -4,8 +4,6 @@
 
 This proposal brings the new **weETH/ETH** T1 vault (id **182**) online by setting its Liquidity Layer limits at dust size and granting the Team Multisig vault auth so limits can be scaled up as the market proves out. It also reduces the live **USDC-ETH DEX (12)** max supply and max borrow shares to **500k** each (~$554k of supply / ~$1.60M of borrow at current share values), fully deprecates the **osETH** vaults' borrow side (vaults **153–157**), removes the Team Multisig dex auth granted in IGP-138 on the **USDat/USDC (49)** and **USDC/trUSD (50)** DEXes, fully deprecates the **rsETH**, **weETHs**, and **ezETH** markets' borrow side (vaults **27**, **80**, **103–104**, and DEXes **13**, **14**, **21**), sets the legacy vault **1–10** base withdrawal limits to the greater of **$10k** and the vault's live supply with a **10% / 6h** expansion, and moves the US equity market hours schedule appointer from the Team Multisig to the **24h FluidTimelockController**. Finally, it collects the Liquidity Layer's uncollected **USDC**, **USDT** and **ETH** revenue into the Fluid Reserve and sends the Fluid Foundation's **$350k/month** September grant tranche (**170,000 USDC + 150,000 USDT + 13 ETH**, ~$352k) from it.
 
-The vault contract was deployed by the Team Multisig at block 25,789,585 and is still unconfigured at the Liquidity Layer, so it cannot be supplied to or borrowed from until this payload executes.
-
 ## Code Changes
 
 ### Action 1: Set Dust Limits for the weETH/ETH T1 Vault (id 182)
