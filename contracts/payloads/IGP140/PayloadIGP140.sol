@@ -21,11 +21,6 @@ interface IFluidUsEquityMarketHours {
 ///         and grants Team Multisig vault auth so limits can be scaled up
 ///         post-launch without another proposal.
 ///
-///         The vault was deployed by the Team Multisig at block 25,789,585
-///         (0x0b8a681ed46EA8ec6b97D686dF0631fBf84B03d2) and is still
-///         unconfigured at the Liquidity Layer, so it cannot be used until
-///         this payload executes.
-///
 ///         This action was originally Action 2 of IGP-139 (the Foundation
 ///         grant). It moved here because the vault-auth call went to the
 ///         factory instead of the factory's owner and reverted the whole
@@ -33,8 +28,9 @@ interface IFluidUsEquityMarketHours {
 ///         launch.
 ///
 ///         Action 2 reduces the live USDC-ETH DEX (12) max supply and
-///         max borrow shares to ~$1M each (500k shares at ~$2/share), down
-///         from 30M / 20M shares set in IGP-79.
+///         max borrow shares to 500k each (~$554k of supply / ~$1.60M of
+///         borrow at 19 Sep 2026 share values), down from the 30M / 20M
+///         shares set in IGP-79.
 ///
 ///         Action 3 fully deprecates the osETH vaults' borrow side: T1
 ///         vaults 153-155 (USDC/USDT/GHO) are paused at the Liquidity Layer
@@ -69,13 +65,13 @@ interface IFluidUsEquityMarketHours {
 ///         $350,000/month grant (raised from $250,000 in IGP-139, whose
 ///         August tranche of 155 stETH executed on 30 Aug 2026). Liquidity
 ///         Layer revenue in USDC, USDT and ETH is collected into the Fluid
-///         Reserve and 170,000 USDC + 150,000 USDT + 13 ETH (~$352,334 at
-///         the 7-day average ETH price of $2,487.26) is forwarded to the
-///         Foundation.
+///         Reserve and 170,000 USDC + 150,000 USDT + 13 ETH (~$350k, with
+///         the ETH leg sized at the 7-day average ETH price of $2,487.26)
+///         is forwarded to the Foundation.
 contract PayloadIGP140 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 140;
 
-    /// @notice weETH/ETH T1 vault, deployed via the Team Multisig.
+    /// @notice weETH/ETH T1 vault.
     uint256 public constant VAULT_WEETH_ETH_ID = 182; // T1: weETH / ETH
 
     /// @notice Live USDC-ETH DEX (smart col + smart debt).
@@ -109,10 +105,10 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
 
     /// @notice September 2026 tranche of the $350,000/month Foundation grant,
     ///         sent from collected Liquidity Layer revenue. 170,000 USDC +
-    ///         150,000 USDT + 13 ETH; 13 ETH is ~$32,334 at the 7-day average
-    ///         ETH price of $2,487.26 (CoinGecko hourly, 12–19 Sep 2026), so
-    ///         the total is ~$352,334. Amounts are fixed in token terms, so
-    ///         the USD value of the ETH leg drifts until execution.
+    ///         150,000 USDT + 13 ETH, ~$350k with the ETH leg sized at the
+    ///         7-day average ETH price of $2,487.26 (CoinGecko hourly, 12–19
+    ///         Sep 2026). Amounts are fixed in token terms, so the USD value
+    ///         of the ETH leg moves with the ETH price until execution.
     uint256 public constant FOUNDATION_GRANT_USDC = 170_000 * 1e6;
     uint256 public constant FOUNDATION_GRANT_USDT = 150_000 * 1e6;
     uint256 public constant FOUNDATION_GRANT_ETH = 13 ether;
@@ -187,10 +183,12 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
     }
 
     /// @notice Action 2: Reduce the live USDC-ETH DEX (12) max supply
-    ///         shares and max borrow shares to ~$1M each. IGP-79 set the
-    ///         caps at 30M / 20M shares (~$30M / $20M); 500k shares is
-    ///         below current liquidity, so new supply and borrows stop
-    ///         until outstanding shares fall under the new ceiling.
+    ///         shares and max borrow shares to 500k each (~$554k of supply /
+    ///         ~$1.60M of borrow at 19 Sep 2026 share values of $1.108 /
+    ///         $3.191). IGP-79 set the caps at 30M / 20M shares (~$33M /
+    ///         ~$64M); 500k shares is below current outstanding on both
+    ///         sides, so new supply and borrows stop until outstanding
+    ///         shares fall under the new ceiling.
     function action2() internal isActionSkippable(2) {
         address usdcEthDex_ = getDexAddress(USDC_ETH_DEX_ID);
 
@@ -365,7 +363,7 @@ contract PayloadIGP140 is PayloadIGPPriceHelpers {
         amounts_[1] = FOUNDATION_GRANT_USDT; // 150,000 USDT
 
         tokens_[2] = ETH_ADDRESS;
-        amounts_[2] = FOUNDATION_GRANT_ETH; // 13 ETH (~$32,334)
+        amounts_[2] = FOUNDATION_GRANT_ETH; // 13 ETH
 
         IFluidReserveContractV2(address(FLUID_RESERVE)).withdrawFunds(
             tokens_,
