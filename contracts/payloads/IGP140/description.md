@@ -1,8 +1,8 @@
-# Launch the weETH/ETH Vault, Deprecate osETH Markets, and Clean Up DEX Limits and Auth
+# Launch the weETH/ETH Vault, Deprecate osETH Markets, Clean Up DEX Limits and Auth, and Send the Foundation's $350k September Grant
 
 ## Summary
 
-This proposal brings the new **weETH/ETH** T1 vault (id **182**) online by setting its Liquidity Layer limits at dust size and granting the Team Multisig vault auth so limits can be scaled up as the market proves out. It also reduces the live **USDC-ETH DEX (12)** max supply and max borrow shares to **~$1M** each, fully deprecates the **osETH** vaults' borrow side (vaults **153–157**), removes the Team Multisig dex auth granted in IGP-138 on the **USDat/USDC (49)** and **USDC/trUSD (50)** DEXes, fully deprecates the **rsETH**, **weETHs**, and **ezETH** markets' borrow side (vaults **27**, **80**, **103–104**, and DEXes **13**, **14**, **21**), sets the legacy vault **1–10** base withdrawal limits to the greater of **$10k** and the vault's live supply with a **10% / 6h** expansion, and moves the US equity market hours schedule appointer from the Team Multisig to the **24h FluidTimelockController**.
+This proposal brings the new **weETH/ETH** T1 vault (id **182**) online by setting its Liquidity Layer limits at dust size and granting the Team Multisig vault auth so limits can be scaled up as the market proves out. It also reduces the live **USDC-ETH DEX (12)** max supply and max borrow shares to **500k** each (~$554k of supply / ~$1.60M of borrow at current share values), fully deprecates the **osETH** vaults' borrow side (vaults **153–157**), removes the Team Multisig dex auth granted in IGP-138 on the **USDat/USDC (49)** and **USDC/trUSD (50)** DEXes, fully deprecates the **rsETH**, **weETHs**, and **ezETH** markets' borrow side (vaults **27**, **80**, **103–104**, and DEXes **13**, **14**, **21**), sets the legacy vault **1–10** base withdrawal limits to the greater of **$10k** and the vault's live supply with a **10% / 6h** expansion, and moves the US equity market hours schedule appointer from the Team Multisig to the **24h FluidTimelockController**. Finally, it collects the Liquidity Layer's uncollected **USDC**, **USDT** and **ETH** revenue into the Fluid Reserve and sends the Fluid Foundation's **$350k/month** September grant tranche (**170,000 USDC + 150,000 USDT + 13 ETH**, ~$352k) from it.
 
 The vault contract was deployed by the Team Multisig at block 25,789,585 and is still unconfigured at the Liquidity Layer, so it cannot be supplied to or borrowed from until this payload executes.
 
@@ -21,16 +21,16 @@ The vault contract was deployed by the Team Multisig at block 25,789,585 and is 
 - Limits are set at the Liquidity Layer via `setVaultLimits` with the standard dust-limit config: 50% expansion over 6 hours.
 - Team Multisig is granted vault auth so it can raise limits post-launch without a further proposal. The call goes through the VaultFactoryOwner wrapper (`0xB031913cB7AD81b8A4Ba412B471c2dA69BEA410B`), which owns the vault factory and which the timelock is authorized on.
 
-### Action 2: Reduce USDC-ETH DEX (12) Max Supply and Borrow Shares to ~$1M
+### Action 2: Reduce USDC-ETH DEX (12) Max Supply and Borrow Shares to 500k
 
 - **DEX**: `0x836951EB21F3Df98273517B7249dCEFF270d34bf` (USDC-ETH, id 12)
 
-| Parameter | Current | New |
-| --- | --- | --- |
-| Max supply shares | `30M` (~$30M, IGP-79) | `500k` (~$1M at ~$2/share) |
-| Max borrow shares | `20M` (~$20M, IGP-79) | `500k` (~$1M at ~$2/share) |
+| Parameter | Current | Outstanding | New |
+| --- | --- | --- | --- |
+| Max supply shares | `30M` (~$33.2M, IGP-79) | 4.66M shares (~$5.16M: 4.50M USDC + 251.3 ETH) | `500k` (~$554k at $1.108/share) |
+| Max borrow shares | `20M` (~$63.8M, IGP-79) | 1.23M shares (~$3.92M: 433.8k USDC + 1,319.3 ETH) | `500k` (~$1.60M at $3.191/share) |
 
-This is the live USDC-ETH pool (~$9.4M liquidity), not the deprecated DEX 5. 500k shares sits below current outstanding, so new supply and borrows are blocked until shares fall under the ceiling. Existing LPs can still withdraw and debt can still be repaid. Calls: `updateMaxSupplyShares(500_000e18)` and `updateMaxBorrowShares(500_000e18)`.
+Share values and outstanding amounts are read from the Liquidity Layer and DexResolver on 19 Sep 2026 at ETH = $2,640; the two share types are not worth the same, so the same 500k literal is ~$554k on the supply side and ~$1.60M on the borrow side. This is the live USDC-ETH pool, not the deprecated DEX 5. 500k shares sits below current outstanding on both sides, so new supply and borrows are blocked until shares fall under the ceiling. Existing LPs can still withdraw and debt can still be repaid. Calls: `updateMaxSupplyShares(500_000e18)` and `updateMaxBorrowShares(500_000e18)`.
 
 ### Action 3: Fully Deprecate the osETH Vaults' Borrow Side
 
@@ -55,7 +55,7 @@ IGP-138 granted the Team Multisig dex auth when launching the USDat/USDC and USD
 
 ### Action 5: Fully Deprecate the rsETH, weETHs, and ezETH Markets' Borrow Side
 
-Same treatment as Action 3, applied to the rsETH, weETHs, and ezETH markets. Vaults 27, 80, 103 and 104 borrow wstETH at the Liquidity Layer (IGP-138 had already capped the ezETH vaults at $100k / $1M; vault 27 still held IGP-135's $1M / $5M). The rsETH vaults 78 and 79 already carry the deprecated borrow config on-chain, so only their DEX is touched here. Existing positions can still repay and withdraw.
+Same treatment as Action 3, applied to the rsETH, weETHs, and ezETH markets. Vaults 27, 80, 103 and 104 borrow wstETH at the Liquidity Layer. Live ceilings on 19 Sep 2026 (wstETH = $3,285): vault 27 still holds IGP-135's 462.7 / 2,314.9 wstETH (~$1.52M base / ~$7.60M max, 339.1 wstETH borrowed); IGP-138 had already pinned the ezETH vaults at base = max, 42.9 wstETH (~$141k) on vault 103 and 428.8 wstETH (~$1.41M) on vault 104 (221.8 wstETH borrowed). The rsETH vaults 78 and 79 already carry the deprecated borrow config on-chain, so only their DEX is touched here. Existing positions can still repay and withdraw.
 
 | Market | Type | Borrow side | Change |
 | --- | --- | --- | --- |
@@ -71,7 +71,7 @@ Same treatment as Action 3, applied to the rsETH, weETHs, and ezETH markets. Vau
 
 IGP-132 pinned each legacy vault's base withdrawal limit to its then-current supply, which leaves remaining suppliers exiting against a tight cap. This action sets a **$10k** base withdrawal limit with a normal **10% / 6h** expansion on all ten vaults.
 
-Nine of the ten hold dust (all under $4k) and take the flat $10k floor. Vault 6 still holds **~640 weETH (~$1.77M)**, so a $10k limit would sit far below its live supply and activate the withdrawal rate limit — adding exactly the exit friction this action removes. It therefore takes a token-denominated base limit of **700 weETH**, set above current supply so the limit stays dormant, as it is today.
+Nine of the ten hold dust (all under $4k) and take the flat $10k floor. Vault 6 still holds **~640 weETH (~$1.87M at weETH = $2,915)**, so a $10k limit would sit far below its live supply and activate the withdrawal rate limit — adding exactly the exit friction this action removes. It therefore takes a token-denominated base limit of **700 weETH**, set above current supply so the limit stays dormant, as it is today.
 
 Base withdrawal limits only gate withdrawals while supply sits above them; below the limit, the full balance is withdrawable at any time.
 
@@ -107,7 +107,8 @@ Existing class-1 schedule writers are unaffected. Only Liquidity governance can 
 
 - **Source**: Fluid Liquidity Layer revenue (`collectRevenue([USDC, USDT, ETH])`) → Fluid Reserve (`0x264786EF916af64a1DB19F513F24a3681734ce92`)
 - **Method**: `withdrawFunds([USDC, USDT, ETH], [170000000000, 150000000000, 13000000000000000000], FLUID_FOUNDATION, "FOUNDATION GRANT")`
-- **Amount**: `170,000 USDC` + `150,000 USDT` + `13 ETH` — ~$352,334 total; 13 ETH is ~$32,334 at the 7-day average ETH price of $2,487.26 (CoinGecko hourly, 168 points, 12–19 Sep 2026)
+- **Amount**: `170,000 USDC` + `150,000 USDT` + `13 ETH` — ~$352,334 total; 13 ETH is ~$32,334 at the 7-day average ETH price of $2,487.26 (CoinGecko hourly, 168 points, 12–19 Sep 2026). Amounts are fixed in token terms, so the ETH leg drifts with price until execution (~$34.3k at the $2,640 spot on 19 Sep)
+- **Funding**: uncollected Liquidity Layer revenue on 19 Sep 2026 is ~174.1k USDC, ~153.9k USDT and ~37.0 ETH (growing ~2.1k USDC and ~2.5k USDT per day); the Reserve itself holds ~255 USDC, ~0 USDT and ~24.4 ETH, so the grant is funded by the collection in the same transaction and the excess stays in the Reserve
 - **Recipient**: Fluid Foundation (`0xde0377eF25aD02dBcFbc87D632E46bf1972A0Dc3`)
 - **Precedent**: IGP-139 Action 1 (grant transfer, memo `FOUNDATION GRANT`) and IGP-136 Action 1 (`collectRevenue` into the Reserve before `withdrawFunds`)
 
@@ -121,4 +122,4 @@ This action was originally Action 2 of IGP-139, the Foundation grant payload. It
 
 ## Conclusion
 
-IGP-140 launches the weETH/ETH T1 vault (id 182) with $7k base withdrawal, $7k base borrow, and $9k max borrow limits at the Liquidity Layer and grants the Team Multisig vault auth for post-launch scaling. It also reduces the live USDC-ETH DEX (12) max supply and max borrow shares to ~$1M each, fully deprecates the osETH vaults' borrow side (vaults 153–157), removes the Team Multisig dex auth granted in IGP-138 on DEXes 49 and 50, fully deprecates the rsETH, weETHs, and ezETH markets' borrow side (vaults 27, 80 and 103–104, plus 1-wei supply-share caps on DEXes 13, 14, and 21), sets the legacy vault 1–10 base withdrawal limits to the greater of $10k and the vault's live supply (only vault 6 is above the floor, at 700 weETH) with a 10% / 6h expansion, and moves the US equity market hours schedule appointer from the Team Multisig to the 24h FluidTimelockController, leaving the multisig at class 2. Finally, it collects Liquidity Layer USDC, USDT and ETH revenue into the Reserve and sends the Foundation's September grant tranche of 170,000 USDC + 150,000 USDT + 13 ETH (~$352,334).
+IGP-140 launches the weETH/ETH T1 vault (id 182) with $7k base withdrawal, $7k base borrow, and $9k max borrow limits at the Liquidity Layer and grants the Team Multisig vault auth for post-launch scaling. It also reduces the live USDC-ETH DEX (12) max supply and max borrow shares to 500k each (~$554k supply / ~$1.60M borrow at current share values), fully deprecates the osETH vaults' borrow side (vaults 153–157), removes the Team Multisig dex auth granted in IGP-138 on DEXes 49 and 50, fully deprecates the rsETH, weETHs, and ezETH markets' borrow side (vaults 27, 80 and 103–104, plus 1-wei supply-share caps on DEXes 13, 14, and 21), sets the legacy vault 1–10 base withdrawal limits to the greater of $10k and the vault's live supply (only vault 6 is above the floor, at 700 weETH) with a 10% / 6h expansion, and moves the US equity market hours schedule appointer from the Team Multisig to the 24h FluidTimelockController, leaving the multisig at class 2. Finally, it collects Liquidity Layer USDC, USDT and ETH revenue into the Reserve and sends the Foundation's $350k/month September grant tranche of 170,000 USDC + 150,000 USDT + 13 ETH (~$352,334).
