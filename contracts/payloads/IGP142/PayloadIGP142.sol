@@ -8,6 +8,10 @@ import {
 } from "../common/interfaces/IFluidLiquidity.sol";
 import {IDSAV2} from "../common/interfaces/IDSA.sol";
 import {IFluidDex} from "../common/interfaces/IFluidDex.sol";
+import {
+    IFluidVault,
+    IFluidVaultT1
+} from "../common/interfaces/IFluidVault.sol";
 
 /// @notice Liquidity Layer admin call not exposed on the shared
 ///         IFluidLiquidityAdmin interface. Signature added to the Liquidity
@@ -76,6 +80,11 @@ interface IFluidLiquidityWithdrawalLimit {
 ///
 ///         Action 12 restricts and pauses the dust-launch vaults 95
 ///         (eBTC/cbBTC) and 167 (PST-USDC / USDC).
+///
+///         Action 13 moves the osETH vaults 153-157 and 159 from their V1
+///         oracles to OracleV2 oracles. The RedStone osETH/ETH feed that the
+///         V1 oracles of vaults 153-157 read is being wound down and already
+///         reverts as stale.
 contract PayloadIGP142 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 142;
 
@@ -171,6 +180,23 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     uint256 public constant VAULT_PST_USDC_ID = 167; // T2: PST-USDC (dex 45) / USDC
     uint256 public constant DEX_PST_USDC_ID = 45;
 
+    // --- Action 13 ---
+    uint256 public constant VAULT_OSETH_USDC_ID = 153; // T1: osETH / USDC
+    uint256 public constant VAULT_OSETH_USDT_ID = 154; // T1: osETH / USDT
+    uint256 public constant VAULT_OSETH_GHO_ID = 155; // T1: osETH / GHO
+    uint256 public constant VAULT_OSETH_USDC_USDT_ID = 156; // T3: osETH / USDC-USDT debt
+    uint256 public constant VAULT_OSETH_USDC_USDT_CONC_ID = 157; // T3: osETH / USDC-USDT debt (concentrated)
+    uint256 public constant VAULT_ETH_OSETH_WSTETH_ID = 159; // T2: ETH-osETH / wstETH
+    /// @dev VaultT1OracleV2_OSETH_USDC (DeployerFactory nonce 383)
+    address public constant ORACLE_OSETH_USDC =
+        0x0Bc3DA8C4Aa67E86B7A1c20e8b72049105571Ea9;
+    /// @dev VaultT1OracleV2_OSETH_USDT (DeployerFactory nonce 384)
+    address public constant ORACLE_OSETH_USDT =
+        0x5c7eF1F1901a201A6bAd703D6588CF8FfC6a05F6;
+    /// @dev VaultT1OracleV2_OSETH_GHO (DeployerFactory nonce 385)
+    address public constant ORACLE_OSETH_GHO =
+        0xfa18A2ea5Bf97C2F9D8a5680ecdA494256376Fd9;
+
     function execute() public virtual override {
         super.execute();
 
@@ -209,6 +235,9 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
 
         // Action 12: Restrict + pause the dust-launch vaults 95 (eBTC/cbBTC) and 167 (PST-USDC / USDC).
         action12();
+
+        // Action 13: Move the osETH vaults 153-157 and 159 to OracleV2 oracles.
+        action13();
     }
 
     function verifyProposal() public view override {}
@@ -552,6 +581,39 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
         address dex45_ = getDexAddress(DEX_PST_USDC_ID);
         setSupplyProtocolLimitsPausedDex(dex45_, v167_);
         IFluidDex(dex45_).pauseUser(v167_, true, false);
+    }
+
+    /// @notice Action 13: Move the osETH vaults to their OracleV2 oracles.
+    /// @dev T1 vaults take the oracle address via `updateOracle(address)`;
+    ///      T2/T3 vaults take the DeployerFactory nonce via
+    ///      `updateOracle(uint256)`. Both probe the new oracle's
+    ///      `getExchangeRateOperate()` / `getExchangeRateLiquidate()` before
+    ///      committing.
+    function action13() internal isActionSkippable(13) {
+        // Vault 153 (T1): VaultT1OracleV2_OSETH_USDC
+        IFluidVaultT1(getVaultAddress(VAULT_OSETH_USDC_ID)).updateOracle(
+            ORACLE_OSETH_USDC
+        );
+        // Vault 154 (T1): VaultT1OracleV2_OSETH_USDT
+        IFluidVaultT1(getVaultAddress(VAULT_OSETH_USDT_ID)).updateOracle(
+            ORACLE_OSETH_USDT
+        );
+        // Vault 155 (T1): VaultT1OracleV2_OSETH_GHO
+        IFluidVaultT1(getVaultAddress(VAULT_OSETH_GHO_ID)).updateOracle(
+            ORACLE_OSETH_GHO
+        );
+
+        // Vault 156 (T3): VaultT3OracleV2_OSETH_USDC-USDT
+        IFluidVault(getVaultAddress(VAULT_OSETH_USDC_USDT_ID)).updateOracle(
+            386
+        );
+        // Vault 157 (T3): VaultT3OracleV2_OSETH_USDC-USDT-CONCENTRATED
+        IFluidVault(getVaultAddress(VAULT_OSETH_USDC_USDT_CONC_ID))
+            .updateOracle(387);
+        // Vault 159 (T2): VaultT2OracleV2_ETH-OSETH_WSTETH
+        IFluidVault(getVaultAddress(VAULT_ETH_OSETH_WSTETH_ID)).updateOracle(
+            388
+        );
     }
 
     function _pauseVaultAtLiquidity(
