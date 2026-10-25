@@ -33,8 +33,7 @@ interface IFluidLiquidityWithdrawalLimit {
 ///         limits of the dexV1 test DEX 0x6d83...e03a (wstETH/ETH, deployed
 ///         from the early MS1 test factory, never part of the DexFactory)
 ///         and pins its current withdrawal limit to its full supply, so no
-///         further withdrawal or borrow can happen. Must execute AFTER the
-///         Team Multisig has closed its position in that DEX.
+///         further withdrawal or borrow can happen.
 ///
 ///         Action 2 rebalances vault 3 (wstETH/ETH). Its ETH borrow at the
 ///         Liquidity Layer is ~0.0049 ETH below the vault's own total borrow,

@@ -21,8 +21,6 @@ This proposal fully restricts the Liquidity Layer limits of the early **dexV1 te
 
 The last step matters: with only the supply restriction, the first operation after execution could still withdraw the full residual once (the withdrawal limit is only recomputed on the next operate). Setting the limit to the full supply closes that.
 
-**Ordering:** the Team Multisig closes its position in this DEX before this proposal executes (swap/arbitrage pause, then withdraw and payback). If this action executes first, the Team Multisig can no longer withdraw.
-
 ### Action 2: Rebalance the wstETH/ETH T1 Vault (3)
 
 - **Vault**: `0xA0F83Fc5885cEBc0420ce7C7b139Adc80c4F4D91` (T1, wstETH collateral / ETH debt)
@@ -191,7 +189,7 @@ T1 vaults take the oracle address via `updateOracle(address)`; T2/T3 vaults take
 
 ## Description
 
-1. **dexV1 test DEX**: closes out the last live Liquidity Layer limits of an early test deployment after the Team Multisig exits its position.
+1. **dexV1 test DEX**: closes out the last live Liquidity Layer limits of an early test deployment.
 2. **Vault 3 rebalance**: clears the borrow-side drift the rebalancer cannot reach while the vault sits at dust borrow limits, and returns it to dust in the same action.
 3. **weETH/ETH vault**: moves vault 182 from dust to launch limits.
 4. **Team Multisig credit**: closes the unused IGP-107 wstETH and cbBTC DEX Lite credit lines, matching the USDC/USDT cut in IGP-132.
