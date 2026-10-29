@@ -1,6 +1,6 @@
 # Close Down the dexV1 Test DEX, Rebalance Vault 3, Launch the weETH/ETH Vault, Remove Team Multisig wstETH/cbBTC Borrow Limits, Exit iETHv2 Test Positions, Close Down IGP-45 Test DEXes id1/id2/id3, Restrict and Pause Pre-Launch Vaults, Vaults 35-40, USDe Vaults 66-73 and Dust-Launch Vaults, Close dex 5, Cap dex 27
 
-> **DRAFT.** Actions are added as they are agreed in #gov-proposals-lineup.
+> **DRAFT.** The action list may still change before the proposal is submitted.
 
 ## Summary
 
@@ -47,7 +47,7 @@ The supply-side difference (≈135 wei wstETH) is below Liquidity Layer storage 
 | Max borrow limit | ≈$9k | **$30M** |
 
 - Set via `setVaultLimits` with the standard T1 expansion (50% over 6 hours).
-- Risk parameters (CF 94% / LT 96% / LML 97% / LP 1%) were set by the Team Multisig. Team Multisig vault auth (granted in IGP-140) is kept for the pending OracleV2 switch.
+- Risk parameters (CF 94% / LT 96% / LML 97% / LP 1%) were set by the Team Multisig. Team Multisig vault auth (granted in IGP-140) is unchanged.
 
 ### Action 4: Reduce Team Multisig wstETH & cbBTC Borrow Limits to Dust
 
@@ -75,7 +75,7 @@ The supply-side difference (≈135 wei wstETH) is below Liquidity Layer storage 
 - The Timelock sends **0.005 ETH** with the cast to cover the ETH leg of the vault 34 repayment; unused ETH is refunded. The wstETH leg is covered by the 0.01 wstETH freed from NFT 18.
 - Vault 34 books slightly more debt shares than dex id1 records for it, so a max payback reverts. The action repays the dex-side shares explicitly; a dust debt and 0.1% of the collateral stay and are frozen by Actions 6 and 7.
 - The cast is wrapped in `try/catch`, so a third-party partial repayment of NFT 2296 cannot block the rest of the proposal.
-- About **$67** returns to iETHv2.
+- The withdrawn funds return to iETHv2.
 
 This action must run before Actions 6 and 7, which freeze both positions.
 
@@ -132,7 +132,7 @@ All seven configs are already mode 1 (with interest), so no mode switch is trigg
 
 ### Action 9: Restrict and Pause the Hidden USDe Vaults 66-73 at the Liquidity Layer
 
-All hidden in the UI, dust positions only.
+Not shown in the app; dust positions only.
 
 | Vault | Address | Supply token | Borrow token | Change |
 | --- | --- | --- | --- | --- |
@@ -193,7 +193,7 @@ T1 vaults take the oracle address via `updateOracle(address)`; T2/T3 vaults take
 2. **Vault 3 rebalance**: clears the borrow-side drift the rebalancer cannot reach while the vault sits at dust borrow limits, and returns it to dust in the same action.
 3. **weETH/ETH vault**: moves vault 182 from dust to launch limits.
 4. **Team Multisig credit**: closes the unused IGP-107 wstETH and cbBTC DEX Lite credit lines, matching the USDC/USDT cut in IGP-132.
-5. **iETHv2 test positions**: iETHv2 withdraws its residual test positions from the pre-launch wstETH/ETH vault (NFT 18) and vault 34 (NFT 2296) before they are frozen. The Timelock sends 0.005 ETH to cover the ETH leg of the vault 34 repayment; about $67 returns to iETHv2.
+5. **iETHv2 test positions**: iETHv2 withdraws its residual test positions from the pre-launch wstETH/ETH vault (NFT 18) and vault 34 (NFT 2296) before they are frozen. The Timelock sends 0.005 ETH to cover the ETH leg of the vault 34 repayment; unused ETH is refunded.
 6. **IGP-45 test DEXes id1/id3**: closes the Liquidity Layer limits of two early test DEXes holding only dust.
 7. **Pre-launch vaults and old DEXes**: restricts and pauses at the Liquidity Layer the remaining protocols from the old vault and DEX factories.
 8. **IGP-45 test DEX id2 and vaults 35-40**: restricts and pauses at the Liquidity Layer the remaining IGP-45 test DEX id2 (USDC/USDT) and the six empty T3 vaults (35-40) built on it.
@@ -205,4 +205,4 @@ T1 vaults take the oracle address via `updateOracle(address)`; T2/T3 vaults take
 
 ## Conclusion
 
-IGP-142 closes the dexV1 test DEX at the Liquidity Layer, rebalances vault 3 without leaving any borrow capacity open, launches the weETH/ETH vault, closes the Team Multisig's remaining wstETH/cbBTC credit lines, returns iETHv2's residual test positions, closes the IGP-45 test DEXes id1/id2/id3 at the Liquidity Layer, restricts and pauses the remaining pre-launch vaults, old DEXes, and vaults 35-40, and closes the hidden USDe vaults 66-73, the dex 5 test market, dex 27 deposits, the dust-launch vaults 95 / 167, and moves the osETH vaults 153-157 and 159 to OracleV2 oracles.
+IGP-142 closes the dexV1 test DEX at the Liquidity Layer, rebalances vault 3 without leaving any borrow capacity open, launches the weETH/ETH vault, closes the Team Multisig's remaining wstETH/cbBTC credit lines, returns iETHv2's residual test positions, closes the IGP-45 test DEXes id1/id2/id3 at the Liquidity Layer, restricts and pauses the remaining pre-launch vaults, old DEXes, and vaults 35-40, and closes the USDe vaults 66-73, the dex 5 test market, dex 27 deposits, the dust-launch vaults 95 / 167, and moves the osETH vaults 153-157 and 159 to OracleV2 oracles.

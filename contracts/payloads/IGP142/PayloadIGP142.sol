@@ -26,8 +26,8 @@ interface IFluidLiquidityWithdrawalLimit {
 
 /// @notice IGP142 (DRAFT): Close down the dexV1 test DEX at the Liquidity
 ///         Layer, rebalance vault 3 (wstETH/ETH), and raise the weETH/ETH
-///         vault (182) from dust to launch limits. More actions are added as
-///         they are agreed in #gov-proposals-lineup.
+///         vault (182) from dust to launch limits. The action list may still
+///         change before submission.
 ///
 ///         Action 1 fully restricts the Liquidity Layer supply and borrow
 ///         limits of the dexV1 test DEX 0x6d83...e03a (wstETH/ETH, deployed
@@ -52,7 +52,7 @@ interface IFluidLiquidityWithdrawalLimit {
 ///         Action 5 exits iETHv2's residual test positions (old vault #3
 ///         NFT 18, vault 34 NFT 2296) through its DSA before Actions 6 and
 ///         7 freeze them. The Timelock sends 0.005 ETH for the ETH leg of
-///         the vault 34 repayment; about $67 returns to iETHv2.
+///         the vault 34 repayment; unused ETH is refunded.
 ///
 ///         Action 6 fully restricts the Liquidity Layer supply and borrow
 ///         limits of the IGP-45 test DEXes dex id1 wstETH/ETH 0x25F0...F901
@@ -259,7 +259,7 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     ///           both tokens (updateUserWithdrawalLimit with a limit above
     ///           supply), so the residual cannot be withdrawn even once.
     ///         Without the last step the first operation after the supply
-    ///         restriction could still withdraw the full residual (fork sim).
+    ///         restriction could still withdraw the full residual.
     function action1() internal isActionSkippable(1) {
         setBorrowProtocolLimitsPaused(DEX_V1_TEST, wstETH_ADDRESS);
         setBorrowProtocolLimitsPaused(DEX_V1_TEST, ETH_ADDRESS);
@@ -330,10 +330,10 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     }
 
     /// @notice Action 3: Raise the weETH/ETH T1 vault (182) from IGP-140
-    ///         dust limits to launch limits (risk params per Ishan):
+    ///         dust limits to launch limits:
     ///         base withdrawal $8M, base borrow $15M, max borrow $30M,
     ///         standard T1 expansion (50% / 6h). Team Multisig vault auth
-    ///         (granted in IGP-140) is kept for the pending OracleV2 switch.
+    ///         (granted in IGP-140) is unchanged.
     function action3() internal isActionSkippable(3) {
         VaultConfig memory VAULT_WEETH_ETH = VaultConfig({
             vault: getVaultAddress(VAULT_WEETH_ETH_ID),
