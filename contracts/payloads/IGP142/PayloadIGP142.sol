@@ -37,7 +37,8 @@ import {
 ///
 ///         Action 4 reduces the Team Multisig's wstETH and cbBTC borrow limits
 ///         at the Liquidity Layer (IGP-107 DEX Lite credit) to dust and
-///         pauses its borrow side for both tokens.
+///         pauses its borrow side for those tokens and for USDC and USDT
+///         (dust since IGP-132).
 ///
 ///         Action 5 exits iETHv2's residual test positions (old vault #3
 ///         NFT 18, vault 34 NFT 2296) through its DSA before Actions 6 and
@@ -198,7 +199,7 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
         // Action 3: Raise weETH/ETH vault (182) to launch limits.
         action3();
 
-        // Action 4: Reduce Team Multisig wstETH & cbBTC borrow limits to dust and pause them.
+        // Action 4: Reduce Team Multisig wstETH & cbBTC borrow limits to dust and pause its wstETH / cbBTC / USDC / USDT borrow.
         action4();
 
         // Action 5: iETHv2 DSA exits its residual test positions (must run before 6 and 7).
@@ -326,8 +327,9 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
 
     /// @notice Action 4: Reduce the Team Multisig's wstETH & cbBTC borrow
     ///         limits on the Liquidity Layer to dust (base 10 / max 20 wei)
-    ///         and pause its borrow side for both tokens.
-    /// @dev Same treatment as USDC & USDT in IGP-132 (action 2). The IGP-107
+    ///         and pause its borrow side for both tokens. USDC and USDT
+    ///         (already dust from IGP-132) are paused too.
+    /// @dev The IGP-107
     ///      DEX Lite credit lines ($1M wstETH, $1M cbBTC) are unused (0 debt).
     ///      The AdminModule reverts `LimitZero` on a literal zero, so base 10 /
     ///      max 20 wei is the canonical dust limit. Mode 1 (with interest)
@@ -335,6 +337,8 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     function action4() internal isActionSkippable(4) {
         _restrictAndPauseBorrow(TEAM_MULTISIG, wstETH_ADDRESS);
         _restrictAndPauseBorrow(TEAM_MULTISIG, cbBTC_ADDRESS);
+        _restrictAndPauseBorrow(TEAM_MULTISIG, USDC_ADDRESS);
+        _restrictAndPauseBorrow(TEAM_MULTISIG, USDT_ADDRESS);
     }
 
     /// @notice Action 5: iETHv2's DSA exits its residual test positions

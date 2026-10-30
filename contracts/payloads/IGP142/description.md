@@ -50,14 +50,14 @@ The supply-side difference (≈135 wei wstETH) is below Liquidity Layer storage 
 ### Action 4: Reduce Team Multisig wstETH & cbBTC Borrow Limits to Dust
 
 - **User**: Team Multisig `0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`
-- **Tokens**: wstETH (`0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0`), cbBTC (`0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf`)
+- **Tokens**: wstETH (`0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0`), cbBTC (`0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf`), plus USDC and USDT (pause only)
 
 | Parameter | Current (IGP-107 DEX Lite credit) | New |
 | --- | --- | --- |
 | Base / max debt ceiling | $1M each (≈185 wstETH, ≈9.1 cbBTC borrowable) | **`10 / 20` wei** |
 | Expansion | 1% over max duration | 0.01% over max duration |
 
-- Calls `setBorrowProtocolLimitsPaused(TEAM_MULTISIG, token)` for wstETH and cbBTC, then `pauseUser` on the borrow side of both tokens.
+- Calls `setBorrowProtocolLimitsPaused(TEAM_MULTISIG, token)` for wstETH and cbBTC, then `pauseUser` on the borrow side of both tokens. USDC and USDT, already at dust since IGP-132, get the same `pauseUser` on the borrow side.
 - Both credit lines are unused (0 debt). Mode 1 (with interest) matches the existing config, so no mode switch is triggered.
 
 ### Action 5: Exit iETHv2's Residual Test Positions
@@ -190,7 +190,7 @@ T1 vaults take the oracle address via `updateOracle(address)`; T2/T3 vaults take
 1. **dexV1 test DEX**: restricts and pauses the last live Liquidity Layer limits of an early test deployment.
 2. **Vault 3 rebalance**: clears the borrow-side drift the rebalancer cannot reach while the vault sits at dust borrow limits, then restricts the vault to dust and pauses it.
 3. **weETH/ETH vault**: moves vault 182 from dust to launch limits.
-4. **Team Multisig credit**: closes the unused IGP-107 wstETH and cbBTC DEX Lite credit lines (dust limits and borrow paused), following the USDC/USDT cut in IGP-132.
+4. **Team Multisig credit**: closes the unused IGP-107 wstETH and cbBTC DEX Lite credit lines (dust limits and borrow paused) and pauses the USDC/USDT borrow side that IGP-132 cut to dust.
 5. **iETHv2 test positions**: iETHv2 withdraws its residual test positions from the pre-launch wstETH/ETH vault (NFT 18) and vault 34 (NFT 2296) before they are frozen. The Timelock sends 0.005 ETH to cover the ETH leg of the vault 34 repayment; unused ETH is refunded.
 6. **IGP-45 test DEXes id1/id3**: closes the Liquidity Layer limits of two early test DEXes holding only dust.
 7. **Pre-launch vaults and old DEXes**: restricts and pauses at the Liquidity Layer the remaining protocols from the old vault and DEX factories.
