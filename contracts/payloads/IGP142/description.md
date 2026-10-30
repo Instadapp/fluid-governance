@@ -1,4 +1,4 @@
-# Close Down the dexV1 Test DEX, Rebalance Vault 3, Launch the weETH/ETH Vault, Remove Team Multisig wstETH/cbBTC Borrow Limits, Exit iETHv2 Test Positions, Close Down IGP-45 Test DEXes id1/id2/id3, Restrict and Pause Pre-Launch Vaults, Vaults 35-40, USDe Vaults 66-73 and Dust-Launch Vaults, Close dex 5, Cap dex 27
+# Close Down the dexV1 Test DEX, Rebalance Vault 3, Launch the weETH/ETH Vault, Remove Team Multisig wstETH/cbBTC Borrow Limits, Exit iETHv2 Test Positions, Close Down IGP-45 Test DEXes id1/id2/id3, Restrict and Pause Pre-Launch Vaults, Vaults 35-40, USDe Vaults 66-73 and Dust-Launch Vaults, Close dex 5, Cap dex 27, Move the osETH Vaults to OracleV2 Oracles
 
 > **DRAFT.** The action list may still change before the proposal is submitted.
 
