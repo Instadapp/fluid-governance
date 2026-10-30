@@ -21,21 +21,23 @@ import {
 ///         Action 1 fully restricts the Liquidity Layer supply and borrow
 ///         limits of the dexV1 test DEX 0x6d83...e03a (wstETH/ETH, deployed
 ///         from the early MS1 test factory, never part of the DexFactory)
-///         to dust, so no further withdrawal or borrow can happen.
+///         to dust and pauses it, so no further withdrawal or borrow can
+///         happen.
 ///
 ///         Action 2 rebalances vault 3 (wstETH/ETH). Its ETH borrow at the
 ///         Liquidity Layer is ~0.0049 ETH below the vault's own total borrow,
 ///         and the rebalance cannot borrow the difference while the vault's
 ///         Liquidity Layer borrow limit is at dust. The action raises the
 ///         limit, runs the rebalance through the Reserve Contract (the
-///         vault's rebalancer), and restores the dust limit.
+///         vault's rebalancer), then restricts the vault to dust and pauses
+///         it at the Liquidity Layer.
 ///
 ///         Action 3 raises the weETH/ETH T1 vault (182) from the IGP-140 dust
 ///         limits to launch limits.
 ///
 ///         Action 4 reduces the Team Multisig's wstETH and cbBTC borrow limits
-///         at the Liquidity Layer (IGP-107 DEX Lite credit) to dust, the same
-///         treatment USDC and USDT received in IGP-132.
+///         at the Liquidity Layer (IGP-107 DEX Lite credit) to dust and
+///         pauses its borrow side for both tokens.
 ///
 ///         Action 5 exits iETHv2's residual test positions (old vault #3
 ///         NFT 18, vault 34 NFT 2296) through its DSA before Actions 6 and
@@ -187,16 +189,16 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     function execute() public virtual override {
         super.execute();
 
-        // Action 1: Fully restrict the dexV1 test DEX at the Liquidity Layer.
+        // Action 1: Fully restrict and pause the dexV1 test DEX at the Liquidity Layer.
         action1();
 
-        // Action 2: Rebalance vault 3 (wstETH/ETH) and restore its dust limit.
+        // Action 2: Rebalance vault 3 (wstETH/ETH), then restrict and pause it.
         action2();
 
         // Action 3: Raise weETH/ETH vault (182) to launch limits.
         action3();
 
-        // Action 4: Reduce Team Multisig wstETH & cbBTC borrow limits to dust.
+        // Action 4: Reduce Team Multisig wstETH & cbBTC borrow limits to dust and pause them.
         action4();
 
         // Action 5: iETHv2 DSA exits its residual test positions (must run before 6 and 7).
@@ -243,12 +245,15 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     ///         (0x6d83...e03a, wstETH/ETH) at the Liquidity Layer.
     ///         - borrow: dust debt ceiling (10 / 20) for wstETH and ETH
     ///         - supply: dust base withdrawal limit (10) for wstETH and ETH
+    ///         - supply and borrow paused for both tokens
     function action1() internal isActionSkippable(1) {
         setBorrowProtocolLimitsPaused(DEX_V1_TEST, wstETH_ADDRESS);
         setBorrowProtocolLimitsPaused(DEX_V1_TEST, ETH_ADDRESS);
 
         setSupplyProtocolLimitsPaused(DEX_V1_TEST, wstETH_ADDRESS);
         setSupplyProtocolLimitsPaused(DEX_V1_TEST, ETH_ADDRESS);
+
+        _pauseUserAtLiquidity(DEX_V1_TEST, wstETH_ADDRESS, ETH_ADDRESS);
     }
 
     /// @notice Action 2: Rebalance vault 3 (wstETH/ETH).
@@ -257,7 +262,8 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     ///         2. Allow-list the Timelock as Reserve rebalancer, call
     ///            rebalanceVaults([vault 3]), remove the Timelock again.
     ///            The borrow drift (~0.0049 ETH) is borrowed to the Reserve.
-    ///         3. Restore the dust ETH borrow limit (10 / 20).
+    ///         3. Restrict the vault to dust (supply wstETH, borrow ETH) and
+    ///            pause it at the Liquidity Layer.
     ///         The supply-side drift (~136 wei wstETH) is below Liquidity
     ///         Layer storage precision (UserModule__OperateAmountInsufficient),
     ///         so the vault's try/catch skips it; no Reserve allowance needed.
@@ -295,8 +301,8 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
         }
         FLUID_RESERVE.updateRebalancer(address(TIMELOCK), false);
 
-        // Step 3: restore the dust borrow limit.
-        setBorrowProtocolLimitsPaused(vault_, ETH_ADDRESS);
+        // Step 3: restore dust limits and pause the vault.
+        _restrictAndPauseVault(vault_, wstETH_ADDRESS, ETH_ADDRESS);
     }
 
     /// @notice Action 3: Raise the weETH/ETH T1 vault (182) from IGP-140
@@ -319,15 +325,16 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     }
 
     /// @notice Action 4: Reduce the Team Multisig's wstETH & cbBTC borrow
-    ///         limits on the Liquidity Layer to dust (base 10 / max 20 wei).
+    ///         limits on the Liquidity Layer to dust (base 10 / max 20 wei)
+    ///         and pause its borrow side for both tokens.
     /// @dev Same treatment as USDC & USDT in IGP-132 (action 2). The IGP-107
     ///      DEX Lite credit lines ($1M wstETH, $1M cbBTC) are unused (0 debt).
     ///      The AdminModule reverts `LimitZero` on a literal zero, so base 10 /
     ///      max 20 wei is the canonical dust limit. Mode 1 (with interest)
     ///      matches the existing config for both tokens, so no mode switch.
     function action4() internal isActionSkippable(4) {
-        setBorrowProtocolLimitsPaused(TEAM_MULTISIG, wstETH_ADDRESS);
-        setBorrowProtocolLimitsPaused(TEAM_MULTISIG, cbBTC_ADDRESS);
+        _restrictAndPauseBorrow(TEAM_MULTISIG, wstETH_ADDRESS);
+        _restrictAndPauseBorrow(TEAM_MULTISIG, cbBTC_ADDRESS);
     }
 
     /// @notice Action 5: iETHv2's DSA exits its residual test positions

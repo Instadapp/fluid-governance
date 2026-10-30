@@ -4,11 +4,11 @@
 
 ## Summary
 
-This proposal fully restricts the Liquidity Layer limits of the early **dexV1 test DEX** (wstETH/ETH, `0x6d83...e03a`) so it can no longer withdraw or borrow, rebalances the **wstETH/ETH T1 vault (3)** borrow side that is stuck behind its dust borrow limit, raises the **weETH/ETH T1 vault (182)** from the IGP-140 dust limits to launch limits, reduces the **Team Multisig** wstETH and cbBTC borrow limits on the Liquidity Layer to dust, withdraws **iETHv2**'s residual test positions before they are frozen, fully restricts the Liquidity Layer limits of the IGP-45 test DEXes **id1** (wstETH/ETH) and **id3** (WBTC/cbBTC), restricts and pauses at the Liquidity Layer the five **pre-launch vaults** of the old VaultFactory, the two old DEXes, and the debt of vaults **42 / 43**, and restricts and pauses the last IGP-45 test DEX **id2** (USDC/USDT) and the six empty T3 vaults **35-40** built on it. It also moves the **osETH vaults** (153-157, 159) from V1 oracles to OracleV2 oracles; the RedStone osETH/ETH feed behind the V1 oracles is being wound down and already reverts.
+This proposal fully restricts and pauses the early **dexV1 test DEX** (wstETH/ETH, `0x6d83...e03a`) at the Liquidity Layer so it can no longer withdraw or borrow, rebalances the **wstETH/ETH T1 vault (3)** borrow side that is stuck behind its dust borrow limit, raises the **weETH/ETH T1 vault (182)** from the IGP-140 dust limits to launch limits, reduces the **Team Multisig** wstETH and cbBTC borrow limits on the Liquidity Layer to dust and pauses them, withdraws **iETHv2**'s residual test positions before they are frozen, fully restricts the Liquidity Layer limits of the IGP-45 test DEXes **id1** (wstETH/ETH) and **id3** (WBTC/cbBTC), restricts and pauses at the Liquidity Layer the five **pre-launch vaults** of the old VaultFactory, the two old DEXes, and the debt of vaults **42 / 43**, and restricts and pauses the last IGP-45 test DEX **id2** (USDC/USDT) and the six empty T3 vaults **35-40** built on it. It also moves the **osETH vaults** (153-157, 159) from V1 oracles to OracleV2 oracles; the RedStone osETH/ETH feed behind the V1 oracles is being wound down and already reverts.
 
 ## Code Changes
 
-### Action 1: Fully Restrict the dexV1 Test DEX at the Liquidity Layer
+### Action 1: Fully Restrict and Pause the dexV1 Test DEX at the Liquidity Layer
 
 - **DEX**: `0x6d83f60eEac0e50A1250760151E81Db2a278e03a` (wstETH / ETH, early dexV1 test deployment, not deployed by the DexFactory)
 - **Tokens**: wstETH (`0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0`), ETH (`0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE`)
@@ -17,8 +17,9 @@ This proposal fully restricts the Liquidity Layer limits of the early **dexV1 te
 | --- | --- | --- |
 | Borrow | `setBorrowProtocolLimitsPaused` for wstETH and ETH | Debt ceiling `10 / 20` (dust), expansion 0.01% over max duration |
 | Supply | `setSupplyProtocolLimitsPaused` for wstETH and ETH | Base withdrawal limit `10` (dust), expansion 0.01% over max duration |
+| Pause | `LIQUIDITY.pauseUser(dex, [wstETH, ETH], [wstETH, ETH])` | Supply and borrow paused for both tokens |
 
-### Action 2: Rebalance the wstETH/ETH T1 Vault (3)
+### Action 2: Rebalance the wstETH/ETH T1 Vault (3), Then Restrict and Pause It
 
 - **Vault**: `0xA0F83Fc5885cEBc0420ce7C7b139Adc80c4F4D91` (T1, wstETH collateral / ETH debt)
 - **Rebalancer**: Reserve Contract (`0x264786EF916af64a1DB19F513F24a3681734ce92`)
@@ -29,7 +30,7 @@ The vault's own total borrow is **≈0.00493 ETH** above its borrow at the Liqui
 | --- | --- |
 | 1 | Raise the vault's ETH debt ceiling at the Liquidity Layer to `1e18` raw (≈1 ETH; vault borrow ≈0.454 ETH) |
 | 2 | `FLUID_RESERVE.updateRebalancer(TIMELOCK, true)`, `rebalanceVaults([vault 3], [0])`, `updateRebalancer(TIMELOCK, false)` |
-| 3 | Restore the dust ETH debt ceiling via `setBorrowProtocolLimitsPaused` |
+| 3 | Restrict the vault to dust (wstETH supply, ETH borrow) via `setSupplyProtocolLimitsPaused` / `setBorrowProtocolLimitsPaused`, then `LIQUIDITY.pauseUser(vault, [wstETH], [ETH])` |
 
 The supply-side difference (≈135 wei wstETH) is below Liquidity Layer storage precision (`UserModule__OperateAmountInsufficient`), so the vault's try/catch skips it. No Reserve allowance is needed.
 
@@ -56,7 +57,7 @@ The supply-side difference (≈135 wei wstETH) is below Liquidity Layer storage 
 | Base / max debt ceiling | $1M each (≈185 wstETH, ≈9.1 cbBTC borrowable) | **`10 / 20` wei** |
 | Expansion | 1% over max duration | 0.01% over max duration |
 
-- Calls `setBorrowProtocolLimitsPaused(TEAM_MULTISIG, token)` for wstETH and cbBTC, the same treatment USDC and USDT received in IGP-132 (action 2).
+- Calls `setBorrowProtocolLimitsPaused(TEAM_MULTISIG, token)` for wstETH and cbBTC, then `pauseUser` on the borrow side of both tokens.
 - Both credit lines are unused (0 debt). Mode 1 (with interest) matches the existing config, so no mode switch is triggered.
 
 ### Action 5: Exit iETHv2's Residual Test Positions
@@ -186,10 +187,10 @@ T1 vaults take the oracle address via `updateOracle(address)`; T2/T3 vaults take
 
 ## Description
 
-1. **dexV1 test DEX**: closes out the last live Liquidity Layer limits of an early test deployment.
-2. **Vault 3 rebalance**: clears the borrow-side drift the rebalancer cannot reach while the vault sits at dust borrow limits, and returns it to dust in the same action.
+1. **dexV1 test DEX**: restricts and pauses the last live Liquidity Layer limits of an early test deployment.
+2. **Vault 3 rebalance**: clears the borrow-side drift the rebalancer cannot reach while the vault sits at dust borrow limits, then restricts the vault to dust and pauses it.
 3. **weETH/ETH vault**: moves vault 182 from dust to launch limits.
-4. **Team Multisig credit**: closes the unused IGP-107 wstETH and cbBTC DEX Lite credit lines, matching the USDC/USDT cut in IGP-132.
+4. **Team Multisig credit**: closes the unused IGP-107 wstETH and cbBTC DEX Lite credit lines (dust limits and borrow paused), following the USDC/USDT cut in IGP-132.
 5. **iETHv2 test positions**: iETHv2 withdraws its residual test positions from the pre-launch wstETH/ETH vault (NFT 18) and vault 34 (NFT 2296) before they are frozen. The Timelock sends 0.005 ETH to cover the ETH leg of the vault 34 repayment; unused ETH is refunded.
 6. **IGP-45 test DEXes id1/id3**: closes the Liquidity Layer limits of two early test DEXes holding only dust.
 7. **Pre-launch vaults and old DEXes**: restricts and pauses at the Liquidity Layer the remaining protocols from the old vault and DEX factories.
