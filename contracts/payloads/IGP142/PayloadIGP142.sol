@@ -673,8 +673,8 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
      */
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
-    // fetched: 2026-10-30T11:56:22.507Z, source: coingecko
-    function ETH_USD_PRICE()   public pure override returns (uint256) { return 2_230 * 1e2; }
-    function weETH_USD_PRICE() public pure override returns (uint256) { return 2_470 * 1e2; }
+    // fetched: 2026-10-30T20:10:03.937Z, source: coingecko
+    function ETH_USD_PRICE()   public pure override returns (uint256) { return 2_240 * 1e2; }
+    function weETH_USD_PRICE() public pure override returns (uint256) { return 2_480 * 1e2; }
     // --- END AUTO-GENERATED PRICES ---
 }
