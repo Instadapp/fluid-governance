@@ -68,11 +68,11 @@ The supply-side difference (≈135 wei wstETH) is left as is: the Reserve has no
 | Position | Holding | Call |
 | --- | --- | --- |
 | NFT 18, pre-launch vault #3 wstETH/ETH `0x28680f14C4Bb86B71119BC6e90E4e6D87E6D1f51` | 0.01 wstETH, no debt | `FLUID-A.operate`: withdraw all |
-| NFT 2296, vault 34 wstETH/ETH T4 `0x57fed7c9b3c763999c519264931790cBcA331417` (on dex id1) | ≈0.0085 wstETH + 0.0104 ETH collateral, ≈0.0034 wstETH + 0.0042 ETH debt | `FLUID-VAULT-T4-A.operatePerfect`: repay `4e15` debt shares, withdraw all but 1e8 collateral shares |
+| NFT 2296, vault 34 wstETH/ETH T4 `0x57fed7c9b3c763999c519264931790cBcA331417` (on dex id1) | ≈0.0085 wstETH + 0.0104 ETH collateral, ≈0.0034 wstETH + 0.0042 ETH debt | `FLUID-VAULT-T4-A.operatePerfect`: repay debt, withdraw collateral |
 
-- The Timelock sends **0.005 ETH** with the cast to cover the ETH leg of the vault 34 repayment; any unused ETH stays with iETHv2. The wstETH leg is covered by the 0.01 wstETH freed from NFT 18.
-- Vault 34 books slightly more debt shares than dex id1 records for it, so a max payback reverts. The action repays the dex-side shares explicitly; a dust debt and 1e8 collateral shares (about 1e-8 of the position) stay and are frozen by Actions 6 and 7.
-- The cast is wrapped in `try/catch`, so a third-party partial repayment of NFT 2296 cannot block the rest of the proposal.
+- The Timelock sends **0.005 ETH** to repay the ETH debt; the wstETH debt is repaid with the 0.01 wstETH withdrawn from NFT 18. Any unused ETH stays with iETHv2.
+- A negligible dust amount stays in vault 34 and is frozen by Actions 6 and 7.
+- If NFT 2296 is partially repaid by someone else before execution, this action is skipped and the rest of the proposal still executes.
 - The withdrawn funds return to iETHv2.
 
 This action must run before Actions 6 and 7, which freeze both positions.
@@ -191,7 +191,7 @@ T1 vaults take the oracle address via `updateOracle(address)`. T2/T3 vaults take
 2. **Vault 3 rebalance**: clears the borrow-side drift the rebalancer cannot reach while the vault sits at dust borrow limits, then restricts the vault to dust and pauses it. Its 12 remaining small positions (~$1.8k collateral) are frozen with it.
 3. **weETH/ETH vault**: moves vault 182 from dust to launch limits.
 4. **Team Multisig credit**: closes the unused IGP-107 wstETH and cbBTC DEX Lite credit lines (dust limits and borrow paused) and pauses the USDC/USDT borrow side that IGP-132 cut to dust.
-5. **iETHv2 test positions**: iETHv2 withdraws its residual test positions from the pre-launch wstETH/ETH vault (NFT 18) and vault 34 (NFT 2296) before they are frozen. The Timelock sends 0.005 ETH to cover the ETH leg of the vault 34 repayment; any unused ETH stays with iETHv2.
+5. **iETHv2 test positions**: iETHv2 withdraws its residual test positions from the pre-launch wstETH/ETH vault (NFT 18) and vault 34 (NFT 2296) before they are frozen. The Timelock sends 0.005 ETH to repay the ETH debt.
 6. **IGP-45 test DEXes id1/id3**: closes the Liquidity Layer limits of two early test DEXes holding only dust.
 7. **Pre-launch vaults and old DEXes**: restricts and pauses at the Liquidity Layer the remaining protocols from the old vault and DEX factories.
 8. **IGP-45 test DEX id2 and vaults 35-40**: restricts and pauses at the Liquidity Layer the remaining IGP-45 test DEX id2 (USDC/USDT) and the six empty T3 vaults (35-40) built on it.
