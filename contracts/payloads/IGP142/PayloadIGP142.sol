@@ -13,10 +13,8 @@ import {
     IFluidVaultT1
 } from "../common/interfaces/IFluidVault.sol";
 
-/// @notice IGP142: Close down the dexV1 test DEX, rebalance vault 3, launch
-///         the weETH/ETH vault, close Team Multisig credit lines, exit
-///         iETHv2 test positions, restrict and pause legacy test DEXes and
-///         vaults, and move the osETH vaults to OracleV2 oracles.
+/// @notice IGP142: Launch the weETH/ETH vault, upgrade the osETH vaults to
+///         OracleV2, and close down legacy and unused markets.
 ///
 ///         Action 1 fully restricts the Liquidity Layer supply and borrow
 ///         limits of the dexV1 test DEX 0x6d83...e03a (wstETH/ETH, deployed
