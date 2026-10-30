@@ -129,9 +129,9 @@ DEX-level user configs of the old-factory DEXes are not governed by the Timelock
 
 All seven configs are already mode 1 (with interest), so no mode switch is triggered.
 
-### Action 9: Restrict and Pause the Hidden USDe Vaults 66-73 at the Liquidity Layer
+### Action 9: Restrict and Pause the USDe Vaults 66-73 at the Liquidity Layer
 
-Not shown in the app; dust positions only.
+Dust positions only.
 
 | Vault | Address | Supply token | Borrow token | Change |
 | --- | --- | --- | --- | --- |
@@ -160,7 +160,7 @@ dex 5 is already paused at the Liquidity Layer. This action does not write its L
 
 ### Action 11: Cap dex 27 (wstUSR-USDC) Supply Shares
 
-**dex 27** `0xd64e12101614209eE810EFDe214542A2cb68d9fD` (hidden): `updateMaxSupplyShares(1)`. No new deposits; existing LPs can still withdraw.
+**dex 27** `0xd64e12101614209eE810EFDe214542A2cb68d9fD`: `updateMaxSupplyShares(1)`. No new deposits; existing LPs can still withdraw.
 
 ### Action 12: Restrict and Pause the Dust-Launch Vaults 95 and 167
 
@@ -196,9 +196,9 @@ T1 vaults take the oracle address via `updateOracle(address)`. T2/T3 vaults take
 6. **IGP-45 test DEXes id1/id3**: closes the Liquidity Layer limits of two early test DEXes holding only dust.
 7. **Pre-launch vaults and old DEXes**: restricts and pauses at the Liquidity Layer the remaining protocols from the old vault and DEX factories.
 8. **IGP-45 test DEX id2 and vaults 35-40**: restricts and pauses at the Liquidity Layer the remaining IGP-45 test DEX id2 (USDC/USDT) and the six empty T3 vaults (35-40) built on it.
-9. **Hidden USDe vaults 66-73**: removes the remaining open borrow limits (≈$128M combined max) and pauses all eight at the Liquidity Layer.
+9. **USDe vaults 66-73**: removes the remaining open borrow limits (≈$128M combined max) and pauses all eight at the Liquidity Layer.
 10. **dex 5 test market**: closes the share caps and vault 62 borrow config left open on a never-launched test DEX.
-11. **dex 27**: stops new deposits into the hidden wstUSR-USDC DEX.
+11. **dex 27**: stops new deposits into the wstUSR-USDC DEX.
 12. **Dust-launch vaults 95 / 167**: restricts and pauses two mainnet vaults that only hold dust launch positions.
 13. **osETH vaults**: moves vaults 153-157 and 159 to OracleV2 oracles, off the RedStone osETH/ETH feed, which currently reverts as stale.
 

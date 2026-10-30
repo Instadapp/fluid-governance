@@ -59,7 +59,7 @@ import {
 ///         IGP-45 test DEX, dex id2 (USDC/USDT), and the six empty T3
 ///         vaults 35-40 built on it.
 ///
-///         Action 9 restricts and pauses the hidden USDe vaults 66-73 at the
+///         Action 9 restricts and pauses the USDe vaults 66-73 at the
 ///         Liquidity Layer.
 ///
 ///         Action 10 closes the never-launched dex 5 (USDC-ETH) test market:
@@ -212,7 +212,7 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
         // Action 8: Restrict + pause old dex id2 (USDC/USDT) and T3 vaults 35-40 at the Liquidity Layer.
         action8();
 
-        // Action 9: Restrict + pause the hidden USDe vaults 66-73 at the Liquidity Layer.
+        // Action 9: Restrict + pause the USDe vaults 66-73 at the Liquidity Layer.
         action9();
 
         // Action 10: Close the dex 5 (USDC-ETH) test market and its T4 vault 62.
@@ -492,7 +492,7 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
         _restrictAndPauseSupply(getVaultAddress(40), sUSDe_ADDRESS);
     }
 
-    /// @notice Action 9: Restrict and pause the hidden USDe vaults at the
+    /// @notice Action 9: Restrict and pause the USDe vaults at the
     ///         Liquidity Layer (dust positions only).
     ///         - vaults 66 / 67 / 68 (USDe -> USDC / USDT / GHO): borrow
     ///           limits to dust (max borrow was $53.5M / $53.3M / $21.6M).
@@ -538,7 +538,7 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
         IFluidDex(dex_).updateMaxBorrowShares(1);
     }
 
-    /// @notice Action 11: Cap the hidden dex 27 (wstUSR-USDC) at 1 max supply
+    /// @notice Action 11: Cap dex 27 (wstUSR-USDC) at 1 max supply
     ///         share, so no new deposits. Existing LPs can still withdraw.
     function action11() internal isActionSkippable(11) {
         IFluidDex(getDexAddress(DEX_WSTUSR_USDC_ID)).updateMaxSupplyShares(1);
