@@ -17,9 +17,6 @@ This proposal fully restricts the Liquidity Layer limits of the early **dexV1 te
 | --- | --- | --- |
 | Borrow | `setBorrowProtocolLimitsPaused` for wstETH and ETH | Debt ceiling `10 / 20` (dust), expansion 0.01% over max duration |
 | Supply | `setSupplyProtocolLimitsPaused` for wstETH and ETH | Base withdrawal limit `10` (dust), expansion 0.01% over max duration |
-| Withdrawal limit | `updateUserWithdrawalLimit(dex, token, type(uint256).max)` for wstETH and ETH | Current withdrawal limit set to the full user supply, withdrawable `0` |
-
-The last step matters: with only the supply restriction, the first operation after execution could still withdraw the full residual once (the withdrawal limit is only recomputed on the next operate). Setting the limit to the full supply closes that.
 
 ### Action 2: Rebalance the wstETH/ETH T1 Vault (3)
 
@@ -84,7 +81,7 @@ This action must run before Actions 6 and 7, which freeze both positions.
 - **dex id1**: `0x25F0A3B25cBC0Ca0417770f686209628323fF901` (wstETH / ETH, old DexFactory), tokens wstETH + ETH
 - **dex id3**: `0x1d3e52a11B98Ed2AAB7eB0Bfe1cbB6525233204d` (WBTC / cbBTC, old DexFactory), tokens WBTC (`0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599`) + cbBTC (`0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf`)
 
-Same three steps as Action 1 for each DEX and token: `setBorrowProtocolLimitsPaused` (debt ceiling `10 / 20`), `setSupplyProtocolLimitsPaused` (base withdrawal limit `10`), `updateUserWithdrawalLimit(dex, token, type(uint256).max)` (withdrawable `0`).
+Same two steps as Action 1 for each DEX and token: `setBorrowProtocolLimitsPaused` (debt ceiling `10 / 20`), `setSupplyProtocolLimitsPaused` (base withdrawal limit `10`).
 
 | DEX | LL supply today | Base withdrawal limit today | Borrow side today |
 | --- | --- | --- | --- |
@@ -105,7 +102,7 @@ Same three steps as Action 1 for each DEX and token: `setBorrowProtocolLimitsPau
 | `0x460143a489729a3cA32DeA82fa48ea61175accbc` (wstETH/USDC) | wstETH | USDC |
 | `0x2B251211f5Ff0A753A8d5B9411d736875174f375` (wstETH/USDT) | wstETH | USDT |
 
-For each: `setSupplyProtocolLimitsPaused` (base withdrawal limit `10`), `setBorrowProtocolLimitsPaused` (debt ceiling `10 / 20`), `updateUserWithdrawalLimit(vault, supplyToken, type(uint256).max)`, then `LIQUIDITY.pauseUser(vault, [supplyToken], [borrowToken])`.
+For each: `setSupplyProtocolLimitsPaused` (base withdrawal limit `10`), `setBorrowProtocolLimitsPaused` (debt ceiling `10 / 20`), then `LIQUIDITY.pauseUser(vault, [supplyToken], [borrowToken])`.
 
 **Vaults 42 / 43** (T2, smart collateral on dex id3, debt at the Liquidity Layer): `setBorrowProtocolLimitsPaused` for USDC (42) / USDT (43), then `pauseUser` on the borrow side. Neither vault has open positions.
 
@@ -167,7 +164,7 @@ dex 5 is already paused at the Liquidity Layer. This action does not write its L
 
 | Vault | Address | Type | Change |
 | --- | --- | --- | --- |
-| 95 | `0xbee8D906BAc00610D8056C88EeEc5E9e9D48104C` | T1 eBTC / cbBTC | supply + borrow to dust, withdrawal limit pinned to full supply, `pauseUser` supply + borrow (same as Action 7) |
+| 95 | `0xbee8D906BAc00610D8056C88EeEc5E9e9D48104C` | T1 eBTC / cbBTC | supply + borrow to dust, `pauseUser` supply + borrow (same as Action 7) |
 | 167 | `0x46a719593378079F242faB86F0d7dEa50D84f28b` | T2 PST-USDC (dex 45) / USDC | USDC borrow at the Liquidity Layer to dust + `pauseUser` borrow; supply at dex 45 (`0x40D66b5f8f1521F97C2acA54dD200Fe3Ca035328`) to dust + `pauseUser(vault, true, false)` |
 
 Dex 45 itself is left unchanged.

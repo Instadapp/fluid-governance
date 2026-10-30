@@ -13,17 +13,6 @@ import {
     IFluidVaultT1
 } from "../common/interfaces/IFluidVault.sol";
 
-/// @notice Liquidity Layer admin call not exposed on the shared
-///         IFluidLiquidityAdmin interface. Signature added to the Liquidity
-///         AdminModule in IGP-37.
-interface IFluidLiquidityWithdrawalLimit {
-    function updateUserWithdrawalLimit(
-        address user_,
-        address token_,
-        uint256 newLimit_
-    ) external;
-}
-
 /// @notice IGP142 (DRAFT): Close down the dexV1 test DEX at the Liquidity
 ///         Layer, rebalance vault 3 (wstETH/ETH), and raise the weETH/ETH
 ///         vault (182) from dust to launch limits. The action list may still
@@ -32,8 +21,7 @@ interface IFluidLiquidityWithdrawalLimit {
 ///         Action 1 fully restricts the Liquidity Layer supply and borrow
 ///         limits of the dexV1 test DEX 0x6d83...e03a (wstETH/ETH, deployed
 ///         from the early MS1 test factory, never part of the DexFactory)
-///         and pins its current withdrawal limit to its full supply, so no
-///         further withdrawal or borrow can happen.
+///         to dust, so no further withdrawal or borrow can happen.
 ///
 ///         Action 2 rebalances vault 3 (wstETH/ETH). Its ETH borrow at the
 ///         Liquidity Layer is ~0.0049 ETH below the vault's own total borrow,
@@ -255,30 +243,12 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     ///         (0x6d83...e03a, wstETH/ETH) at the Liquidity Layer.
     ///         - borrow: dust debt ceiling (10 / 20) for wstETH and ETH
     ///         - supply: dust base withdrawal limit (10) for wstETH and ETH
-    ///         - current withdrawal limit set to the full user supply for
-    ///           both tokens (updateUserWithdrawalLimit with a limit above
-    ///           supply), so the residual cannot be withdrawn even once.
-    ///         Without the last step the first operation after the supply
-    ///         restriction could still withdraw the full residual.
     function action1() internal isActionSkippable(1) {
         setBorrowProtocolLimitsPaused(DEX_V1_TEST, wstETH_ADDRESS);
         setBorrowProtocolLimitsPaused(DEX_V1_TEST, ETH_ADDRESS);
 
         setSupplyProtocolLimitsPaused(DEX_V1_TEST, wstETH_ADDRESS);
         setSupplyProtocolLimitsPaused(DEX_V1_TEST, ETH_ADDRESS);
-
-        IFluidLiquidityWithdrawalLimit(address(LIQUIDITY))
-            .updateUserWithdrawalLimit(
-                DEX_V1_TEST,
-                wstETH_ADDRESS,
-                type(uint256).max
-            );
-        IFluidLiquidityWithdrawalLimit(address(LIQUIDITY))
-            .updateUserWithdrawalLimit(
-                DEX_V1_TEST,
-                ETH_ADDRESS,
-                type(uint256).max
-            );
     }
 
     /// @notice Action 2: Rebalance vault 3 (wstETH/ETH).
@@ -429,11 +399,10 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     ///         DexFactory) at the Liquidity Layer, same pattern as Action 1:
     ///         - dex id1 wstETH/ETH (0x25F0...F901), tokens wstETH + ETH
     ///         - dex id3 WBTC/cbBTC (0x1d3e...204d), tokens WBTC + cbBTC
-    ///         Borrow to dust (10 / 20), supply base withdrawal limit to dust
-    ///         (10), and current withdrawal limit pinned to the full user
-    ///         supply so the residual cannot be withdrawn even once.
+    ///         Borrow to dust (10 / 20) and supply base withdrawal limit to
+    ///         dust (10).
     /// @dev Borrow side is already non-borrowable (limit below current
-    ///      borrow) but still on the 20% / 12h expand config; this pins it.
+    ///      borrow) but still on the 20% / 12h expand config; this sets it to dust.
     ///      id1 residual includes vault 34's dust position (NFT 2296, after
     ///      Action 5); id3 residual is the locked initial shares only.
     function action6() internal isActionSkippable(6) {
@@ -452,8 +421,7 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     /// @notice Action 7: Fully restrict and pause the remaining old
     ///         protocols at the Liquidity Layer.
     ///         - old VaultFactory vaults #1-#5: supply + borrow limits to
-    ///           dust, withdrawal limit pinned to full supply, supply and
-    ///           borrow paused at the Liquidity Layer.
+    ///           dust, supply and borrow paused at the Liquidity Layer.
     ///         - T2 vaults 42 / 43 (smart col on dex id3): Liquidity Layer
     ///           debt limits to dust and paused.
     ///         - dex id1 / dex id3 (limits already dusted in Action 6):
@@ -562,8 +530,8 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     /// @notice Action 12: Restrict and pause the mainnet dust-launch vaults
     ///         (1-3 positions each, tens of dollars of collateral).
     ///         - vault 95 (T1 eBTC / cbBTC): same treatment as the old vaults
-    ///           in Action 7 (supply + borrow to dust, withdrawal limit
-    ///           pinned, paused at the Liquidity Layer).
+    ///           in Action 7 (supply + borrow to dust, paused at the
+    ///           Liquidity Layer).
     ///         - vault 167 (T2 PST-USDC dex 45 / USDC): USDC borrow at the
     ///           Liquidity Layer to dust and paused; its smart-col supply at
     ///           dex 45 to dust and paused. Dex 45 itself is untouched.
@@ -641,8 +609,6 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     ) internal {
         setSupplyProtocolLimitsPaused(vault_, supplyToken_);
         setBorrowProtocolLimitsPaused(vault_, borrowToken_);
-        IFluidLiquidityWithdrawalLimit(address(LIQUIDITY))
-            .updateUserWithdrawalLimit(vault_, supplyToken_, type(uint256).max);
 
         address[] memory supplyTokens_ = new address[](1);
         supplyTokens_[0] = supplyToken_;
@@ -681,11 +647,6 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
 
         setSupplyProtocolLimitsPaused(dex_, token0_);
         setSupplyProtocolLimitsPaused(dex_, token1_);
-
-        IFluidLiquidityWithdrawalLimit(address(LIQUIDITY))
-            .updateUserWithdrawalLimit(dex_, token0_, type(uint256).max);
-        IFluidLiquidityWithdrawalLimit(address(LIQUIDITY))
-            .updateUserWithdrawalLimit(dex_, token1_, type(uint256).max);
     }
 
     /**
