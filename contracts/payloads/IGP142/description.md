@@ -32,7 +32,7 @@ The vault's own total borrow is **≈0.00493 ETH** above its borrow at the Liqui
 
 The supply-side difference (≈135 wei wstETH) is left as is: the Reserve has no wstETH allowance for the vault, so that leg fails inside the vault's `try/catch` and is skipped. The borrow-side rebalance is unaffected.
 
-**Effect on existing positions.** Vault 3 still holds 12 small user positions across 7 owners, ≈0.64 wstETH collateral and ≈0.455 ETH debt in total (~$1.8k / ~$1.0k on 30 Oct 2026). Once the vault is paused at the Liquidity Layer, these positions can no longer deposit, withdraw, repay or be liquidated. Governance can unpause the vault in a later proposal if an owner needs to exit.
+**Effect on existing positions.** Vault 3 still holds 12 small user positions across 7 owners, ≈0.64 wstETH collateral and ≈0.455 ETH debt in total (~$1.8k / ~$1.0k). Once the vault is paused at the Liquidity Layer, these positions can no longer deposit, withdraw, repay or be liquidated. Governance can unpause the vault in a later proposal if an owner needs to exit.
 
 ### Action 3: Launch Limits for the weETH/ETH T1 Vault (182)
 
@@ -54,7 +54,7 @@ The supply-side difference (≈135 wei wstETH) is left as is: the Reserve has no
 
 | Parameter | Current (IGP-107 DEX Lite credit) | New |
 | --- | --- | --- |
-| Base / max debt ceiling | ≈185.4 wstETH / ≈9.11 cbBTC (sized at $1M each in IGP-107; ~$518k / ~$701k on 30 Oct 2026) | **`10 / 20` wei** |
+| Base / max debt ceiling | ≈185.4 wstETH / ≈9.11 cbBTC (sized at $1M each in IGP-107) | **`10 / 20` wei** |
 | Expansion | 1% over max duration | 0.01% over max duration |
 
 - Calls `setBorrowProtocolLimitsPaused(TEAM_MULTISIG, token)` for wstETH and cbBTC, then `pauseUser` on the borrow side of both tokens. USDC and USDT, already at dust since IGP-132, get the same dust write and `pauseUser` on the borrow side.
@@ -84,7 +84,7 @@ This action must run before Actions 6 and 7, which freeze both positions.
 
 Same two steps as Action 1 for each DEX and token: `setBorrowProtocolLimitsPaused` (debt ceiling `10 / 20`), `setSupplyProtocolLimitsPaused` (base withdrawal limit `10`).
 
-| DEX | LL supply (30 Oct 2026) | Base withdrawal limit | Borrow side |
+| DEX | LL supply | Base withdrawal limit | Borrow side |
 | --- | --- | --- | --- |
 | id1 | 0.0185 wstETH + 0.0227 ETH (~$103) | 17.29 wstETH / 21.24 ETH (25% / 12h) | already non-borrowable (limit below borrow), 20% / 12h |
 | id3 | 0.00202 WBTC + 0.00202 cbBTC (~$311) | 0.807 WBTC / 0.808 cbBTC (25% / 12h) | already non-borrowable (limit below borrow), 20% / 12h |
