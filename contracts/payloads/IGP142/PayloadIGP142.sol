@@ -32,7 +32,7 @@ import {
 ///         user positions (~0.64 wstETH collateral, ~0.455 ETH debt).
 ///
 ///         Action 3 raises the weETH/ETH T1 vault (182) from the IGP-140 dust
-///         limits to launch limits.
+///         limits to launch limits and removes the Team Multisig vault auth.
 ///
 ///         Action 4 reduces the Team Multisig's wstETH and cbBTC borrow limits
 ///         at the Liquidity Layer (IGP-107 DEX Lite credit) to dust and
@@ -194,7 +194,7 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
         // Action 2: Rebalance vault 3 (wstETH/ETH), then restrict and pause it.
         action2();
 
-        // Action 3: Raise weETH/ETH vault (182) to launch limits.
+        // Action 3: Raise weETH/ETH vault (182) to launch limits, remove Team Multisig auth.
         action3();
 
         // Action 4: Reduce Team Multisig wstETH & cbBTC borrow limits to dust and pause its wstETH / cbBTC / USDC / USDT borrow.
@@ -308,8 +308,8 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     /// @notice Action 3: Raise the weETH/ETH T1 vault (182) from IGP-140
     ///         dust limits to launch limits:
     ///         base withdrawal $8M, base borrow $15M, max borrow $30M,
-    ///         standard T1 expansion (50% / 6h). Team Multisig vault auth
-    ///         (granted in IGP-140) is unchanged.
+    ///         standard T1 expansion (50% / 6h). Removes the Team Multisig
+    ///         vault auth granted in IGP-140 for setup.
     function action3() internal isActionSkippable(3) {
         VaultConfig memory VAULT_WEETH_ETH = VaultConfig({
             vault: getVaultAddress(VAULT_WEETH_ETH_ID),
@@ -322,6 +322,12 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
         });
 
         setVaultLimits(VAULT_WEETH_ETH);
+
+        VAULT_FACTORY_WRAPPER_OWNER.setVaultAuth(
+            VAULT_WEETH_ETH.vault,
+            TEAM_MULTISIG,
+            false
+        );
     }
 
     /// @notice Action 4: Reduce the Team Multisig's wstETH & cbBTC borrow
