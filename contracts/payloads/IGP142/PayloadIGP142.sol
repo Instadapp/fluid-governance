@@ -13,10 +13,10 @@ import {
     IFluidVaultT1
 } from "../common/interfaces/IFluidVault.sol";
 
-/// @notice IGP142 (DRAFT): Close down the dexV1 test DEX at the Liquidity
-///         Layer, rebalance vault 3 (wstETH/ETH), and raise the weETH/ETH
-///         vault (182) from dust to launch limits. The action list may still
-///         change before submission.
+/// @notice IGP142: Close down the dexV1 test DEX, rebalance vault 3, launch
+///         the weETH/ETH vault, close Team Multisig credit lines, exit
+///         iETHv2 test positions, restrict and pause legacy test DEXes and
+///         vaults, and move the osETH vaults to OracleV2 oracles.
 ///
 ///         Action 1 fully restricts the Liquidity Layer supply and borrow
 ///         limits of the dexV1 test DEX 0x6d83...e03a (wstETH/ETH, deployed
@@ -30,7 +30,8 @@ import {
 ///         Liquidity Layer borrow limit is at dust. The action raises the
 ///         limit, runs the rebalance through the Reserve Contract (the
 ///         vault's rebalancer), then restricts the vault to dust and pauses
-///         it at the Liquidity Layer.
+///         it at the Liquidity Layer. This freezes its 12 remaining small
+///         user positions (~0.64 wstETH collateral, ~0.455 ETH debt).
 ///
 ///         Action 3 raises the weETH/ETH T1 vault (182) from the IGP-140 dust
 ///         limits to launch limits.
@@ -38,12 +39,12 @@ import {
 ///         Action 4 reduces the Team Multisig's wstETH and cbBTC borrow limits
 ///         at the Liquidity Layer (IGP-107 DEX Lite credit) to dust and
 ///         pauses its borrow side for those tokens and for USDC and USDT
-///         (dust since IGP-132).
+///         (dust since IGP-132, rewritten to the same dust limits).
 ///
 ///         Action 5 exits iETHv2's residual test positions (old vault #3
 ///         NFT 18, vault 34 NFT 2296) through its DSA before Actions 6 and
 ///         7 freeze them. The Timelock sends 0.005 ETH for the ETH leg of
-///         the vault 34 repayment; unused ETH is refunded.
+///         the vault 34 repayment; unused ETH stays with iETHv2.
 ///
 ///         Action 6 fully restricts the Liquidity Layer supply and borrow
 ///         limits of the IGP-45 test DEXes dex id1 wstETH/ETH 0x25F0...F901
@@ -263,10 +264,11 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     ///            rebalanceVaults([vault 3]), remove the Timelock again.
     ///            The borrow drift (~0.0049 ETH) is borrowed to the Reserve.
     ///         3. Restrict the vault to dust (supply wstETH, borrow ETH) and
-    ///            pause it at the Liquidity Layer.
-    ///         The supply-side drift (~136 wei wstETH) is below Liquidity
-    ///         Layer storage precision (UserModule__OperateAmountInsufficient),
-    ///         so the vault's try/catch skips it; no Reserve allowance needed.
+    ///            pause it at the Liquidity Layer. This freezes the 12 remaining
+    ///            user positions (repay, withdraw and liquidation revert after).
+    ///         The supply-side drift (~135 wei wstETH) needs a wstETH transfer
+    ///         from the Reserve, which has no allowance for the vault; that leg
+    ///         reverts inside the vault's try/catch and is skipped.
     function action2() internal isActionSkippable(2) {
         address vault_ = getVaultAddress(VAULT_WSTETH_ETH_ID);
 
@@ -327,9 +329,10 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     /// @notice Action 4: Reduce the Team Multisig's wstETH & cbBTC borrow
     ///         limits on the Liquidity Layer to dust (base 10 / max 20 wei)
     ///         and pause its borrow side for both tokens. USDC and USDT
-    ///         (already dust from IGP-132) are paused too.
+    ///         (already dust from IGP-132) get the same dust write and pause.
     /// @dev The IGP-107
-    ///      DEX Lite credit lines ($1M wstETH, $1M cbBTC) are unused (0 debt).
+    ///      DEX Lite credit lines (sized at $1M each: ~185.4 wstETH,
+    ///      ~9.11 cbBTC) are unused (0 debt).
     ///      The AdminModule reverts `LimitZero` on a literal zero, so base 10 /
     ///      max 20 wei is the canonical dust limit. Mode 1 (with interest)
     ///      matches the existing config for both tokens, so no mode switch.
@@ -354,7 +357,7 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     ///        4e15 dex-side shares explicitly (4,000,005 dust shares stay),
     ///        and keep 1e8 col shares behind that dust.
     ///      - The DSA holds no ETH; the Timelock sends 0.005 ETH with the
-    ///        cast for the ETH leg (~0.00421 needed), unused ETH is refunded.
+    ///        cast for the ETH leg (~0.00421 needed), unused ETH stays in the DSA.
     ///        Payback caps 0.0045 wstETH / 0.005 ETH leave 30% / 19% headroom.
     ///      - try/catch: anyone can partially repay NFT 2296, which would
     ///        make the fixed share amount revert; that must not block the
@@ -563,9 +566,9 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     /// @notice Action 13: Move the osETH vaults to their OracleV2 oracles.
     /// @dev T1 vaults take the oracle address via `updateOracle(address)`;
     ///      T2/T3 vaults take the DeployerFactory nonce via
-    ///      `updateOracle(uint256)`. Both probe the new oracle's
+    ///      `updateOracle(uint256)` and probe the new oracle's
     ///      `getExchangeRateOperate()` / `getExchangeRateLiquidate()` before
-    ///      committing.
+    ///      committing. T1 only stores the address.
     function action13() internal isActionSkippable(13) {
         // Vault 153 (T1): VaultT1OracleV2_OSETH_USDC
         IFluidVaultT1(getVaultAddress(VAULT_OSETH_USDC_ID)).updateOracle(
