@@ -73,8 +73,7 @@ import {
 ///
 ///         Action 13 moves the osETH vaults 153-157 and 159 from their V1
 ///         oracles to OracleV2 oracles. The RedStone osETH/ETH feed that the
-///         V1 oracles of vaults 153-157 read is being wound down and already
-///         reverts as stale.
+///         V1 oracles of vaults 153-157 read currently reverts as stale.
 contract PayloadIGP142 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 142;
 
@@ -353,7 +352,7 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
     ///      - NFT 2296: vault 34 books 4,000,002 more debt shares than dex
     ///        id1 records for it, so a max payback underflows. Repay the
     ///        4e15 dex-side shares explicitly (4,000,005 dust shares stay),
-    ///        and keep 1e13 col shares (0.1%) behind that dust.
+    ///        and keep 1e8 col shares behind that dust.
     ///      - The DSA holds no ETH; the Timelock sends 0.005 ETH with the
     ///        cast for the ETH leg (~0.00421 needed), unused ETH is refunded.
     ///        Payback caps 0.0045 wstETH / 0.005 ETH leave 30% / 19% headroom.
@@ -375,7 +374,7 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
             0
         );
 
-        // vault 34 NFT 2296: repay the dex-side debt shares, withdraw all but 0.1% of the collateral
+        // vault 34 NFT 2296: repay the dex-side debt shares, withdraw all but 1e8 collateral shares
         targets_[1] = "FLUID-VAULT-T4-A";
         datas_[1] = abi.encodeWithSelector(
             bytes4(
@@ -386,7 +385,7 @@ contract PayloadIGP142 is PayloadIGPPriceHelpers {
             T4OperatePerfect({
                 vaultAddress: VAULT_34_WSTETH_ETH_T4,
                 nftId: 2296,
-                perfectColShares: -9_990_000_000_000_000,
+                perfectColShares: -9_999_999_900_000_000,
                 colToken0MinMax: -1,
                 colToken1MinMax: -1,
                 perfectDebtShares: -4_000_000_000_000_000,

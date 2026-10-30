@@ -4,7 +4,7 @@
 
 ## Summary
 
-This proposal fully restricts and pauses the early **dexV1 test DEX** (wstETH/ETH, `0x6d83...e03a`) at the Liquidity Layer so it can no longer withdraw or borrow, rebalances the **wstETH/ETH T1 vault (3)** borrow side that is stuck behind its dust borrow limit, raises the **weETH/ETH T1 vault (182)** from the IGP-140 dust limits to launch limits, reduces the **Team Multisig** wstETH and cbBTC borrow limits on the Liquidity Layer to dust and pauses them, withdraws **iETHv2**'s residual test positions before they are frozen, fully restricts the Liquidity Layer limits of the IGP-45 test DEXes **id1** (wstETH/ETH) and **id3** (WBTC/cbBTC), restricts and pauses at the Liquidity Layer the five **pre-launch vaults** of the old VaultFactory, the two old DEXes, and the debt of vaults **42 / 43**, and restricts and pauses the last IGP-45 test DEX **id2** (USDC/USDT) and the six empty T3 vaults **35-40** built on it. It also moves the **osETH vaults** (153-157, 159) from V1 oracles to OracleV2 oracles; the RedStone osETH/ETH feed behind the V1 oracles is being wound down and already reverts.
+This proposal fully restricts and pauses the early **dexV1 test DEX** (wstETH/ETH, `0x6d83...e03a`) at the Liquidity Layer so it can no longer withdraw or borrow, rebalances the **wstETH/ETH T1 vault (3)** borrow side that is stuck behind its dust borrow limit and then restricts and pauses it, raises the **weETH/ETH T1 vault (182)** from the IGP-140 dust limits to launch limits, reduces the **Team Multisig** wstETH and cbBTC borrow limits on the Liquidity Layer to dust and pauses them, withdraws **iETHv2**'s residual test positions before they are frozen, fully restricts the Liquidity Layer limits of the IGP-45 test DEXes **id1** (wstETH/ETH) and **id3** (WBTC/cbBTC), restricts and pauses at the Liquidity Layer the five **pre-launch vaults** of the old VaultFactory, the two old DEXes, and the debt of vaults **42 / 43**, restricts and pauses the last IGP-45 test DEX **id2** (USDC/USDT) and the six empty T3 vaults **35-40** built on it, restricts and pauses the **USDe vaults 66-73** and the dust-launch vaults **95 / 167**, closes the **dex 5** test market and its vault 62, and caps **dex 27** supply shares. It also moves the **osETH vaults** (153-157, 159) from V1 oracles to OracleV2 oracles; the RedStone osETH/ETH feed behind the V1 oracles currently reverts as stale.
 
 ## Code Changes
 
@@ -68,10 +68,10 @@ The supply-side difference (≈135 wei wstETH) is below Liquidity Layer storage 
 | Position | Holding | Call |
 | --- | --- | --- |
 | NFT 18, pre-launch vault #3 wstETH/ETH `0x28680f14C4Bb86B71119BC6e90E4e6D87E6D1f51` | 0.01 wstETH, no debt | `FLUID-A.operate`: withdraw all |
-| NFT 2296, vault 34 wstETH/ETH T4 `0x57fed7c9b3c763999c519264931790cBcA331417` (on dex id1) | ≈0.0085 wstETH + 0.0104 ETH collateral, ≈0.0034 wstETH + 0.0042 ETH debt | `FLUID-VAULT-T4-A.operatePerfect`: repay `4e15` debt shares, withdraw 99.9% of the collateral |
+| NFT 2296, vault 34 wstETH/ETH T4 `0x57fed7c9b3c763999c519264931790cBcA331417` (on dex id1) | ≈0.0085 wstETH + 0.0104 ETH collateral, ≈0.0034 wstETH + 0.0042 ETH debt | `FLUID-VAULT-T4-A.operatePerfect`: repay `4e15` debt shares, withdraw all but 1e8 collateral shares |
 
 - The Timelock sends **0.005 ETH** with the cast to cover the ETH leg of the vault 34 repayment; unused ETH is refunded. The wstETH leg is covered by the 0.01 wstETH freed from NFT 18.
-- Vault 34 books slightly more debt shares than dex id1 records for it, so a max payback reverts. The action repays the dex-side shares explicitly; a dust debt and 0.1% of the collateral stay and are frozen by Actions 6 and 7.
+- Vault 34 books slightly more debt shares than dex id1 records for it, so a max payback reverts. The action repays the dex-side shares explicitly; a dust debt and 1e8 collateral shares (about 1e-8 of the position) stay and are frozen by Actions 6 and 7.
 - The cast is wrapped in `try/catch`, so a third-party partial repayment of NFT 2296 cannot block the rest of the proposal.
 - The withdrawn funds return to iETHv2.
 
@@ -172,7 +172,7 @@ Dex 45 itself is left unchanged.
 
 ### Action 13: Move the osETH Vaults to OracleV2
 
-The V1 oracles of vaults 153-157 price osETH on RedStone's osETH/ETH feed (`0x66ac...B32C`), which StakeWise is winding down; the feed already reverts as stale, so these vaults cannot currently operate or liquidate. The OracleV2 oracles price osETH on the StakeWise capped rate (`CappedRateBalancer_OSETH_CenterPriceInverted`, `0xddAF...06BB`) with Chainlink ETH/USD, and never read the RedStone feed. Vault 159 moves with them for consistency.
+The V1 oracles of vaults 153-157 price osETH on RedStone's osETH/ETH feed (`0x66ac...B32C`), which currently reverts as stale, so these vaults cannot currently operate or liquidate. The OracleV2 oracles price osETH on the StakeWise capped rate (`CappedRateBalancer_OSETH_CenterPriceInverted`, `0xddAF...06BB`) with Chainlink ETH/USD, and never read the RedStone feed. Vault 159 moves with them for consistency.
 
 | Vault | Address | Type | New oracle |
 | --- | --- | --- | --- |
@@ -199,7 +199,7 @@ T1 vaults take the oracle address via `updateOracle(address)`; T2/T3 vaults take
 10. **dex 5 test market**: closes the share caps and vault 62 borrow config left open on a never-launched test DEX.
 11. **dex 27**: stops new deposits into the hidden wstUSR-USDC DEX.
 12. **Dust-launch vaults 95 / 167**: restricts and pauses two mainnet vaults that only hold dust launch positions.
-13. **osETH vaults**: moves vaults 153-157 and 159 to OracleV2 oracles, off the RedStone osETH/ETH feed that is being wound down.
+13. **osETH vaults**: moves vaults 153-157 and 159 to OracleV2 oracles, off the RedStone osETH/ETH feed, which currently reverts as stale.
 
 ## Conclusion
 
