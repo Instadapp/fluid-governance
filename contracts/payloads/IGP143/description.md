@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal performs nine actions on mainnet. Action 1 sets the three **tBTC T1 vaults** (88 tBTC/USDC, 89 tBTC/USDT, 90 tBTC/GHO) to exit-only at the Liquidity Layer: borrow limits are fully restricted to dust, tBTC withdrawal limits are set to current supply plus a 20% buffer, and the vaults are unpaused so users can repay and withdraw. Action 2 updates the **DSA connector-registry chiefs**: the five remaining chiefs are removed and the **Team Multisig 24h timelock** becomes the ConnectorsV2 chief. Action 3 collects the Liquidity Layer's **USDC**, **USDT**, **GHO**, **USDe** and **ETH** revenue into the Fluid Reserve and sends the monthly tranche of the **$350k/month** grant, mostly in stablecoins, to the **Team Multisig**. Action 4 updates the oracle on the **USDC-ETH / USDC-ETH T4 vault (77)**. Actions 5 to 9 upgrade the **Liquidity Layer pause setup**, one part per action so each can be skipped on its own: rollbacks registered (5), new Admin and User modules with the Liquidity guardian moved to the new PauseAuthLiquidity (6), the OracleV2 guardian (7), and the DEX pause (8) and limits (9) global auths moved to the new auth contracts.
+This proposal performs nine actions on mainnet. Action 1 sets the three **tBTC T1 vaults** (88 tBTC/USDC, 89 tBTC/USDT, 90 tBTC/GHO) to exit-only at the Liquidity Layer: borrow limits are fully restricted to dust, tBTC withdrawal limits are set to current supply plus a 20% buffer, and the vaults are unpaused so users can repay and withdraw. Action 2 updates the **DSA connector-registry chiefs**: the five remaining chiefs are removed and the **Team Multisig 24h timelock** becomes the ConnectorsV2 chief. Action 3 collects the Liquidity Layer's **USDC**, **USDT**, **GHO**, **USDe** and **ETH** revenue into the Fluid Reserve and sends the monthly tranche of the **$350k/month** grant, mostly in stablecoins, to the **Team Multisig**. Action 4 updates the oracle on the **USDC-ETH / USDC-ETH T4 vault (77)**. Actions 5 to 9 upgrade the **Liquidity Layer pause setup**, one part per action so the parts can be skipped separately (5 and 6 only together): rollbacks registered (5), new Admin and User modules with the Liquidity guardian moved to the new PauseAuthLiquidity (6), the OracleV2 guardian (7), and the DEX pause (8) and limits (9) global auths moved to the new auth contracts.
 
 ## Code Changes
 
@@ -70,7 +70,7 @@ At authoring (block 26458491) the Reserve plus uncollected Liquidity revenue hol
 
 ### Actions 5 to 9: Liquidity Layer Pause Upgrade
 
-All calls are made by the governance timelock `0x2386DC45AdDed673317eF068992F19421B481F4c`, in this order. Liquidity proxy `0x52Aa899454998Be5b000Ad077a46Bbe360F4e497`, DexFactory `0x91716C4EDA1Fb55e84Bf8b4c7085f84285c19085`, OracleV2 `0x643E32D5a39C1B0a483BCF2C5c2c55C4b982ac06`. Each part is its own action and can be skipped on its own.
+All calls are made by the governance timelock `0x2386DC45AdDed673317eF068992F19421B481F4c`, in this order. Liquidity proxy `0x52Aa899454998Be5b000Ad077a46Bbe360F4e497`, DexFactory `0x91716C4EDA1Fb55e84Bf8b4c7085f84285c19085`, OracleV2 `0x643E32D5a39C1B0a483BCF2C5c2c55C4b982ac06`. Each part is its own action. Actions 7, 8 and 9 can each be skipped on their own; Actions 5 and 6 should only be skipped together.
 
 | Action | Contract | Call |
 | --- | --- | --- |
@@ -82,7 +82,8 @@ All calls are made by the governance timelock `0x2386DC45AdDed673317eF068992F194
 
 - Action 5: the rollback cleanup is permissionless. The payload only calls it while a registration still exists, so the action also runs if someone clears it before execution. Registration reverts while the expired registrations exist, so cleanup and registration stay in one action.
 - Action 6: the module swap and the Liquidity guardian change stay in one action, because the old PauseAuthLiquidity only calls the old Admin module's pause functions and the new PauseAuthLiquidity only the new module's. After the swap the action checks that `pauseUserBorrow` routes to the new Admin module and that the old `pauseUser`, `pauseTokens(address[])` and `unpauseTokens(address[])` are no longer routed.
-- Action 6 runs after Action 1: the new Admin module no longer routes `unpauseUser`, which Action 1 uses. Rollbacks can only be registered while the old modules are routed, so skipping Action 5 while executing Action 6 leaves the swap without a registered rollback.
+- Action 6 runs after Action 1: the new Admin module no longer routes `unpauseUser`, which Action 1 uses. Rollbacks can only be registered while the old modules are routed, so skipping Action 5 while executing Action 6 leaves the swap without a registered rollback. Skipping Action 6 while executing Action 5 leaves rollback registrations for the old modules and the dummy implementation that cannot be cleared or replaced for 7 days, so a later swap would have to wait or go without a rollback.
+- A rollback (Team Multisig, within 7 days of execution) only restores the module routing. The guardian stays the new PauseAuthLiquidity, which cannot pause on the old modules, so after a rollback pausing is manual by the Team Multisig until governance sets the guardian again.
 - Actions 7, 8 and 9 are independent of each other and of Actions 5 and 6.
 
 ## Description

@@ -84,9 +84,10 @@ interface IFluidOracleV2Guardians {
 ///           PauseAuthLiquidity (one action: the old PauseAuthLiquidity only
 ///           calls the old module's pause functions, the new one only the
 ///           new module's). Runs after Action 1 because the new Admin module
-///           no longer routes `unpauseUser`, which Action 1 uses. Skipping
-///           Action 5 but running Action 6 leaves the swap without a
-///           registered rollback.
+///           no longer routes `unpauseUser`, which Action 1 uses.
+///           Skip Actions 5 and 6 together: Action 6 alone has no registered
+///           rollback, Action 5 alone leaves registrations that block
+///           registering again for 7 days.
 ///         - Action 7 adds PauseAuthOracleV2 as OracleV2 guardian.
 ///         - Action 8 moves the DEX pause global auth to the new PauseAuthDex.
 ///         - Action 9 moves the DEX limits global auth to the new
@@ -399,6 +400,9 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
     ///            dummy implementation
     ///         Registration reverts while the expired registrations exist,
     ///         so both steps stay in one action.
+    ///         Skip together with Action 6: the registrations made here
+    ///         cannot be cleared or replaced for 7 days (ROLLBACK_PERIOD), so
+    ///         a later swap would have to wait or go without a rollback.
     function action5() internal isActionSkippable(5) {
         IFluidLiquidityRollbackModule rollback_ = IFluidLiquidityRollbackModule(
             address(LIQUIDITY)
@@ -428,6 +432,10 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
     ///         Must run after Action 1. Run Action 5 first so the swap has
     ///         a registered rollback (rollbacks cannot be registered once
     ///         the old modules are removed).
+    ///         A rollback only restores the module routing, not the guardian:
+    ///         the new PauseAuthLiquidity cannot pause on the old modules and
+    ///         the old one is no longer a guardian, so pausing is then manual
+    ///         (Team Multisig) until governance sets the guardian again.
     function action6() internal isActionSkippable(6) {
         IInfiniteProxy proxy_ = IInfiniteProxy(address(LIQUIDITY));
 
