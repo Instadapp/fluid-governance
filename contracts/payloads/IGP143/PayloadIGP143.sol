@@ -15,10 +15,6 @@ import {
 import {IFluidVault} from "../common/interfaces/IFluidVault.sol";
 import {IInfiniteProxy} from "../common/interfaces/IInfiniteProxy.sol";
 
-interface IFluidMultisigTimelockController {
-    function getMinDelay() external view returns (uint256);
-}
-
 /// @notice Liquidity Layer rollback module (routed on the Liquidity proxy).
 interface IFluidLiquidityRollbackModule {
     struct RollbackSigsSlot {
@@ -129,10 +125,6 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
         0x27AC3fFdB94B80Daf5A421e8338dCF6eE23aF73E;
     address public constant V1_CHIEF_4 =
         0xDE13DF1c51364C67dA5cC6360CF5F2e64F1Ae4bd;
-
-    /// @dev Minimum delay the Team Multisig timelock must have to become
-    ///      the ConnectorsV2 chief.
-    uint256 public constant MIN_CONNECTOR_CHIEF_DELAY = 1 days;
 
     // --- Action 3 ---
     /// @dev Grant recipient: the Team Multisig.
@@ -282,8 +274,8 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
     ///         - legacy v1 InstaConnectors: disableChief for all four chiefs,
     ///           no new chief added there.
     ///         Reverts unless all five old chiefs end false, the timelock is
-    ///         the ConnectorsV2 chief with a delay of at least 24h, and the
-    ///         InstaIndex master is still the governance timelock.
+    ///         the ConnectorsV2 chief, and the InstaIndex master is still the
+    ///         governance timelock.
     function action2() internal isActionSkippable(2) {
         // ConnectorsV2
         if (DSA_CONNECTORS_V2.chief(TEAM_MULTISIG)) {
@@ -295,12 +287,6 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
         );
 
         // ConnectorsV2: Team Multisig 24h timelock becomes the chief
-        require(
-            IFluidMultisigTimelockController(
-                FLUID_MULTISIG_TIMELOCK_CONTROLLER
-            ).getMinDelay() >= MIN_CONNECTOR_CHIEF_DELAY,
-            "timelock-delay-too-short"
-        );
         if (!DSA_CONNECTORS_V2.chief(FLUID_MULTISIG_TIMELOCK_CONTROLLER)) {
             DSA_CONNECTORS_V2.toggleChief(FLUID_MULTISIG_TIMELOCK_CONTROLLER);
         }

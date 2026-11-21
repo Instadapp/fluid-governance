@@ -36,7 +36,7 @@ The InstaIndex (`0x2971AdFa57b20E5a416aE5a708A8655A9c74f723`) master is already 
 | | | `disableChief(address)` | remove `0xDE13DF1c51364C67dA5cC6360CF5F2e64F1Ae4bd` |
 
 - `toggleChief` flips the flag, so the payload only calls it while each address is not yet in its target state. It can never re-grant chief to the Team Multisig or remove it from the timelock.
-- **Team Multisig timelock** `0x4d6CE4F4498d59Eed397bCbC687805a07f9b2346` (OpenZeppelin `TimelockController`): minimum delay 24 hours, proposer and canceller = Team Multisig, executor = Fluid Safe `0x196Ed45eC4ACA949E7AA921ceC81e219e682775e`, admin = the timelock itself. These are the only role grants since its deployment and none was revoked. The payload requires a delay of at least 24 hours before it adds the chief.
+- **Team Multisig timelock** `0x4d6CE4F4498d59Eed397bCbC687805a07f9b2346` (OpenZeppelin `TimelockController`): minimum delay 24 hours, proposer and canceller = Team Multisig, executor = Fluid Safe `0x196Ed45eC4ACA949E7AA921ceC81e219e682775e`, admin = the timelock itself. These are the only role grants since its deployment and none was revoked.
 - A ConnectorsV2 chief can only add, update and remove connectors. Adding or removing chiefs stays with the InstaIndex master (`toggleChief` is master-only), so the timelock cannot grant chief to anyone else.
 - The v1 registry gets no new chief. No connector was enabled on it since June 2021; all four chiefs are removed in the same execution and v1 changes stay with governance.
 - The action reverts unless all five old chiefs end with `chief == false`, the timelock is the ConnectorsV2 chief, and the InstaIndex master is still the governance timelock.
