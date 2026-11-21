@@ -57,36 +57,38 @@ interface IFluidOracleV2Guardians {
 ///         After this action users can repay and withdraw, but no new
 ///         borrow is possible.
 ///
-///         Action 2 updates the DSA connector chiefs: removes the Team
-///         Multisig on ConnectorsV2 and four addresses on the legacy v1
-///         InstaConnectors, and makes the Team Multisig 24h timelock the
-///         ConnectorsV2 chief. The InstaIndex master stays unchanged.
+///         Action 2 removes the Team Multisig as ConnectorsV2 chief and makes
+///         the Team Multisig 24h timelock the ConnectorsV2 chief. The
+///         InstaIndex master stays unchanged.
 ///
-///         Action 3 collects the Liquidity Layer's USDC, USDT, GHO, USDe and
+///         Action 3 removes the four chiefs on the legacy v1 InstaConnectors.
+///
+///         Action 4 collects the Liquidity Layer's USDC, USDT, GHO, USDe and
 ///         ETH revenue into the Fluid Reserve and sends the monthly grant
-///         tranche of the $350,000/month grant (IGP-139), mostly in
-///         stablecoins, to the Team Multisig.
+///         tranche of the $350,000/month grant (IGP-139), in stablecoins,
+///         to the Team Multisig.
 ///
-///         Action 4 updates the oracle of the T4 USDC-ETH / USDC-ETH
+///         Action 5 updates the oracle of the T4 USDC-ETH / USDC-ETH
 ///         vault 77 (DeployerFactory nonce 410).
 ///
-///         Actions 5 to 9 upgrade the Liquidity Layer pause setup, one
-///         part per action so each can be skipped on its own:
-///         - Action 5 clears the expired rollback registrations and registers
+///         Actions 6 to 11 upgrade the Liquidity Layer pause setup, one
+///         part per action:
+///         - Action 6 clears the expired rollback registrations and registers
 ///           rollbacks for the Admin and User modules and the dummy
 ///           implementation.
-///         - Action 6 swaps in the new Admin and User modules and dummy
-///           implementation and moves the Liquidity guardian to the new
-///           PauseAuthLiquidity (one action: the old PauseAuthLiquidity only
-///           calls the old module's pause functions, the new one only the
-///           new module's). Runs after Action 1 because the new Admin module
+///         - Action 7 swaps in the new Admin and User modules and dummy
+///           implementation. Runs after Action 1 because the new Admin module
 ///           no longer routes `unpauseUser`, which Action 1 uses.
-///           Skip Actions 5 and 6 together: Action 6 alone has no registered
-///           rollback, Action 5 alone leaves registrations that block
+///           Skip Actions 6 and 7 together: Action 7 alone has no registered
+///           rollback, Action 6 alone leaves registrations that block
 ///           registering again for 7 days.
-///         - Action 7 adds PauseAuthOracleV2 as OracleV2 guardian.
-///         - Action 8 moves the DEX pause global auth to the new PauseAuthDex.
-///         - Action 9 moves the DEX limits global auth to the new
+///         - Action 8 moves the Liquidity guardian to the new
+///           PauseAuthLiquidity. Skip together with Action 7: the old
+///           PauseAuthLiquidity only calls the old module's pause functions,
+///           the new one only the new module's.
+///         - Action 9 adds PauseAuthOracleV2 as OracleV2 guardian.
+///         - Action 10 moves the DEX pause global auth to the new PauseAuthDex.
+///         - Action 11 moves the DEX limits global auth to the new
 ///           LimitsAuthDex.
 contract PayloadIGP143 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 143;
@@ -105,10 +107,7 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
     ///      Vault 90: supply ≈0.0004 tBTC (≈$31) -> 0.0005 tBTC (≈$39)
     uint256 public constant VAULT_90_BASE_WITHDRAWAL_LIMIT = 5 * 1e14;
 
-    uint256 public constant WITHDRAWAL_EXPAND_PERCENT = 10 * 1e2; // 10%
-    uint256 public constant WITHDRAWAL_EXPAND_DURATION = 12 hours;
-
-    // --- Action 2 ---
+    // --- Actions 2 and 3 ---
     /// @dev InstaIndex: master() is the governance timelock and stays so.
     IDSAInstaIndex public constant INSTA_INDEX =
         IDSAInstaIndex(0x2971AdFa57b20E5a416aE5a708A8655A9c74f723);
@@ -126,31 +125,23 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
     address public constant V1_CHIEF_4 =
         0xDE13DF1c51364C67dA5cC6360CF5F2e64F1Ae4bd;
 
-    // --- Action 3 ---
+    // --- Action 4 ---
     /// @dev Grant recipient: the Team Multisig.
     address public constant MONTHLY_GRANT_RECIPIENT = TEAM_MULTISIG;
-    /// @notice Monthly tranche of the $350,000/month grant (IGP-139), mostly
-    ///         in stablecoins: $248k in USDC, USDT, GHO and USDe (~71%), the
-    ///         rest in ETH and stETH. Sized to what the Reserve plus
-    ///         uncollected Liquidity revenue holds at authoring (block
-    ///         26458491: ~100.3k USDC, ~96.3k USDT, ~52.2k GHO, ~5.5k USDe,
-    ///         ~18.4 ETH, ~40.7 stETH). ~$350k at the 7-day average ETH /
-    ///         stETH price of ~$1,815 (13-19 Nov 2026). Fixed token amounts.
-    uint256 public constant MONTHLY_GRANT_USDC = 98_000 * 1e6;
-    uint256 public constant MONTHLY_GRANT_USDT = 94_000 * 1e6;
-    uint256 public constant MONTHLY_GRANT_GHO = 51_000 * 1e18;
-    uint256 public constant MONTHLY_GRANT_USDE = 5_000 * 1e18;
-    uint256 public constant MONTHLY_GRANT_ETH = 17 ether;
-    uint256 public constant MONTHLY_GRANT_STETH = 39 ether;
+    /// @notice Monthly tranche of the $350,000/month grant (IGP-139), in
+    ///         stablecoins.
+    uint256 public constant MONTHLY_GRANT_USDC = 150_000 * 1e6;
+    uint256 public constant MONTHLY_GRANT_USDT = 150_000 * 1e6;
+    uint256 public constant MONTHLY_GRANT_GHO = 50_000 * 1e18;
 
-    // --- Action 4 ---
+    // --- Action 5 ---
     uint256 public constant VAULT_USDC_ETH_USDC_ETH_ID = 77; // T4: USDC-ETH / USDC-ETH
     /// @dev VaultT4Oracle USDC-ETH / USDC-ETH,
     ///      0x317155C3EDdB9ae57097D98b2954CB6cC7f38f6D.
     ///      Replaces nonce 60 (0x9c9cad6Dd23fbDCdA3348726c306bAF20c428c4C).
     uint256 public constant VAULT_77_NEW_ORACLE_NONCE = 410;
 
-    // --- Actions 5 to 9 ---
+    // --- Actions 6 to 11 ---
     /// @dev Expired rollback registrations on the Liquidity Layer, cleared
     ///      before the new rollbacks are registered.
     address public constant EXPIRED_ROLLBACK_USER_MODULE =
@@ -202,29 +193,35 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
         // Action 1: Restrict tBTC vaults 88/89/90 borrow to dust, set withdrawal limits and unpause them (exit-only).
         action1();
 
-        // Action 2: Remove the remaining DSA connector chiefs and make the Team Multisig 24h timelock the ConnectorsV2 chief.
+        // Action 2: ConnectorsV2: remove the Team Multisig as chief and make the Team Multisig 24h timelock the chief.
         action2();
 
-        // Action 3: Collect Liquidity Layer revenue and send the monthly grant tranche.
+        // Action 3: Legacy v1 InstaConnectors: remove the four remaining chiefs.
         action3();
 
-        // Action 4: Update oracle on the USDC-ETH / USDC-ETH T4 vault 77.
+        // Action 4: Collect Liquidity Layer revenue and send the monthly grant tranche.
         action4();
 
-        // Action 5: Liquidity Layer: clear expired rollback registrations and register the new rollbacks.
+        // Action 5: Update oracle on the USDC-ETH / USDC-ETH T4 vault 77.
         action5();
 
-        // Action 6: Liquidity Layer: swap the Admin and User modules and the guardian (must run after Action 1).
+        // Action 6: Liquidity Layer: clear expired rollback registrations and register the new rollbacks.
         action6();
 
-        // Action 7: OracleV2: add PauseAuthOracleV2 as guardian.
+        // Action 7: Liquidity Layer: swap the Admin and User modules (must run after Action 1).
         action7();
 
-        // Action 8: DexFactory: move the pause global auth to the new PauseAuthDex.
+        // Action 8: Liquidity Layer: move the guardian to the new PauseAuthLiquidity.
         action8();
 
-        // Action 9: DexFactory: move the limits global auth to the new LimitsAuthDex.
+        // Action 9: OracleV2: add PauseAuthOracleV2 as guardian.
         action9();
+
+        // Action 10: DexFactory: move the pause global auth to the new PauseAuthDex.
+        action10();
+
+        // Action 11: DexFactory: move the limits global auth to the new LimitsAuthDex.
+        action11();
     }
 
     function verifyProposal() public view override {}
@@ -265,19 +262,14 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
         );
     }
 
-    /// @notice Action 2: Remove the remaining DSA connector chiefs and make
-    ///         the Team Multisig 24h timelock the ConnectorsV2 chief.
-    ///         - ConnectorsV2 (used by DSA v2 cast): toggleChief(Team Multisig)
-    ///           to remove it, toggleChief(Team Multisig timelock) to add it.
-    ///           toggleChief flips the flag, so each call only runs while the
-    ///           flag is not yet in its target state.
-    ///         - legacy v1 InstaConnectors: disableChief for all four chiefs,
-    ///           no new chief added there.
-    ///         Reverts unless all five old chiefs end false, the timelock is
-    ///         the ConnectorsV2 chief, and the InstaIndex master is still the
-    ///         governance timelock.
+    /// @notice Action 2: ConnectorsV2 (used by DSA v2 cast): remove the Team
+    ///         Multisig as chief and make the Team Multisig 24h timelock the
+    ///         chief. toggleChief flips the flag, so each call only runs while
+    ///         the flag is not yet in its target state.
+    ///         Reverts unless the Team Multisig ends false, the timelock ends
+    ///         true, and the InstaIndex master is still the governance
+    ///         timelock.
     function action2() internal isActionSkippable(2) {
-        // ConnectorsV2
         if (DSA_CONNECTORS_V2.chief(TEAM_MULTISIG)) {
             DSA_CONNECTORS_V2.toggleChief(TEAM_MULTISIG);
         }
@@ -286,7 +278,6 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
             "v2-chief-not-removed"
         );
 
-        // ConnectorsV2: Team Multisig 24h timelock becomes the chief
         if (!DSA_CONNECTORS_V2.chief(FLUID_MULTISIG_TIMELOCK_CONTROLLER)) {
             DSA_CONNECTORS_V2.toggleChief(FLUID_MULTISIG_TIMELOCK_CONTROLLER);
         }
@@ -295,7 +286,17 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
             "v2-timelock-chief-not-set"
         );
 
-        // Legacy v1 InstaConnectors
+        require(
+            INSTA_INDEX.master() == address(TIMELOCK),
+            "insta-index-master-changed"
+        );
+    }
+
+    /// @notice Action 3: Legacy v1 InstaConnectors: disableChief for all four
+    ///         chiefs, no new chief added there.
+    ///         Reverts unless all four end false and the InstaIndex master is
+    ///         still the governance timelock.
+    function action3() internal isActionSkippable(3) {
         address[4] memory v1Chiefs_ = [
             V1_CHIEF_1,
             V1_CHIEF_2,
@@ -318,14 +319,14 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
         );
     }
 
-    /// @notice Action 3: Collect the Liquidity Layer's USDC, USDT, GHO, USDe
+    /// @notice Action 4: Collect the Liquidity Layer's USDC, USDT, GHO, USDe
     ///         and ETH revenue into the Fluid Reserve and transfer the
     ///         monthly tranche of the $350,000/month grant to the Team
     ///         Multisig.
     /// @dev IGP-141 Action 2 pattern (`collectRevenue`, then
     ///      `FLUID_RESERVE.withdrawFunds`, memo "FOUNDATION GRANT"), to the
     ///      Team Multisig instead of the Foundation address.
-    function action3() internal isActionSkippable(3) {
+    function action4() internal isActionSkippable(4) {
         // Step 1: Collect Liquidity Layer revenue into the Reserve.
         address[] memory liquidityTokens_ = new address[](5);
         liquidityTokens_[0] = USDC_ADDRESS; // ~81.3k uncollected
@@ -337,26 +338,17 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
         LIQUIDITY.collectRevenue(liquidityTokens_);
 
         // Step 2: Transfer the tranche to the Team Multisig.
-        address[] memory tokens_ = new address[](6);
-        uint256[] memory amounts_ = new uint256[](6);
+        address[] memory tokens_ = new address[](3);
+        uint256[] memory amounts_ = new uint256[](3);
 
         tokens_[0] = USDC_ADDRESS;
-        amounts_[0] = MONTHLY_GRANT_USDC; // 98,000 USDC
+        amounts_[0] = MONTHLY_GRANT_USDC; // 150,000 USDC
 
         tokens_[1] = USDT_ADDRESS;
-        amounts_[1] = MONTHLY_GRANT_USDT; // 94,000 USDT
+        amounts_[1] = MONTHLY_GRANT_USDT; // 150,000 USDT
 
         tokens_[2] = GHO_ADDRESS;
-        amounts_[2] = MONTHLY_GRANT_GHO; // 51,000 GHO
-
-        tokens_[3] = USDe_ADDRESS;
-        amounts_[3] = MONTHLY_GRANT_USDE; // 5,000 USDe
-
-        tokens_[4] = ETH_ADDRESS;
-        amounts_[4] = MONTHLY_GRANT_ETH; // 17 ETH
-
-        tokens_[5] = stETH_ADDRESS;
-        amounts_[5] = MONTHLY_GRANT_STETH; // 39 stETH
+        amounts_[2] = MONTHLY_GRANT_GHO; // 50,000 GHO
 
         IFluidReserveContractV2(address(FLUID_RESERVE)).withdrawFunds(
             tokens_,
@@ -366,30 +358,30 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
         );
     }
 
-    /// @notice Action 4: Update oracle on the USDC-ETH / USDC-ETH T4
+    /// @notice Action 5: Update oracle on the USDC-ETH / USDC-ETH T4
     ///         vault 77.
     /// @dev T4 vaults take the DeployerFactory nonce via
     ///      `updateOracle(uint256)` and probe the new oracle's
     ///      `getExchangeRateOperate()` / `getExchangeRateLiquidate()` before
     ///      committing (IGP-142 Action 13 pattern).
-    function action4() internal isActionSkippable(4) {
+    function action5() internal isActionSkippable(5) {
         // Vault 77 (T4): VaultT4Oracle USDC-ETH / USDC-ETH, nonce 60 -> 410
         IFluidVault(getVaultAddress(VAULT_USDC_ETH_USDC_ETH_ID)).updateOracle(
             VAULT_77_NEW_ORACLE_NONCE
         );
     }
 
-    /// @notice Action 5: Liquidity Layer rollbacks.
+    /// @notice Action 6: Liquidity Layer rollbacks.
     ///         1. clear the expired rollback registrations (skipped for any
     ///            already cleared, the call is permissionless)
     ///         2. register rollbacks for the Admin and User modules and the
     ///            dummy implementation
     ///         Registration reverts while the expired registrations exist,
     ///         so both steps stay in one action.
-    ///         Skip together with Action 6: the registrations made here
+    ///         Skip together with Action 7: the registrations made here
     ///         cannot be cleared or replaced for 7 days (ROLLBACK_PERIOD), so
     ///         a later swap would have to wait or go without a rollback.
-    function action5() internal isActionSkippable(5) {
+    function action6() internal isActionSkippable(6) {
         IFluidLiquidityRollbackModule rollback_ = IFluidLiquidityRollbackModule(
             address(LIQUIDITY)
         );
@@ -410,22 +402,15 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
         rollback_.registerRollbackDummyImplementation();
     }
 
-    /// @notice Action 6: Liquidity Layer module swap and guardian.
-    ///         1. swap the Admin and User modules, remove the Zircuit
-    ///            transfer module, set the new dummy implementation
-    ///         2. Liquidity guardians: add the new PauseAuthLiquidity,
-    ///            remove the old one
-    ///         Must run after Action 1. Run Action 5 first so the swap has
+    /// @notice Action 7: Liquidity Layer module swap: swap the Admin and User
+    ///         modules, remove the Zircuit transfer module, set the new dummy
+    ///         implementation.
+    ///         Must run after Action 1. Run Action 6 first so the swap has
     ///         a registered rollback (rollbacks cannot be registered once
     ///         the old modules are removed).
-    ///         A rollback only restores the module routing, not the guardian:
-    ///         the new PauseAuthLiquidity cannot pause on the old modules and
-    ///         the old one is no longer a guardian, so pausing is then manual
-    ///         (Team Multisig) until governance sets the guardian again.
-    function action6() internal isActionSkippable(6) {
+    function action7() internal isActionSkippable(7) {
         IInfiniteProxy proxy_ = IInfiniteProxy(address(LIQUIDITY));
 
-        // 1. Module swap
         proxy_.removeImplementation(OLD_ADMIN_MODULE);
         proxy_.removeImplementation(OLD_USER_MODULE);
         proxy_.removeImplementation(ZIRCUIT_TRANSFER_MODULE);
@@ -454,8 +439,17 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
             proxy_.getSigsImplementation(0x7a4df6eb) == address(0), // unpauseTokens(address[])
             "old-unpause-tokens-routed"
         );
+    }
 
-        // 2. Liquidity guardians
+    /// @notice Action 8: Liquidity guardians: add the new PauseAuthLiquidity,
+    ///         remove the old one.
+    ///         Skip together with Action 7: the old PauseAuthLiquidity only
+    ///         calls the old module's pause functions, the new one only the
+    ///         new module's.
+    ///         A module rollback does not restore the guardian: pausing is
+    ///         then manual (Team Multisig) until governance sets the guardian
+    ///         again.
+    function action8() internal isActionSkippable(8) {
         FluidLiquidityAdminStructs.AddressBool[]
             memory guardians_ = new FluidLiquidityAdminStructs.AddressBool[](2);
         guardians_[0] = FluidLiquidityAdminStructs.AddressBool({
@@ -469,24 +463,24 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
         LIQUIDITY.updateGuardians(guardians_);
     }
 
-    /// @notice Action 7: OracleV2 guardian: add PauseAuthOracleV2.
-    function action7() internal isActionSkippable(7) {
+    /// @notice Action 9: OracleV2 guardian: add PauseAuthOracleV2.
+    function action9() internal isActionSkippable(9) {
         IFluidOracleV2Guardians(ORACLE_V2).setGuardian(
             PAUSE_AUTH_ORACLE_V2,
             true
         );
     }
 
-    /// @notice Action 8: DexFactory pause global auth: add the new
+    /// @notice Action 10: DexFactory pause global auth: add the new
     ///         PauseAuthDex, remove the old one.
-    function action8() internal isActionSkippable(8) {
+    function action10() internal isActionSkippable(10) {
         DEX_FACTORY.setGlobalAuth(NEW_PAUSE_AUTH_DEX, true);
         DEX_FACTORY.setGlobalAuth(OLD_PAUSE_AUTH_DEX, false);
     }
 
-    /// @notice Action 9: DexFactory limits global auth: add the new
+    /// @notice Action 11: DexFactory limits global auth: add the new
     ///         LimitsAuthDex, remove the old one.
-    function action9() internal isActionSkippable(9) {
+    function action11() internal isActionSkippable(11) {
         DEX_FACTORY.setGlobalAuth(NEW_LIMITS_AUTH_DEX, true);
         DEX_FACTORY.setGlobalAuth(OLD_LIMITS_AUTH_DEX, false);
     }
@@ -502,25 +496,12 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
         address borrowToken_,
         uint256 baseWithdrawalLimit_
     ) internal {
-        // Borrow: max restrict
-        setBorrowProtocolLimitsPaused(vault_, borrowToken_);
-
-        // Supply: current supply + 20%, 10% expansion over 12 hours
-        FluidLiquidityAdminStructs.UserSupplyConfig[]
-            memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
-                1
-            );
-        configs_[0] = FluidLiquidityAdminStructs.UserSupplyConfig({
-            user: vault_,
-            token: tBTC_ADDRESS,
-            mode: 1,
-            expandPercent: WITHDRAWAL_EXPAND_PERCENT,
-            expandDuration: WITHDRAWAL_EXPAND_DURATION,
-            baseWithdrawalLimit: baseWithdrawalLimit_
-        });
-        LIQUIDITY.updateUserSupplyConfigs(configs_);
-
-        // Unpause the paused legs
+        setProtocolLimitsExitOnly(
+            vault_,
+            tBTC_ADDRESS,
+            borrowToken_,
+            baseWithdrawalLimit_
+        );
         _unpauseUserAtLiquidity(vault_, tBTC_ADDRESS, borrowToken_);
     }
 
