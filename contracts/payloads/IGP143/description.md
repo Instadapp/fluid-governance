@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal performs eleven actions on mainnet. Action 1 sets the three **tBTC T1 vaults** (88 tBTC/USDC, 89 tBTC/USDT, 90 tBTC/GHO) to exit-only at the Liquidity Layer: borrow limits are fully restricted to dust, tBTC withdrawal limits are set to current supply plus a 20% buffer, and the vaults are unpaused so users can repay and withdraw. Action 2 removes the Team Multisig as **DSA ConnectorsV2 chief** and makes the **Team Multisig 24h timelock** the ConnectorsV2 chief. Action 3 removes the four remaining chiefs on the **legacy v1 connector registry**. Action 4 collects the Liquidity Layer's **USDC**, **USDT**, **GHO**, **USDe** and **ETH** revenue into the Fluid Reserve and sends the monthly tranche of the **$350k/month** grant, in stablecoins, to the **Team Multisig**. Action 5 updates the oracle on the **USDC-ETH / USDC-ETH T4 vault (77)**. Actions 6 to 11 upgrade the **Liquidity Layer pause setup**, one part per action so the parts can be skipped separately (6, 7 and 8 only together): rollbacks registered (6), new Admin and User modules (7), the Liquidity guardian moved to the new PauseAuthLiquidity (8), the OracleV2 guardian (9), and the DEX pause (10) and limits (11) global auths moved to the new auth contracts.
+This proposal performs eleven actions on mainnet. Action 1 sets the three **tBTC T1 vaults** (88 tBTC/USDC, 89 tBTC/USDT, 90 tBTC/GHO) to exit-only at the Liquidity Layer: borrow limits are fully restricted to dust, tBTC withdrawal limits are set to current supply plus a 20% buffer, and the vaults are unpaused so users can repay and withdraw. Action 2 removes the Team Multisig as **DSA ConnectorsV2 chief** and makes the **Team Multisig 24h timelock** the ConnectorsV2 chief. Action 3 removes the four remaining chiefs on the **legacy v1 connector registry**. Action 4 collects the Liquidity Layer's **USDC**, **USDT** and **GHO** revenue into the Fluid Reserve and sends the monthly tranche of the **$350k/month** grant, in stablecoins, to the **Team Multisig**. Action 5 updates the oracle on the **USDC-ETH / USDC-ETH T4 vault (77)**. Actions 6 to 11 upgrade the **Liquidity Layer pause setup**, one part per action so the parts can be skipped separately (6, 7 and 8 only together): rollbacks registered (6), new Admin and User modules (7), the Liquidity guardian moved to the new PauseAuthLiquidity (8), the OracleV2 guardian (9), and the DEX pause (10) and limits (11) global auths moved to the new auth contracts.
 
 ## Code Changes
 
@@ -20,7 +20,7 @@ This proposal performs eleven actions on mainnet. Action 1 sets the three **tBTC
 | Supply | `LIQUIDITY.updateUserSupplyConfigs` for tBTC | Base withdrawal limit = supply + 20%: **0.6707 / 1.3729 / 0.0005 tBTC**, expansion **10% over 12 hours** |
 | Unpause | `LIQUIDITY.unpauseUser(vault, [tBTC], [debt token])` | Supply and borrow legs unpaused at the Liquidity Layer |
 
-The Team Multisig pauses the three vaults at the Liquidity Layer (both legs) in the meantime. `unpauseUser` reverts for a leg that is not paused, so the payload reads each leg's pause bit and only unpauses the paused legs. The action runs whether or not the Team Multisig pause was executed.
+The Team Multisig paused the three vaults at the Liquidity Layer (supply and borrow legs). `unpauseUser` reverts for a leg that is not paused, so the action requires both legs of each vault to still be paused at execution.
 
 ### Action 2: ConnectorsV2: Remove the Team Multisig as Chief and Add the 24h Timelock
 
@@ -51,7 +51,7 @@ The InstaIndex (`0x2971AdFa57b20E5a416aE5a708A8655A9c74f723`) master is already 
 
 ### Action 4: Collect Revenue and Send the Monthly Grant
 
-1. `collectRevenue` on the Liquidity Layer for USDC, USDT, GHO, USDe and ETH into the Fluid Reserve.
+1. `collectRevenue` on the Liquidity Layer for USDC, USDT and GHO into the Fluid Reserve.
 2. `withdrawFunds` from the Fluid Reserve to the Team Multisig `0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`, memo "FOUNDATION GRANT":
 
 | Token | Amount | ~USD |

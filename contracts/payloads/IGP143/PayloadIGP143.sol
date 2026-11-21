@@ -7,41 +7,14 @@ import {IFluidReserveContractV2} from "../common/interfaces/IFluidReserveContrac
 import {
     AdminModuleStructs as FluidLiquidityAdminStructs
 } from "../common/interfaces/IFluidLiquidity.sol";
-import {LiquiditySlotsLink} from "../libraries/liquiditySlotsLink.sol";
 import {
     IDSAConnectorsV1,
     IDSAInstaIndex
 } from "../common/interfaces/IDSA.sol";
 import {IFluidVault} from "../common/interfaces/IFluidVault.sol";
 import {IInfiniteProxy} from "../common/interfaces/IInfiniteProxy.sol";
-
-/// @notice Liquidity Layer rollback module (routed on the Liquidity proxy).
-interface IFluidLiquidityRollbackModule {
-    struct RollbackSigsSlot {
-        uint40 rollbackRegisterTimestamp;
-        address replacesImplementation;
-        bytes4[] sigs;
-    }
-
-    function cleanupExpiredRollbackImplementation(
-        address implementation_
-    ) external;
-
-    function registerRollbackImplementation(
-        address oldImplementation_,
-        address newImplementation_
-    ) external;
-
-    function registerRollbackDummyImplementation() external;
-
-    function getRollbackForImplementation(
-        address rollbackImplementation_
-    ) external view returns (RollbackSigsSlot memory);
-}
-
-interface IFluidOracleV2Guardians {
-    function setGuardian(address guardian_, bool allowed_) external;
-}
+import {IFluidLiquidityRollback} from "../common/interfaces/IFluidLiquidityRollback.sol";
+import {IFluidOracleV2} from "../common/interfaces/IFluidOracleV2.sol";
 
 /// @notice IGP143: Wind down the tBTC vaults 88, 89 and 90 to exit-only,
 ///         remove the remaining DSA connector chiefs, switch the
@@ -63,8 +36,8 @@ interface IFluidOracleV2Guardians {
 ///
 ///         Action 3 removes the four chiefs on the legacy v1 InstaConnectors.
 ///
-///         Action 4 collects the Liquidity Layer's USDC, USDT, GHO, USDe and
-///         ETH revenue into the Fluid Reserve and sends the monthly grant
+///         Action 4 collects the Liquidity Layer's USDC, USDT and GHO
+///         revenue into the Fluid Reserve and sends the monthly grant
 ///         tranche of the $350,000/month grant (IGP-139), in stablecoins,
 ///         to the Team Multisig.
 ///
@@ -241,25 +214,44 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
     ///           ceiling to dust (10 / 20), 0.01% expansion over max duration
     ///         - supply (tBTC): base withdrawal limit = current supply +
     ///           20%, 10% expansion over 12 hours
-    ///         - unpause supply and borrow at the Liquidity Layer (only the
-    ///           legs that are paused, so the action runs whether or not the
-    ///           Team Multisig pause was executed)
+    ///         - unpause supply and borrow at the Liquidity Layer (both are
+    ///           paused; `unpauseUser` reverts for a leg that is not)
     function action1() internal isActionSkippable(1) {
-        _setExitOnly(
-            getVaultAddress(VAULT_TBTC_USDC_ID),
-            USDC_ADDRESS,
-            VAULT_88_BASE_WITHDRAWAL_LIMIT
-        );
-        _setExitOnly(
-            getVaultAddress(VAULT_TBTC_USDT_ID),
-            USDT_ADDRESS,
-            VAULT_89_BASE_WITHDRAWAL_LIMIT
-        );
-        _setExitOnly(
-            getVaultAddress(VAULT_TBTC_GHO_ID),
-            GHO_ADDRESS,
-            VAULT_90_BASE_WITHDRAWAL_LIMIT
-        );
+        // Vault 88: tBTC / USDC
+        {
+            address vault_ = getVaultAddress(VAULT_TBTC_USDC_ID);
+            setProtocolLimitsExitOnly(
+                vault_,
+                tBTC_ADDRESS,
+                USDC_ADDRESS,
+                VAULT_88_BASE_WITHDRAWAL_LIMIT
+            );
+            _unpauseUserAtLiquidity(vault_, tBTC_ADDRESS, USDC_ADDRESS);
+        }
+
+        // Vault 89: tBTC / USDT
+        {
+            address vault_ = getVaultAddress(VAULT_TBTC_USDT_ID);
+            setProtocolLimitsExitOnly(
+                vault_,
+                tBTC_ADDRESS,
+                USDT_ADDRESS,
+                VAULT_89_BASE_WITHDRAWAL_LIMIT
+            );
+            _unpauseUserAtLiquidity(vault_, tBTC_ADDRESS, USDT_ADDRESS);
+        }
+
+        // Vault 90: tBTC / GHO
+        {
+            address vault_ = getVaultAddress(VAULT_TBTC_GHO_ID);
+            setProtocolLimitsExitOnly(
+                vault_,
+                tBTC_ADDRESS,
+                GHO_ADDRESS,
+                VAULT_90_BASE_WITHDRAWAL_LIMIT
+            );
+            _unpauseUserAtLiquidity(vault_, tBTC_ADDRESS, GHO_ADDRESS);
+        }
     }
 
     /// @notice Action 2: ConnectorsV2 (used by DSA v2 cast): remove the Team
@@ -319,8 +311,8 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
         );
     }
 
-    /// @notice Action 4: Collect the Liquidity Layer's USDC, USDT, GHO, USDe
-    ///         and ETH revenue into the Fluid Reserve and transfer the
+    /// @notice Action 4: Collect the Liquidity Layer's USDC, USDT and GHO
+    ///         revenue into the Fluid Reserve and transfer the
     ///         monthly tranche of the $350,000/month grant to the Team
     ///         Multisig.
     /// @dev IGP-141 Action 2 pattern (`collectRevenue`, then
@@ -328,12 +320,10 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
     ///      Team Multisig instead of the Foundation address.
     function action4() internal isActionSkippable(4) {
         // Step 1: Collect Liquidity Layer revenue into the Reserve.
-        address[] memory liquidityTokens_ = new address[](5);
-        liquidityTokens_[0] = USDC_ADDRESS; // ~81.3k uncollected
-        liquidityTokens_[1] = USDT_ADDRESS; // ~79.5k uncollected
-        liquidityTokens_[2] = GHO_ADDRESS; // ~52.2k uncollected
-        liquidityTokens_[3] = USDe_ADDRESS; // ~5.5k uncollected
-        liquidityTokens_[4] = ETH_ADDRESS; // ~12.8 ETH uncollected
+        address[] memory liquidityTokens_ = new address[](3);
+        liquidityTokens_[0] = USDC_ADDRESS;
+        liquidityTokens_[1] = USDT_ADDRESS;
+        liquidityTokens_[2] = GHO_ADDRESS;
 
         LIQUIDITY.collectRevenue(liquidityTokens_);
 
@@ -382,7 +372,7 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
     ///         cannot be cleared or replaced for 7 days (ROLLBACK_PERIOD), so
     ///         a later swap would have to wait or go without a rollback.
     function action6() internal isActionSkippable(6) {
-        IFluidLiquidityRollbackModule rollback_ = IFluidLiquidityRollbackModule(
+        IFluidLiquidityRollback rollback_ = IFluidLiquidityRollback(
             address(LIQUIDITY)
         );
 
@@ -465,7 +455,7 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
 
     /// @notice Action 9: OracleV2 guardian: add PauseAuthOracleV2.
     function action9() internal isActionSkippable(9) {
-        IFluidOracleV2Guardians(ORACLE_V2).setGuardian(
+        IFluidOracleV2(ORACLE_V2).setGuardian(
             PAUSE_AUTH_ORACLE_V2,
             true
         );
@@ -491,70 +481,24 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
      * |__________________________________
      */
 
-    function _setExitOnly(
-        address vault_,
-        address borrowToken_,
-        uint256 baseWithdrawalLimit_
-    ) internal {
-        setProtocolLimitsExitOnly(
-            vault_,
-            tBTC_ADDRESS,
-            borrowToken_,
-            baseWithdrawalLimit_
-        );
-        _unpauseUserAtLiquidity(vault_, tBTC_ADDRESS, borrowToken_);
-    }
-
-    /// @dev `unpauseUser` reverts with UserNotPaused for a leg that is not
-    ///      paused, so only the paused legs are passed in.
     function _unpauseUserAtLiquidity(
         address user_,
         address supplyToken_,
         address borrowToken_
     ) internal {
-        bool supplyPaused_ = _isPaused(
-            LiquiditySlotsLink.LIQUIDITY_USER_SUPPLY_DOUBLE_MAPPING_SLOT,
-            user_,
-            supplyToken_,
-            LiquiditySlotsLink.BITS_USER_SUPPLY_IS_PAUSED
-        );
-        bool borrowPaused_ = _isPaused(
-            LiquiditySlotsLink.LIQUIDITY_USER_BORROW_DOUBLE_MAPPING_SLOT,
-            user_,
-            borrowToken_,
-            LiquiditySlotsLink.BITS_USER_BORROW_IS_PAUSED
-        );
-        if (!supplyPaused_ && !borrowPaused_) return;
-
-        address[] memory supplyTokens_ = new address[](supplyPaused_ ? 1 : 0);
-        if (supplyPaused_) supplyTokens_[0] = supplyToken_;
-        address[] memory borrowTokens_ = new address[](borrowPaused_ ? 1 : 0);
-        if (borrowPaused_) borrowTokens_[0] = borrowToken_;
+        address[] memory supplyTokens_ = new address[](1);
+        supplyTokens_[0] = supplyToken_;
+        address[] memory borrowTokens_ = new address[](1);
+        borrowTokens_[0] = borrowToken_;
 
         LIQUIDITY.unpauseUser(user_, supplyTokens_, borrowTokens_);
-    }
-
-    function _isPaused(
-        uint256 mappingSlot_,
-        address user_,
-        address token_,
-        uint256 pauseBit_
-    ) internal view returns (bool) {
-        uint256 userData_ = LIQUIDITY.readFromStorage(
-            LiquiditySlotsLink.calculateDoubleMappingStorageSlot(
-                mappingSlot_,
-                user_,
-                token_
-            )
-        );
-        return (userData_ >> pauseBit_) & 1 == 1;
     }
 
     /// @dev `cleanupExpiredRollbackImplementation` is permissionless and
     ///      reverts NotRegistered once cleared, so it only runs while the
     ///      registration still exists.
     function _cleanupExpiredRollback(
-        IFluidLiquidityRollbackModule rollback_,
+        IFluidLiquidityRollback rollback_,
         address implementation_
     ) internal {
         if (
@@ -588,11 +532,4 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
         sigs_[18] = 0x02c6bb6a; // updateUserSupplyConfigs
         sigs_[19] = 0x8f0c2916; // updateUserWithdrawalLimit
     }
-
-    // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
-    // 7-day average of hourly closes, 2026-11-09 21:00Z to 2026-11-16 20:00Z, source: coinbase
-    function ETH_USD_PRICE()    public pure override returns (uint256) { return 1_950 * 1e2; }
-    function STABLE_USD_PRICE() public pure override returns (uint256) { return 1 * 1e2; }
-    function BTC_USD_PRICE()    public pure override returns (uint256) { return 69_500 * 1e2; }
-    // --- END AUTO-GENERATED PRICES ---
 }
