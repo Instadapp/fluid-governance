@@ -234,6 +234,36 @@ contract PayloadIGPHelpers is PayloadIGPConstants {
         }
     }
 
+    uint256 internal constant EXIT_ONLY_WITHDRAWAL_EXPAND_PERCENT = 10 * 1e2; // 10%
+    uint256 internal constant EXIT_ONLY_WITHDRAWAL_EXPAND_DURATION = 12 hours;
+
+    /// @dev Exit-only at the Liquidity Layer: borrow max restricted, withdrawals
+    ///      stay open under `baseWithdrawalLimit_` (in `supplyToken_` decimals).
+    function setProtocolLimitsExitOnly(
+        address protocol_,
+        address supplyToken_,
+        address borrowToken_,
+        uint256 baseWithdrawalLimit_
+    ) internal {
+        setBorrowProtocolLimitsPaused(protocol_, borrowToken_);
+
+        FluidLiquidityAdminStructs.UserSupplyConfig[]
+            memory configs_ = new FluidLiquidityAdminStructs.UserSupplyConfig[](
+                1
+            );
+
+        configs_[0] = FluidLiquidityAdminStructs.UserSupplyConfig({
+            user: protocol_,
+            token: supplyToken_,
+            mode: 1,
+            expandPercent: EXIT_ONLY_WITHDRAWAL_EXPAND_PERCENT,
+            expandDuration: EXIT_ONLY_WITHDRAWAL_EXPAND_DURATION,
+            baseWithdrawalLimit: baseWithdrawalLimit_
+        });
+
+        LIQUIDITY.updateUserSupplyConfigs(configs_);
+    }
+
     function setSupplyProtocolLimitsPausedDex(
         address dex_,
         address user_
