@@ -2,7 +2,7 @@
 
 ## Summary
 
-This proposal performs eleven actions on mainnet. Action 1 sets the three **tBTC T1 vaults** (88 tBTC/USDC, 89 tBTC/USDT, 90 tBTC/GHO) to exit-only at the Liquidity Layer: borrow limits are fully restricted to dust, tBTC withdrawal limits are set to current supply plus a 20% buffer, and the vaults are unpaused so users can repay and withdraw. Action 2 removes the Team Multisig as **DSA ConnectorsV2 chief** and makes the **Team Multisig 24h timelock** the ConnectorsV2 chief. Action 3 removes the four remaining chiefs on the **legacy v1 connector registry**. Action 4 collects the Liquidity Layer's **USDC**, **USDT** and **GHO** revenue into the Fluid Reserve and sends the monthly tranche of the **$350k/month** grant, in stablecoins, to the **Team Multisig**. Action 5 updates the oracle on the **USDC-ETH / USDC-ETH T4 vault (77)**. Actions 6 to 11 upgrade the **Liquidity Layer pause setup**, one part per action so the parts can be skipped separately (6, 7 and 8 only together): rollbacks registered (6), new Admin and User modules (7), the Liquidity guardian moved to the new PauseAuthLiquidity (8), the OracleV2 guardian (9), and the DEX pause (10) and limits (11) global auths moved to the new auth contracts.
+This proposal performs twelve actions on mainnet. Action 1 sets the three **tBTC T1 vaults** (88 tBTC/USDC, 89 tBTC/USDT, 90 tBTC/GHO) to exit-only at the Liquidity Layer: borrow limits are fully restricted to dust, tBTC withdrawal limits are set to current supply plus a 20% buffer, and the vaults are unpaused so users can repay and withdraw. Action 2 removes the Team Multisig as **DSA ConnectorsV2 chief** and makes the **Team Multisig 24h timelock** the ConnectorsV2 chief. Action 3 removes the four remaining chiefs on the **legacy v1 connector registry**. Action 4 collects the Liquidity Layer's **USDC**, **USDT** and **GHO** revenue into the Fluid Reserve and sends the monthly tranche of the **$350k/month** grant, in stablecoins, to the **Team Multisig**. Action 5 updates the oracle on the **USDC-ETH / USDC-ETH T4 vault (77)**. Actions 6 to 11 upgrade the **Liquidity Layer pause setup**, one part per action so the parts can be skipped separately (6, 7 and 8 only together): rollbacks registered (6), new Admin and User modules (7), the Liquidity guardian moved to the new PauseAuthLiquidity (8), the OracleV2 guardian (9), and the DEX pause (10) and limits (11) global auths moved to the new auth contracts. Action 12 raises the **governance quorum** from 4,000,000 to 10,000,000 FLUID.
 
 ## Code Changes
 
@@ -91,6 +91,18 @@ All calls are made by the governance timelock `0x2386DC45AdDed673317eF068992F194
 - A rollback (Team Multisig, within 7 days of execution) only restores the module routing. The guardian stays the new PauseAuthLiquidity, which cannot pause on the old modules, so after a rollback pausing is manual by the Team Multisig until governance sets the guardian again.
 - Actions 9, 10 and 11 are independent of each other and of Actions 6, 7 and 8.
 
+### Action 12: Raise the Governance Quorum to 10,000,000 FLUID
+
+The quorum is a constant (`quorumVotes`) in the governor implementation, so raising it needs a new implementation. The governor proxy `0x0204Cd037B2ec03605CFdFe482D8e257C765fA1B` is switched to a new GovernorBravoDelegate that only changes `quorumVotes` from `4000000e18` to `10000000e18`.
+
+| Contract | Call | Effect |
+| --- | --- | --- |
+| Governor | `_setImplementation(<new GovernorBravoDelegate>)` | `quorumVotes` 4,000,000 → 10,000,000 FLUID |
+
+- The action reverts unless the governor reports the new implementation and a quorum of 10,000,000 FLUID.
+- Action 12 runs last. The quorum of this proposal is checked under the current implementation before execution, so this proposal is not affected.
+- After execution, a proposal needs at least 10,000,000 FLUID votes in favour to succeed, including any proposal that is still queued at that time.
+
 ## Description
 
 1. **tBTC vaults 88 / 89 / 90**: closes all new borrowing and reopens the vaults for exits only. The withdrawal limits sit 20% above current supply, so every user can withdraw their full collateral after repaying.
@@ -104,6 +116,7 @@ All calls are made by the governance timelock `0x2386DC45AdDed673317eF068992F194
 9. **OracleV2 guardian**: adds PauseAuthOracleV2 as OracleV2 guardian.
 10. **DEX pause auth**: moves the DexFactory pause global auth to the new PauseAuthDex.
 11. **DEX limits auth**: moves the DexFactory limits global auth to the new LimitsAuthDex.
+12. **Governance quorum**: raises the quorum for governance proposals from 4,000,000 to 10,000,000 FLUID.
 
 ## Conclusion
 

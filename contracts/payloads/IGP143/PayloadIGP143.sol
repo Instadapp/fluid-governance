@@ -16,6 +16,13 @@ import {IInfiniteProxy} from "../common/interfaces/IInfiniteProxy.sol";
 import {IFluidLiquidityRollback} from "../common/interfaces/IFluidLiquidityRollback.sol";
 import {IFluidOracleV2} from "../common/interfaces/IFluidOracleV2.sol";
 
+/// @dev View functions of the governor proxy used by the Action 12 checks.
+interface IGovernorBravoQuorum {
+    function implementation() external view returns (address);
+
+    function quorumVotes() external view returns (uint256);
+}
+
 /// @notice IGP143: Wind down the tBTC vaults 88, 89 and 90 to exit-only,
 ///         remove the remaining DSA connector chiefs, switch the
 ///         USDC-ETH / USDC-ETH vault 77 oracle and upgrade the Liquidity
@@ -63,6 +70,10 @@ import {IFluidOracleV2} from "../common/interfaces/IFluidOracleV2.sol";
 ///         - Action 10 moves the DEX pause global auth to the new PauseAuthDex.
 ///         - Action 11 moves the DEX limits global auth to the new
 ///           LimitsAuthDex.
+///
+///         Action 12 upgrades the governor implementation to raise the
+///         quorum from 4,000,000 to 10,000,000 FLUID. Runs last, so this
+///         proposal still executes under the current implementation.
 contract PayloadIGP143 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 143;
 
@@ -160,6 +171,12 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
     address public constant OLD_LIMITS_AUTH_DEX =
         0x5A09B07DFCc0852ADA327Dc81A9cb676B6c676f2;
 
+    // --- Action 12 ---
+    /// @dev New GovernorBravoDelegate (quorumVotes = 10,000,000 FLUID).
+    ///      TODO: set to the deployed address before proposing.
+    address public constant NEW_GOVERNOR_IMPLEMENTATION = address(0);
+    uint256 public constant NEW_QUORUM_VOTES = 10_000_000 * 1e18;
+
     function execute() public virtual override {
         super.execute();
 
@@ -195,6 +212,9 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
 
         // Action 11: DexFactory: move the limits global auth to the new LimitsAuthDex.
         action11();
+
+        // Action 12: Governor: upgrade the implementation to raise the quorum to 10M FLUID (must run last).
+        action12();
     }
 
     function verifyProposal() public view override {}
@@ -473,6 +493,29 @@ contract PayloadIGP143 is PayloadIGPPriceHelpers {
     function action11() internal isActionSkippable(11) {
         DEX_FACTORY.setGlobalAuth(NEW_LIMITS_AUTH_DEX, true);
         DEX_FACTORY.setGlobalAuth(OLD_LIMITS_AUTH_DEX, false);
+    }
+
+    /// @notice Action 12: Governor: switch to the new GovernorBravoDelegate,
+    ///         which raises `quorumVotes` from 4,000,000 to 10,000,000 FLUID.
+    ///         Reverts unless the new implementation is routed and reports
+    ///         the new quorum.
+    function action12() internal isActionSkippable(12) {
+        require(
+            NEW_GOVERNOR_IMPLEMENTATION != address(0),
+            "governor-implementation-not-set"
+        );
+
+        GOVERNOR._setImplementation(NEW_GOVERNOR_IMPLEMENTATION);
+
+        IGovernorBravoQuorum governor_ = IGovernorBravoQuorum(address(GOVERNOR));
+        require(
+            governor_.implementation() == NEW_GOVERNOR_IMPLEMENTATION,
+            "governor-implementation-not-updated"
+        );
+        require(
+            governor_.quorumVotes() == NEW_QUORUM_VOTES,
+            "governor-quorum-not-updated"
+        );
     }
 
     /**

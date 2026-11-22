@@ -32,7 +32,7 @@ contract InstaGovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorB
     uint public constant MAX_VOTING_DELAY = 50400; // About 1 week, 12s per block
 
     /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
-    uint public constant quorumVotes = 4000000e18; // 4,000,000
+    uint public constant quorumVotes = 10000000e18; // 10,000,000
 
     /// @notice The maximum number of actions that can be included in a proposal
     uint public constant proposalMaxOperations = 30; // 30 actions
