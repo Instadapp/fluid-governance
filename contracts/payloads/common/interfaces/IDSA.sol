@@ -15,4 +15,17 @@ interface IDSAV2 {
 
 interface IDSAConnectorsV2 {
     function toggleChief(address _chiefAddress) external;
+
+    function chief(address _chiefAddress) external view returns (bool);
+}
+
+/// @notice Legacy v1 InstaConnectors registry (InstaIndex connectors(1)).
+interface IDSAConnectorsV1 {
+    function disableChief(address _userAddress) external;
+
+    function chief(address _userAddress) external view returns (bool);
+}
+
+interface IDSAInstaIndex {
+    function master() external view returns (address);
 }
