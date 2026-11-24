@@ -17,8 +17,8 @@ import {PayloadIGPPriceHelpers} from "../common/pricehelpers.sol";
 ///         and, on the DexV2 proxy only, FLUID supply: base withdrawal limit
 ///         $5M, expand 50% / 6h.
 ///
-///         Action 2 transfers vault position NFT 3192 (vault 76) from the
-///         Treasury to the Team Multisig.
+///         Action 2 transfers the ETH/FLUID Fluid Dex V1 position (NFT 3192,
+///         vault 76) from the Treasury to the Team Multisig.
 contract PayloadIGP144 is PayloadIGPPriceHelpers {
     uint256 public constant PROPOSAL_ID = 144;
 
@@ -39,7 +39,8 @@ contract PayloadIGP144 is PayloadIGPPriceHelpers {
     uint256 public constant MAX_BORROW_LIMIT_USD_CBBTC = 5_000_000; // $5M
 
     // --- Action 2 ---
-    /// @dev Vault 76 position NFT (VAULT_FACTORY token id), held by the Treasury.
+    /// @dev ETH/FLUID Fluid Dex V1 position: vault 76 NFT (VAULT_FACTORY token
+    ///      id), held by the Treasury.
     uint256 public constant VAULT_76_POSITION_NFT_ID = 3192;
 
     function execute() public virtual override {
@@ -48,7 +49,7 @@ contract PayloadIGP144 is PayloadIGPPriceHelpers {
         // Action 1: DexV2 and Money Market launch limits on the Liquidity Layer.
         action1();
 
-        // Action 2: Transfer vault position NFT 3192 from the Treasury to the Team Multisig.
+        // Action 2: Transfer the ETH/FLUID Fluid Dex V1 position (NFT 3192) from the Treasury to the Team Multisig.
         action2();
     }
 
@@ -97,8 +98,8 @@ contract PayloadIGP144 is PayloadIGPPriceHelpers {
         );
     }
 
-    /// @notice Action 2: Transfer vault 76 position NFT 3192 from the
-    ///         Treasury to the Team Multisig.
+    /// @notice Action 2: Transfer the ETH/FLUID Fluid Dex V1 position (vault 76,
+    ///         NFT 3192) from the Treasury to the Team Multisig.
     function action2() internal isActionSkippable(2) {
         string[] memory targets_ = new string[](1);
         bytes[] memory encodedSpells_ = new bytes[](1);
