@@ -34,11 +34,10 @@ Token amounts are sized at ETH ~$1,770, wstETH ~$2,230, BTC ~$63,000, stablecoin
 
 ### Action 2: Transfer the ETH/FLUID Fluid Dex V1 Position to the Team Multisig
 
-- **NFT**: ETH/FLUID Fluid Dex V1 position, Fluid Vault NFT [#3192](https://etherscan.io/nft/0x324c5Dc1fC42c7a4D43d92df1eBA58a54d13Bf2d/3192) (vault 76), Vault Factory `0x324c5Dc1fC42c7a4D43d92df1eBA58a54d13Bf2d`
-- **Position**: smart-collateral position on vault 76 (T2: FLUID/ETH DEX liquidity as collateral, ETH debt). It holds ~99.9% of the FLUID/ETH DEX liquidity (~2.63M FLUID + ~0.89 ETH, ~$3.85M) against ~0.042 ETH of debt. The Team Multisig opened it in Dec 2024 and moved it to the Treasury in Aug 2025.
+- **NFT**: ETH/FLUID Fluid Dex V1 position [#3192](https://etherscan.io/nft/0x324c5Dc1fC42c7a4D43d92df1eBA58a54d13Bf2d/3192)
+- **Position**: ~99.9% of the ETH/FLUID Fluid Dex V1 liquidity (~2.63M FLUID + ~0.89 ETH, ~$3.85M) as collateral, ~0.042 ETH of debt
 - **Source**: Treasury DSA (`0x28849D2b63fA8D361e5fc15cB8aBB13019884d09`)
 - **Recipient**: Team Multisig (`0x4F6F977aCDD1177DCD81aB83074855EcB9C2D49e`)
-- **Method**: `withdrawERC721` via the `BASIC-B` (BASIC-ERC721) connector from the Treasury DSA
 
 ## Description
 
