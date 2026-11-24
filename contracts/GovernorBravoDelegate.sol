@@ -146,14 +146,14 @@ contract InstaGovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorB
     }
 
     /**
-      * @notice Cancels a proposal only if sender is the proposer, or proposer delegates dropped below proposal threshold
+      * @notice Cancels a proposal only if sender is the proposer
       * @param proposalId The id of the proposal to cancel
       */
     function cancel(uint proposalId) external {
         require(state(proposalId) != ProposalState.Executed, "GovernorBravo::cancel: cannot cancel executed proposal");
 
         Proposal storage proposal = proposals[proposalId];
-        require(msg.sender == proposal.proposer || token.getPriorVotes(proposal.proposer, SafeMath.sub(block.number, 1)) < proposalThreshold, "GovernorBravo::cancel: proposer above threshold");
+        require(msg.sender == proposal.proposer, "GovernorBravo::cancel: proposer only");
 
         proposal.canceled = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
