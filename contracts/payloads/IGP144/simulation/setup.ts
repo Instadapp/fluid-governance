@@ -7,9 +7,19 @@
  * reverts, so this script first runs proposal 143 through governance (votes,
  * queue, timelock delay, execute) from wherever it is on chain. Once 143 has
  * executed on mainnet, the script is a no-op.
+ *
+ * IGP-144 action 4 switches vaults to OracleV2 oracles. On T2/T3/T4 vaults
+ * `updateOracle` probes the new oracle's operate and liquidate rates, and the
+ * OracleV2 price sources reject stale feed rounds. The simulation warps past
+ * the voting period and the timelock delays, so every live feed is stale by
+ * then. As in IGP142/simulation/setup.ts, the script replaces the Chainlink /
+ * RedStone feeds the new oracles read with a mock that returns the live answer
+ * with `updatedAt = block.timestamp`.
  */
 
 import { JsonRpcProvider, ethers } from "ethers";
+import * as fs from "fs";
+import * as path from "path";
 
 const GOVERNOR = "0x0204Cd037B2ec03605CFdFe482D8e257C765fA1B";
 const PROPOSER = "0xA45f7bD6A5Ff45D31aaCE6bCD3d426D9328cea01";
@@ -43,6 +53,80 @@ const IGP143_RESERVE_FUNDING: { symbol: string; token: string; amount: bigint; h
     holder: "0x1a88Df1cFe15Af22B3c4c783D4e6F7F9e0C1885d",
   },
 ];
+
+// Chainlink / RedStone feeds read by the action 4 oracles (getExchangeRateOperate /
+// getExchangeRateLiquidate traced on mainnet).
+const ACTION4_FEEDS: string[] = [
+  "0x02E1F8d15762047b7a87BA0E5d94B9a0c5b54Ed2",
+  "0x0911af228c32458a560853605eF78b129c7DF099",
+  "0x3E7d1eAB13ad0104d2750B8863b489D65364e32D",
+  "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6",
+  "0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c",
+  "0xfdFD9C85aD200c506Cf9e21F1FD8dd01932FBB23",
+  "0x67F6838e58859d612E4ddF04dA396d6DABB66Dc4",
+  "0x65eD6a4ac085620eE943c0B15525C4428D23e4Db",
+  "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+  "0x3f12643D3f6f874d39C2a4c9f2Cd6f2DbAC877FC",
+  "0xFF3BC18cCBd5999CE63E788A1c250a88626aD099",
+  "0xeeF31c7d9F2E82e8A497b140cc60cc082Be4b94e",
+  "0xBE4d4D2FDdE7408bD00B9912705De7bDC3F9bDeb",
+  "0x2665701293fCbEB223D11A08D826563EDcCE423A",
+  "0xF7E906179255EF13270604197610B79bFfe546ca",
+  "0x5c29868C58b6e15e2b962943278969Ab6a7D3212",
+  "0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6",
+  "0x9944D86CEB9160aF5C5feB251FD671923323f8C3",
+  "0x66704DAD467A7cA508B3be15865D9B9F3E186c90",
+  "0x5c9C449BbC9a6075A2c061dF312a35fd1E05fF22",
+  "0x8350b7De6a6a2C1368E7D4Bd968190e13E354297",
+  "0x86392dC19c0b719886221c78AB11eb8Cf5c52812",
+  "0xa569d910839Ae8865Da8F8e70FfFb0cBA869F961",
+  "0xbC5FBcf58CeAEa19D523aBc76515b9AEFb5cfd58",
+  "0x5c499403bc092C651e35893AF6fE5CE973692795",
+];
+
+const FEED_ABI = new ethers.Interface([
+  "function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)",
+  "function decimals() view returns (uint8)",
+]);
+
+// Same mock as IGP-142 (compiled by `npm run compile`).
+const MOCK_FEED_ARTIFACT = "artifacts/contracts/payloads/IGP142/simulation/MockPriceFeed.sol/MockPriceFeed.json";
+
+function readArtifactBytecode(relativeArtifactPath: string): string {
+  const artifactPath = path.join(process.cwd(), relativeArtifactPath);
+  if (!fs.existsSync(artifactPath)) {
+    throw new Error(`Artifact not found at ${artifactPath}. Run 'npm run compile' first.`);
+  }
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf-8"));
+  const raw = artifact.deployedBytecode?.object ?? artifact.deployedBytecode ?? "";
+  if (typeof raw !== "string" || raw.length === 0) {
+    throw new Error(`${artifactPath} has no deployedBytecode`);
+  }
+  return raw.startsWith("0x") ? raw : `0x${raw}`;
+}
+
+async function mockFeeds(provider: JsonRpcProvider): Promise<void> {
+  const bytecode = readArtifactBytecode(MOCK_FEED_ARTIFACT);
+  const word = (v: bigint) => ethers.toBeHex(v, 32);
+  for (const feed of ACTION4_FEEDS) {
+    const round = FEED_ABI.decodeFunctionResult(
+      "latestRoundData",
+      await provider.send("eth_call", [{ to: feed, data: FEED_ABI.encodeFunctionData("latestRoundData") }, "latest"]),
+    );
+    const decimals = FEED_ABI.decodeFunctionResult(
+      "decimals",
+      await provider.send("eth_call", [{ to: feed, data: FEED_ABI.encodeFunctionData("decimals") }, "latest"]),
+    )[0];
+    const answer: bigint = round[1];
+    if (answer <= 0n) {
+      throw new Error(`${feed} has a non-positive live answer`);
+    }
+    await provider.send("tenderly_setCode", [feed, bytecode]);
+    await provider.send("tenderly_setStorageAt", [feed, word(0n), word(answer)]);
+    await provider.send("tenderly_setStorageAt", [feed, word(1n), word(BigInt(decimals))]);
+    console.log(`[SETUP] Mocked feed ${feed}: answer=${answer}, decimals=${decimals}`);
+  }
+}
 
 const STATES = ["Pending", "Active", "Canceled", "Defeated", "Succeeded", "Queued", "Expired", "Executed"];
 
@@ -161,6 +245,7 @@ async function executePreviousProposal(provider: JsonRpcProvider): Promise<void>
 export async function preSetup(provider: JsonRpcProvider, _payloadAddress?: string): Promise<void> {
   console.log("[SETUP] Running pre-setup for IGP144...");
   try {
+    await mockFeeds(provider);
     await executePreviousProposal(provider);
     console.log(`[SETUP] IGP-${PREVIOUS_PROPOSAL_ID} executed, IGP-144 runs on post-IGP-${PREVIOUS_PROPOSAL_ID} state`);
     console.log("[SETUP] Pre-setup completed successfully");
