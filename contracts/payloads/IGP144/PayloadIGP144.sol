@@ -135,7 +135,10 @@ contract PayloadIGP144 is PayloadIGPPriceHelpers {
     ///         each of ETH, USDC, USDT, WBTC and cbBTC:
     ///         - borrow: dust debt ceiling (10 / 20)
     ///         - supply: dust base withdrawal limit (10)
-    ///         - supply and borrow paused
+    ///         - supply, withdraw, borrow and payback paused
+    /// @dev Uses `pauseUserSupply` / `pauseUserBorrow` of the Admin module
+    ///      set in IGP-143 (which no longer routes `pauseUser`). Both proxies
+    ///      are user class 0 and hold nothing at the Liquidity Layer.
     function action3() internal isActionSkippable(3) {
         address[2] memory protocols_ = [OLD_DEXV2_PROXY, OLD_MONEY_MARKET_PROXY];
 
@@ -151,7 +154,8 @@ contract PayloadIGP144 is PayloadIGPPriceHelpers {
                 setBorrowProtocolLimitsPaused(protocols_[p], tokens_[t]);
                 setSupplyProtocolLimitsPaused(protocols_[p], tokens_[t]);
             }
-            LIQUIDITY.pauseUser(protocols_[p], tokens_, tokens_);
+            LIQUIDITY.pauseUserSupply(protocols_[p], tokens_, true, true);
+            LIQUIDITY.pauseUserBorrow(protocols_[p], tokens_, true, true);
         }
     }
 

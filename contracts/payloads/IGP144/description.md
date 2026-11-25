@@ -52,7 +52,10 @@ For each proxy, for ETH, USDC, USDT, WBTC and cbBTC:
 | --- | --- | --- |
 | Borrow | `setBorrowProtocolLimitsPaused` | Debt ceiling `10 / 20` (dust), expansion 0.01% over max duration |
 | Supply | `setSupplyProtocolLimitsPaused` | Base withdrawal limit `10` (dust), expansion 0.01% over max duration |
-| Pause | `LIQUIDITY.pauseUser(proxy, tokens, tokens)` | Supply and borrow paused for all five tokens |
+| Pause supply | `LIQUIDITY.pauseUserSupply(proxy, tokens, true, true)` | Supply and withdraw paused for all five tokens |
+| Pause borrow | `LIQUIDITY.pauseUserBorrow(proxy, tokens, true, true)` | Borrow and payback paused for all five tokens |
+
+The pause calls use the Liquidity Admin module set in IGP-143, so IGP-144 must execute after IGP-143.
 
 ## Description
 

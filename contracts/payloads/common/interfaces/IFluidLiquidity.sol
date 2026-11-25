@@ -144,6 +144,32 @@ interface IFluidLiquidityAdmin {
         address[] calldata borrowTokens_
     ) external;
 
+    /// @notice pause supply and / or withdraw for a user (Admin module from IGP-143).
+    /// Only callable by Guardians.
+    /// @param user_          address of user to pause
+    /// @param tokens_        token addresses to pause
+    /// @param pauseSupply_   pause supply
+    /// @param pauseWithdraw_ pause withdraw
+    function pauseUserSupply(
+        address user_,
+        address[] calldata tokens_,
+        bool pauseSupply_,
+        bool pauseWithdraw_
+    ) external returns (bool[] memory actedSupply_, bool[] memory actedWithdraw_);
+
+    /// @notice pause borrow and / or payback for a user (Admin module from IGP-143).
+    /// Only callable by Guardians.
+    /// @param user_          address of user to pause
+    /// @param tokens_        token addresses to pause
+    /// @param pauseBorrow_   pause borrow
+    /// @param pausePayback_  pause payback
+    function pauseUserBorrow(
+        address user_,
+        address[] calldata tokens_,
+        bool pauseBorrow_,
+        bool pausePayback_
+    ) external returns (bool[] memory actedBorrow_, bool[] memory actedPayback_);
+
     /// @notice         collects revenue for tokens to configured revenueCollector address.
     /// @param tokens_  array of tokens to collect revenue for
     /// @dev            Note that this can revert if token balance is < revenueAmount (utilization > 100%)
