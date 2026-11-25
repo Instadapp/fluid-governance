@@ -30,7 +30,7 @@ DexV2 proxy only, supply only (no borrow config), mode with interest, expand 50%
 | --- | --- |
 | FLUID | $5M |
 
-Token amounts are sized at ETH ~$1,770, wstETH ~$2,230, BTC ~$63,000, stablecoins $1 and FLUID ~$1.48 (CoinGecko). At those prices $5M is ~2,825 ETH, ~2,242 wstETH and ~79.4 WBTC / cbBTC; $30M is ~16,949 ETH and ~13,453 wstETH; $15M is ~238.1 WBTC; $5M is ~3.38M FLUID. The token amounts are fixed, so their USD value moves with price until execution.
+Token amounts are sized at ETH ~$1,650, wstETH ~$2,060, BTC ~$59,000, stablecoins $1 and FLUID ~$1.43 (CoinGecko). At those prices $5M is ~3,030 ETH, ~2,427 wstETH and ~84.7 WBTC / cbBTC; $30M is ~18,182 ETH and ~14,563 wstETH; $15M is ~254.2 WBTC; $5M is ~3.50M FLUID. The token amounts are fixed, so their USD value moves with price until execution.
 
 ### Action 2: Transfer the ETH/FLUID Fluid Dex V1 Position to the Team Multisig
 
