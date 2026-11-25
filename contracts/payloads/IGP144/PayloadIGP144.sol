@@ -347,13 +347,11 @@ contract PayloadIGP144 is PayloadIGPPriceHelpers {
     }
 
     // --- BEGIN AUTO-GENERATED PRICES (scripts/verify/prepare-prices.ts) ---
-    // fetched: 2026-11-25T08:32:05.941Z, source: coingecko
+    // fetched: 2026-11-25T08:46:15.994Z, source: coingecko
     function BTC_USD_PRICE()    public pure override returns (uint256) { return 59_000 * 1e2; }
     function ETH_USD_PRICE()    public pure override returns (uint256) { return 1_650 * 1e2; }
+    function FLUID_USD_PRICE()  public pure override returns (uint256) { return 1.43 * 1e2; }
     function STABLE_USD_PRICE() public pure override returns (uint256) { return 1 * 1e2; }
     function wstETH_USD_PRICE() public pure override returns (uint256) { return 2_060 * 1e2; }
-    // prepare-prices.ts skips FLUID (NON_PRICED_EXEMPT) but action 1 prices it; set by hand, re-check on every rerun.
-    // fetched: 2026-11-25, source: coingecko
-    function FLUID_USD_PRICE()  public pure override returns (uint256) { return 1.43 * 1e2; }
     // --- END AUTO-GENERATED PRICES ---
 }

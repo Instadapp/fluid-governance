@@ -22,6 +22,7 @@
 
 import { readFileSync } from "node:fs";
 import {
+  TOKENS,
   tokenByConstantName,
   type TokenEntry,
 } from "./tokens.js";
@@ -37,7 +38,6 @@ import {
 export const NON_PRICED_EXEMPT = new Set<string>([
   "WETH_ADDRESS",
   "stETH_ADDRESS",
-  "FLUID_ADDRESS",
   // fToken admin contracts used as Liquidity `user` / protocol addresses.
   "F_SUSDs_ADDRESS",
 ]);
@@ -89,13 +89,11 @@ export function checkDispatchCoverage(
   const covered: TokenEntry[] = [];
   const missing: TokenEntry[] = [];
   for (const t of tokens) {
-    if (NON_PRICED_EXEMPT.has(t.constantName)) {
-      covered.push(t);
-      continue;
-    }
-    const pattern = new RegExp(
-      `token\\s*==\\s*${escapeRegex(t.constantName)}\\b`
-    );
+    // Constants sharing an address (INST / FLUID) share one dispatch branch.
+    const names = TOKENS.filter(
+      (o) => o.address.toLowerCase() === t.address.toLowerCase()
+    ).map((o) => escapeRegex(o.constantName));
+    const pattern = new RegExp(`token\\s*==\\s*(?:${names.join("|")})\\b`);
     if (pattern.test(src)) covered.push(t);
     else missing.push(t);
   }
@@ -144,7 +142,6 @@ export function detectTokensUsedFromSource(src: string): TokenUsageResult {
   const used: TokenEntry[] = [];
   const unknown: string[] = [];
   for (const ident of pricedIds) {
-    if (NON_PRICED_EXEMPT.has(ident)) continue;
     const entry = tokenByConstantName(ident);
     if (entry) used.push(entry);
     else unknown.push(ident);
