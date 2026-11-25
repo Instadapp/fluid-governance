@@ -122,8 +122,8 @@ interface IFluidLiquidityAdmin {
         AdminModuleStructs.UserBorrowConfig[] memory userBorrowConfigs_
     ) external;
 
-    /// @notice pause operations for a particular user in class 0 (class 1 users can't be paused by guardians).
-    /// Only callable by Guardians.
+    /// @notice DEPRECATED: removed from Liquidity by IGP-143 and reverts there; use `pauseUserSupply` /
+    /// `pauseUserBorrow`. Kept only so payloads executed before IGP-143 still compile.
     /// @param user_          address of user to pause operations for
     /// @param supplyTokens_  token addresses to pause withdrawals for
     /// @param borrowTokens_  token addresses to pause borrowings for
@@ -133,8 +133,8 @@ interface IFluidLiquidityAdmin {
         address[] calldata borrowTokens_
     ) external;
 
-    /// @notice unpause operations for a particular user in class 0 (class 1 users can't be paused by guardians).
-    /// Only callable by Guardians.
+    /// @notice DEPRECATED: removed from Liquidity by IGP-143 and reverts there; use `unpauseUserSupply` /
+    /// `unpauseUserBorrow`. Kept only so payloads executed before IGP-143 still compile.
     /// @param user_          address of user to unpause operations for
     /// @param supplyTokens_  token addresses to unpause withdrawals for
     /// @param borrowTokens_  token addresses to unpause borrowings for
@@ -168,6 +168,32 @@ interface IFluidLiquidityAdmin {
         address[] calldata tokens_,
         bool pauseBorrow_,
         bool pausePayback_
+    ) external returns (bool[] memory actedBorrow_, bool[] memory actedPayback_);
+
+    /// @notice unpause supply and / or withdraw for a user (Admin module from IGP-143).
+    /// Only callable by Guardians.
+    /// @param user_            address of user to unpause
+    /// @param tokens_          token addresses to unpause
+    /// @param unpauseSupply_   unpause supply
+    /// @param unpauseWithdraw_ unpause withdraw
+    function unpauseUserSupply(
+        address user_,
+        address[] calldata tokens_,
+        bool unpauseSupply_,
+        bool unpauseWithdraw_
+    ) external returns (bool[] memory actedSupply_, bool[] memory actedWithdraw_);
+
+    /// @notice unpause borrow and / or payback for a user (Admin module from IGP-143).
+    /// Only callable by Guardians.
+    /// @param user_           address of user to unpause
+    /// @param tokens_         token addresses to unpause
+    /// @param unpauseBorrow_  unpause borrow
+    /// @param unpausePayback_ unpause payback
+    function unpauseUserBorrow(
+        address user_,
+        address[] calldata tokens_,
+        bool unpauseBorrow_,
+        bool unpausePayback_
     ) external returns (bool[] memory actedBorrow_, bool[] memory actedPayback_);
 
     /// @notice         collects revenue for tokens to configured revenueCollector address.
