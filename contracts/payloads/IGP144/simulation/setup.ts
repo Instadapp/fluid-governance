@@ -32,7 +32,7 @@ const VOTERS = [
 
 // IGP-143 action 4 grant amounts, assumed to be in the Reserve at execution (as in
 // IGP143/simulation/setup.ts). tenderly_setErc20Balance rejects GHO, so GHO is
-// transferred from the sGHO contract instead.
+// transferred from the stkGHO contract instead.
 const IGP143_RESERVE_FUNDING: { symbol: string; token: string; amount: bigint; holder?: string }[] = [
   { symbol: "USDC", token: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", amount: 150_000n * 10n ** 6n },
   { symbol: "USDT", token: "0xdAC17F958D2ee523a2206206994597C13D831ec7", amount: 150_000n * 10n ** 6n },
