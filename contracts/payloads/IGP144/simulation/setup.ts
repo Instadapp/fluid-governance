@@ -30,11 +30,18 @@ const VOTERS = [
   "0x4604E3bFbaCcB317a6FfEde8Bf24105F476A7329",
 ];
 
-// IGP-143 action 4 grant amounts, funded the same way as IGP143/simulation/setup.ts.
-const IGP143_RESERVE_FUNDING: { symbol: string; token: string; amount: bigint }[] = [
+// IGP-143 action 4 grant amounts, assumed to be in the Reserve at execution (as in
+// IGP143/simulation/setup.ts). tenderly_setErc20Balance rejects GHO, so GHO is
+// transferred from the sGHO contract instead.
+const IGP143_RESERVE_FUNDING: { symbol: string; token: string; amount: bigint; holder?: string }[] = [
   { symbol: "USDC", token: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", amount: 150_000n * 10n ** 6n },
   { symbol: "USDT", token: "0xdAC17F958D2ee523a2206206994597C13D831ec7", amount: 150_000n * 10n ** 6n },
-  { symbol: "GHO", token: "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f", amount: 50_000n * 10n ** 18n },
+  {
+    symbol: "GHO",
+    token: "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
+    amount: 50_000n * 10n ** 18n,
+    holder: "0x1a88Df1cFe15Af22B3c4c783D4e6F7F9e0C1885d",
+  },
 ];
 
 const STATES = ["Pending", "Active", "Canceled", "Defeated", "Succeeded", "Queued", "Expired", "Executed"];
@@ -79,9 +86,18 @@ async function erc20Balance(provider: JsonRpcProvider, token: string, holder: st
 }
 
 async function fundReserveForIgp143(provider: JsonRpcProvider): Promise<void> {
-  for (const { symbol, token, amount } of IGP143_RESERVE_FUNDING) {
-    if ((await erc20Balance(provider, token, FLUID_RESERVE)) >= amount) continue;
-    await provider.send("tenderly_setErc20Balance", [token, FLUID_RESERVE, ethers.toBeHex(amount)]);
+  for (const { symbol, token, amount, holder } of IGP143_RESERVE_FUNDING) {
+    const balance = await erc20Balance(provider, token, FLUID_RESERVE);
+    if (balance >= amount) continue;
+    if (holder) {
+      const data = new ethers.Interface(["function transfer(address,uint256)"]).encodeFunctionData("transfer", [
+        FLUID_RESERVE,
+        amount - balance,
+      ]);
+      await send(provider, holder, token, data, `Reserve ${symbol} top-up`);
+    } else {
+      await provider.send("tenderly_setErc20Balance", [token, FLUID_RESERVE, ethers.toBeHex(amount)]);
+    }
     console.log(`[SETUP] Reserve ${symbol} balance set to ${amount} for IGP-143 action 4`);
   }
 }
